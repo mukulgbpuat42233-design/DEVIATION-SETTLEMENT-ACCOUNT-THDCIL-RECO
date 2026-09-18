@@ -5,11 +5,102 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Khurja DSM Calculator</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script>
+// Global error handler
+window.addEventListener('error', function(e) {
+  if (e && e.message && e.message.indexOf('Script error') !== -1) {
+    console.warn('[Global] Suppressed cross-origin Script error:', e);
+  }
+});
+// Safe localStorage polyfill for iframes and privacy sandboxes
+(function() {
+  var isSupported = false;
+  try {
+    var testKey = '__storage_test__';
+    window.localStorage.setItem(testKey, '1');
+    window.localStorage.removeItem(testKey);
+    isSupported = true;
+  } catch (e) {
+    isSupported = false;
+  }
+  if (!isSupported) {
+    var memStore = {};
+    var mockStorage = {
+      getItem: function(k) { return Object.prototype.hasOwnProperty.call(memStore, k) ? memStore[k] : null; },
+      setItem: function(k, v) { memStore[k] = String(v); },
+      removeItem: function(k) { delete memStore[k]; },
+      clear: function() { memStore = {}; },
+      key: function(i) { return Object.keys(memStore)[i] || null; },
+      get length() { return Object.keys(memStore).length; }
+    };
+    try {
+      Object.defineProperty(window, 'localStorage', {
+        value: mockStorage,
+        configurable: true,
+        enumerable: true,
+        writable: true
+      });
+    } catch (e) {
+      try { window.localStorage = mockStorage; } catch (err) {}
+    }
+  }
+})();
+</script>
+<script src="/vendor/xlsx.bundle.js"></script>
+<script src="/vendor/chart.umd.min.js"></script>
+<script>
+// Chart.js Auto-Destroy Collision Guard: Ensures canvas can always be cleanly reused without ID collision errors
+(function() {
+  if (typeof Chart !== 'undefined') {
+    var OriginalChart = Chart;
+    function SafeChart(item, config) {
+      try {
+        var el = (typeof item === 'string') ? document.getElementById(item) : item;
+        if (el && el.canvas) el = el.canvas;
+        if (el && typeof OriginalChart.getChart === 'function') {
+          var existing = OriginalChart.getChart(el);
+          if (existing) {
+            try {
+              existing.destroy();
+            } catch (destroyErr) {
+              console.warn('[SafeChart] existing.destroy() warning:', destroyErr);
+            }
+            if (OriginalChart.instances && existing.id in OriginalChart.instances) {
+              delete OriginalChart.instances[existing.id];
+            }
+          }
+        }
+        if (el && OriginalChart.instances) {
+          for (var instId in OriginalChart.instances) {
+            var inst = OriginalChart.instances[instId];
+            if (inst && (inst.canvas === el || (inst.canvas && inst.canvas.id === el.id))) {
+              try { inst.destroy(); } catch(e){}
+              if (OriginalChart.instances[instId]) delete OriginalChart.instances[instId];
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('[SafeChart] Auto-destroy prior chart error:', err);
+      }
+      return new OriginalChart(item, config);
+    }
+    Object.setPrototypeOf(SafeChart, OriginalChart);
+    SafeChart.prototype = OriginalChart.prototype;
+    var keys = Object.getOwnPropertyNames(OriginalChart);
+    for (var i = 0; i < keys.length; i++) {
+      var k = keys[i];
+      if (!(k in SafeChart)) {
+        try {
+          Object.defineProperty(SafeChart, k, Object.getOwnPropertyDescriptor(OriginalChart, k));
+        } catch(e) {}
+      }
+    }
+    window.Chart = SafeChart;
+  }
+})();
+</script>
+<script src="/vendor/jspdf.umd.min.js"></script>
+<script src="/vendor/jspdf.plugin.autotable.min.js"></script>
 
 <style>
 :root{
@@ -758,6 +849,26 @@ const BLOCKS_PER_DAY = 96;
 const WEEK_COUNT = 52;
 const STORAGE_PREFIX = 'khurja-week:';
 
+window.THDC_PLANTS = window.THDC_PLANTS || {
+  "Khurja STPP":{name:"Khurja STPP",capacity:1320,unit:"MW",type:"Thermal Power Plant"},
+  "Koteshwar HEP":{name:"Koteshwar HEP",capacity:400,unit:"MW",type:"Hydro Electric Power Plant"},
+  "Tehri HPP":{name:"Tehri HPP",capacity:1000,unit:"MW",type:"Hydro Power Plant"},
+  "Tehri PSP":{name:"Tehri PSP",capacity:1000,unit:"MW",type:"Pumped Storage Plant"},
+  "Khurja Floating Solar":{name:"Khurja Floating Solar",capacity:11,unit:"MW",type:"Floating Solar Power Plant"}
+};
+
+window.THDC_GRID_SOURCES = window.THDC_GRID_SOURCES || {
+  "Khurja STPP":{authority:"UPSLDC",label:"UPSLDC",region:"Uttar Pradesh",revisionLabel:"UPSLDC Schedule Revision",statementLabel:"UPSLDC DSM Statement"},
+  "Khurja Floating Solar":{authority:"UPSLDC",label:"UPSLDC",region:"Uttar Pradesh",revisionLabel:"UPSLDC Schedule Revision",statementLabel:"UPSLDC DSM Statement"},
+  "Tehri HPP":{authority:"NRPC",label:"NRPC",region:"Northern Region",revisionLabel:"NRPC Schedule Revision",statementLabel:"NRPC DSM Statement"},
+  "Tehri PSP":{authority:"NRPC",label:"NRPC",region:"Northern Region",revisionLabel:"NRPC Schedule Revision",statementLabel:"NRPC DSM Statement"},
+  "Koteshwar HEP":{authority:"NRPC",label:"NRPC",region:"Northern Region",revisionLabel:"NRPC Schedule Revision",statementLabel:"NRPC DSM Statement"}
+};
+
+window.currentPlantContext = (function(){
+  try { return localStorage.getItem('thdc-plant-context') || 'Khurja Floating Solar'; } catch(e) { return 'Khurja Floating Solar'; }
+})();
+
 const state = {
   weeks: {},          // weekNum -> { days:[...], originalDays:[...] }
   currentWeek: 1,
@@ -769,6 +880,7 @@ const state = {
   pendingOtp: null,    // in-memory only, never persisted
   projectMeta: { name:'Khurja DSM Calculator', plant:'11 MW Khurja Floating Solar Power Plant' }
 };
+window.state = state;
 
 for(let w=1; w<=WEEK_COUNT; w++){ state.weeks[w] = { days: [], originalDays: [], dsaDate: '' }; }
 
@@ -1245,7 +1357,7 @@ function renderLogin(){
       <!-- Header -->
       <div style="width: 100%; background: white; padding: 20px 40px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; box-sizing: border-box;">
           <div style="display: flex; align-items: center; gap: 20px;">
-              <img src="https://upload.wikimedia.org/wikipedia/en/9/9a/Logo_of_THDCIL.png" alt="THDCIL Logo" style="height: 60px; object-fit: contain;">
+              <img src="/vendor/thdcil-logo.png" alt="THDCIL Logo" onerror="this.onerror=null;this.src='https://upload.wikimedia.org/wikipedia/en/9/9a/Logo_of_THDCIL.png'" style="height: 60px; object-fit: contain;">
               <div style="border-left: 2px solid #E2E8F0; padding-left: 20px;">
                   <h1 style="margin: 0; font-size: 22px; font-weight: 900; color: #0A2E7A; letter-spacing: -0.02em;">DSM RECONCILIATION PORTAL</h1>
                   <div style="font-size: 13px; color: #64748B; font-weight: 700; margin-top: 4px;">THDC INDIA LIMITED</div>
@@ -1753,7 +1865,18 @@ function editBlock(date, idx, field, value){
 }
 
 /* ================= CHARTS ================= */
-function destroyChart(id){ if(state.charts[id]){ state.charts[id].destroy(); delete state.charts[id]; } }
+function destroyChart(id){
+  if(state.charts && state.charts[id]){ try{ state.charts[id].destroy(); }catch(e){} delete state.charts[id]; }
+  if(typeof Chart!=='undefined' && typeof Chart.getChart === 'function'){
+    try{
+      const el = (typeof id === 'string') ? document.getElementById(id) : id;
+      if(el){
+        const existing = Chart.getChart(el);
+        if(existing) existing.destroy();
+      }
+    }catch(e){}
+  }
+}
 function renderCharts(){
   if(typeof Chart === 'undefined') return;
   const week = weekObj();
@@ -1765,32 +1888,41 @@ function renderCharts(){
 
   destroyChart('schAct');
   if(week.days.length){
-    state.charts.schAct = new Chart(document.getElementById('chartSchAct'), {
-      type:'bar',
-      data:{labels, datasets:[
-        {label:'Scheduled', data:schs, backgroundColor:'#215CD1'},
-        {label:'Actual', data:acts, backgroundColor:'#8FB1EE'}
-      ]},
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:11}}}},scales:{y:{ticks:{font:{size:10}}},x:{ticks:{font:{size:10}}}}}
-    });
+    const el = document.getElementById('chartSchAct');
+    if(el){
+      state.charts.schAct = new Chart(el, {
+        type:'bar',
+        data:{labels, datasets:[
+          {label:'Scheduled', data:schs, backgroundColor:'#215CD1'},
+          {label:'Actual', data:acts, backgroundColor:'#8FB1EE'}
+        ]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:11}}}},scales:{y:{ticks:{font:{size:10}}},x:{ticks:{font:{size:10}}}}}
+      });
+    }
   }
 
   destroyChart('dev');
   if(week.days.length){
-    state.charts.dev = new Chart(document.getElementById('chartDev'), {
-      type:'bar',
-      data:{labels, datasets:[{label:'Deviation (MWh)', data:devs, backgroundColor: devs.map(v=>v>=0?'#215CD1':'#C1403A')}]},
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{font:{size:10}}},x:{ticks:{font:{size:10}}}}}
-    });
+    const el = document.getElementById('chartDev');
+    if(el){
+      state.charts.dev = new Chart(el, {
+        type:'bar',
+        data:{labels, datasets:[{label:'Deviation (MWh)', data:devs, backgroundColor: devs.map(v=>v>=0?'#215CD1':'#C1403A')}]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{font:{size:10}}},x:{ticks:{font:{size:10}}}}}
+      });
+    }
   }
 
   destroyChart('charge');
   if(week.days.length){
-    state.charts.charge = new Chart(document.getElementById('chartCharge'), {
-      type:'bar',
-      data:{labels, datasets:[{label:'DSM Charge (₹)', data:charges, backgroundColor: charges.map(v=>v<0?'#0F8A5F':(v>0?'#C1403A':'#8A93A3'))}]},
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{font:{size:10}}},x:{ticks:{font:{size:10}}}}}
-    });
+    const el = document.getElementById('chartCharge');
+    if(el){
+      state.charts.charge = new Chart(el, {
+        type:'bar',
+        data:{labels, datasets:[{label:'DSM Charge (₹)', data:charges, backgroundColor: charges.map(v=>v<0?'#0F8A5F':(v>0?'#C1403A':'#8A93A3'))}]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{font:{size:10}}},x:{ticks:{font:{size:10}}}}}
+      });
+    }
   }
 
   destroyChart('blockProfile');
@@ -2520,20 +2652,31 @@ function renderFrequencyResponseVisible(){
 
   if(typeof Chart!=='undefined'){
     const c=document.getElementById('frequencyResponseTimelineChart');
-    if(window._frVisibleChart){try{window._frVisibleChart.destroy()}catch(e){}}
-    window._frVisibleChart=new Chart(c,{
-      type:'scatter',
-      data:{datasets:[
-        {label:'GRID STRESS',data:stress.map(b=>({x:b.idx,y:b.dev})),backgroundColor:'#C1403A',pointRadius:4},
-        {label:'FREQUENCY SUPPORT',data:support.map(b=>({x:b.idx,y:b.dev})),backgroundColor:'#0F8A5F',pointRadius:4},
-        {label:'ADVERSE',data:adverse.map(b=>({x:b.idx,y:b.dev})),backgroundColor:'#E7A62A',pointRadius:4},
-        {label:'NEUTRAL',data:neutral.map(b=>({x:b.idx,y:b.dev})),backgroundColor:'#8A93A3',pointRadius:3}
-      ]},
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:8},boxWidth:9}}},
-        scales:{x:{title:{display:true,text:'96 Block Sequence',font:{size:9}},min:1,max:96,ticks:{stepSize:8,font:{size:7}}},
-                y:{title:{display:true,text:'Deviation (MWh)',font:{size:9}},ticks:{font:{size:7}}}}
+    if(c){
+      if(typeof Chart.getChart === 'function'){
+        try {
+          const old = Chart.getChart(c);
+          if(old) old.destroy();
+        } catch(e){}
       }
-    });
+      if(window._frVisibleChart){try{window._frVisibleChart.destroy()}catch(e){} window._frVisibleChart=null;}
+      if(window._frequencyResponseTimeline){try{window._frequencyResponseTimeline.destroy()}catch(e){} window._frequencyResponseTimeline=null;}
+
+      window._frVisibleChart=new Chart(c,{
+        type:'scatter',
+        data:{datasets:[
+          {label:'GRID STRESS',data:stress.map(b=>({x:b.idx,y:b.dev})),backgroundColor:'#C1403A',pointRadius:4},
+          {label:'FREQUENCY SUPPORT',data:support.map(b=>({x:b.idx,y:b.dev})),backgroundColor:'#0F8A5F',pointRadius:4},
+          {label:'ADVERSE',data:adverse.map(b=>({x:b.idx,y:b.dev})),backgroundColor:'#E7A62A',pointRadius:4},
+          {label:'NEUTRAL',data:neutral.map(b=>({x:b.idx,y:b.dev})),backgroundColor:'#8A93A3',pointRadius:3}
+        ]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:8},boxWidth:9}}},
+          scales:{x:{title:{display:true,text:'96 Block Sequence',font:{size:9}},min:1,max:96,ticks:{stepSize:8,font:{size:7}}},
+                  y:{title:{display:true,text:'Deviation (MWh)',font:{size:9}},ticks:{font:{size:7}}}}
+        }
+      });
+      window._frequencyResponseTimeline = window._frVisibleChart;
+    }
   }
 }
 
@@ -2616,7 +2759,7 @@ function renderOptimizationInsights(){
 function renderAll(){
   if (typeof renderOptimizationInsights === 'function') setTimeout(renderOptimizationInsights, 120);
   setTimeout(renderFrequencyDaywise,100);
-  try{setTimeout(renderCompleteInsights,50);setTimeout(renderFrequencyAnalysis,80);setTimeout(renderFrequencyResponseVisual,110)}catch(e){}
+  try{setTimeout(renderCompleteInsights,50);setTimeout(renderFrequencyAnalysis,80);setTimeout(renderFrequencyResponseVisible,110)}catch(e){}
   renderQualityBanner();
   renderHeatStrip();
   renderKPIs();
@@ -2627,8 +2770,6 @@ function renderAll(){
   renderDateTable();
   if(state.currentDate){ renderDayDetailPanel(); } else { document.getElementById('dayDetailPanel').style.display='none'; }
   renderCharts();
-
-  setTimeout(renderFrequencyResponseVisible,60);
 }
 
 /* ================= INIT ================= */
@@ -3081,69 +3222,9 @@ window.addEventListener('load',()=>setTimeout(renderFrequencyTimeline,1100));
 </script><script>
 
 function renderFrequencyResponseVisual(){
-  const chartEl=document.getElementById('frequencyResponseTimelineChart');
-  const kpiEl=document.getElementById('frequencyResponseKPIs');
-  const exEl=document.getElementById('frequencyResponseExplanation');
-  if(!chartEl)return;
-  const blocks=ciAllBlocks(ciWeek());
-  if(!blocks.length){
-    if(kpiEl)kpiEl.innerHTML='<div class="frv-explain">Load 96-block data to display frequency response.</div>';
-    return;
+  if(typeof renderFrequencyResponseVisible === 'function'){
+    return renderFrequencyResponseVisible();
   }
-  const low=49.97, high=50.03;
-  const classify=b=>{
-    if(b.f<low && b.dev<0)return ['GRID STRESS','frv-stress'];
-    if(b.f<low && b.dev>0)return ['FREQUENCY SUPPORT','frv-support'];
-    if(b.f>high && b.dev>0)return ['ADVERSE','frv-stress'];
-    if(b.f>high && b.dev<0)return ['FREQUENCY SUPPORT','frv-support'];
-    return ['NEUTRAL','frv-neutral'];
-  };
-  const stress=blocks.filter(b=>classify(b)[0]==='GRID STRESS');
-  const support=blocks.filter(b=>classify(b)[0]==='FREQUENCY SUPPORT');
-  const adverse=blocks.filter(b=>classify(b)[0]==='ADVERSE');
-  const neutral=blocks.filter(b=>classify(b)[0]==='NEUTRAL');
-  const lowUnder=blocks.filter(b=>b.f<low&&b.dev<0);
-  const lowOver=blocks.filter(b=>b.f<low&&b.dev>0);
-  const highUnder=blocks.filter(b=>b.f>high&&b.dev<0);
-  const highOver=blocks.filter(b=>b.f>high&&b.dev>0);
-  const avg=(a,k)=>a.length?a.reduce((s,b)=>s+b[k],0)/a.length:0;
-  const minF=Math.min(...blocks.map(b=>b.f)), maxF=Math.max(...blocks.map(b=>b.f));
-  const score=((support.length-adverse.length)/(blocks.length||1))*100;
-
-  kpiEl.innerHTML=`
-    <div class="frv-kpi bad"><span>GRID STRESS</span><b>${stress.length}</b><span>low F + under-injection</span></div>
-    <div class="frv-kpi good"><span>FREQUENCY SUPPORT</span><b>${support.length}</b><span>directionally supportive</span></div>
-    <div class="frv-kpi bad"><span>ADVERSE</span><b>${adverse.length}</b><span>high F + over-injection</span></div>
-    <div class="frv-kpi"><span>NEUTRAL / DEADBAND</span><b>${neutral.length}</b><span>49.97–50.03 Hz</span></div>
-    <div class="frv-kpi"><span>MIN FREQUENCY</span><b>${ciNum(minF,3)} Hz</b></div>
-    <div class="frv-kpi"><span>MAX FREQUENCY</span><b>${ciNum(maxF,3)} Hz</b></div>
-    <div class="frv-kpi bad"><span>UNDER @ LOW F</span><b>${lowUnder.length}</b><span>${ciNum(avg(lowUnder,'dev'),3)} MWh avg deviation</span></div>
-    <div class="frv-kpi good"><span>OVER @ LOW F</span><b>${lowOver.length}</b><span>${ciNum(avg(lowOver,'dev'),3)} MWh avg deviation</span></div>`;
-
-  exEl.innerHTML=`
-    <div class="frv-explain">
-      <b>How to read this:</b>
-      When frequency is <b>below ${low.toFixed(2)} Hz</b>, under-injection is flagged <b style="color:#C1403A">GRID STRESS</b> because it is directionally opposite to the needed active-power response, while over-injection is flagged <b style="color:#0F8A5F">FREQUENCY SUPPORT</b>.
-      When frequency is <b>above ${high.toFixed(2)} Hz</b>, the direction reverses.
-      <br><b>Observed week:</b> ${lowUnder.length} low-frequency under-injection blocks vs ${lowOver.length} low-frequency over-injection blocks. Directional response score: <b>${score>=0?'+':''}${ciNum(score,1)}</b>.
-      <br><span style="color:#6B7D90">This describes the observed relationship; it does not by itself establish that the plant caused or corrected the grid-frequency event.</span>
-    </div>`;
-
-  if(window._frequencyResponseTimeline)window._frequencyResponseTimeline.destroy();
-  const datasets=[
-    {label:'Grid Stress — Under @ Low F',data:stress.map(b=>({x:b.block+(new Date(b.date).getTime()%7)*96,y:b.dev})),backgroundColor:'#C1403A',borderColor:'#C1403A',pointRadius:4},
-    {label:'Frequency Support',data:support.map(b=>({x:b.block+(new Date(b.date).getTime()%7)*96,y:b.dev})),backgroundColor:'#0F8A5F',borderColor:'#0F8A5F',pointRadius:4},
-    {label:'Adverse — Over @ High F',data:adverse.map(b=>({x:b.block+(new Date(b.date).getTime()%7)*96,y:b.dev})),backgroundColor:'#C1403A',borderColor:'#C1403A',pointRadius:4},
-    {label:'Neutral / Deadband',data:neutral.map(b=>({x:b.block+(new Date(b.date).getTime()%7)*96,y:b.dev})),backgroundColor:'#E7A62A',borderColor:'#E7A62A',pointRadius:3}
-  ];
-  window._frequencyResponseTimeline=new Chart(chartEl,{type:'scatter',data:{datasets},options:{
-    responsive:true,maintainAspectRatio:false,
-    plugins:{legend:{position:'bottom',labels:{font:{size:7},boxWidth:8}}},
-    scales:{
-      x:{title:{display:true,text:'Block sequence (Day × 96)',font:{size:8}},ticks:{font:{size:7}}},
-      y:{title:{display:true,text:'Deviation (MWh)',font:{size:8}},ticks:{font:{size:7}}}
-    }
-  }});
 }
 window.addEventListener('load',()=>setTimeout(renderFrequencyResponseVisual,1200));
 
@@ -3211,6 +3292,9 @@ function renderFrequencyDaywise(){
    summaryRows+=`<tr><td>${formatDateDDMMYYYY(day.date)}</td><td>${avgF.toFixed(3)}</td><td>${minF.toFixed(3)}</td><td>${maxF.toFixed(3)}</td><td>${stress.length}</td><td>${support.length}</td><td>${adverse.length}</td><td>${neutral.length}</td><td><span class="${responseClass}">${response}</span></td></tr>`;
    setTimeout(()=>{
      const c=document.getElementById(id); if(!c||typeof Chart==='undefined')return;
+     if(typeof Chart.getChart === 'function'){
+       try { const ex = Chart.getChart(c); if(ex) ex.destroy(); } catch(e){}
+     }
      const ds=[
        {label:'Grid Stress',data:stress.map(b=>({x:b.idx,y:b.dev})),backgroundColor:'#C1403A',pointRadius:3},
        {label:'Frequency Support',data:support.map(b=>({x:b.idx,y:b.dev})),backgroundColor:'#0F8A5F',pointRadius:3},
@@ -3804,6 +3888,7 @@ window.addEventListener('load',()=>setTimeout(()=>{if(typeof updateTopWorkspaceC
 
 <script id="remove-login-date-format-card">
 (function(){
+  var observer=null;
   function removeDateFormatCard(){
     if(!document.querySelector('.login-wrap')) return;
     const nodes=[...document.querySelectorAll('.login-wrap *')];
@@ -3819,12 +3904,17 @@ window.addEventListener('load',()=>setTimeout(()=>{if(typeof updateTopWorkspaceC
       if(txt.includes('DATE FORMAT') && txt.length < 180) card=parent;
       else break;
     }
-    card.remove();
+    try {
+      if(observer) observer.disconnect();
+      card.remove();
+    } catch(e){}
   }
   window.removeLoginDateFormatCard=removeDateFormatCard;
   document.addEventListener('DOMContentLoaded',removeDateFormatCard);
-  const observer=new MutationObserver(removeDateFormatCard);
-  observer.observe(document.documentElement,{childList:true,subtree:true});
+  if(typeof MutationObserver!=='undefined'){
+    observer=new MutationObserver(removeDateFormatCard);
+    observer.observe(document.documentElement,{childList:true,subtree:true});
+  }
 })();
 </script>
 

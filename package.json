@@ -6,9 +6,12 @@
   "scripts": {
     "dev": "node server.js",
     "start": "node server.js",
-    "build": "mkdir -p dist && cp -r index.html THDCIL_Universal_DSM_Engine.html dist/ 2>/dev/null || true"
+    "build": "mkdir -p dist && cp -r index.html THDCIL_Universal_DSM_Engine.html vendor dist/ 2>/dev/null || true"
   },
   "dependencies": {
     "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "jsdom": "^30.1.0"
   }
 }
