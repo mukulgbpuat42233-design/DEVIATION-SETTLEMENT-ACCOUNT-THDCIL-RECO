@@ -1015,6 +1015,23 @@ function computeBlock(s,a,f,r){
   return {dev, devPct, devType, volLimit, freqBand, multWithin, devWithin, devBeyond, multBeyond, charge};
 }
 
+/* ---------------- revision-aware block calculation ---------------- */
+function revisionAwareBlock(day, b){
+  if(typeof window !== 'undefined' && window.THDC_REVISION_AWARE) {
+    return window.THDC_REVISION_AWARE(day, b);
+  }
+  const s = (typeof applicableSchedule === 'function') ? applicableSchedule(day, b) : (Number(b?.s) || 0);
+  const a = Number(b?.a) || 0;
+  const f = Number(b?.f) || 50;
+  const r = Number(b?.r) || 0;
+  const x = computeBlock(s, a, f, r);
+  const rev = (typeof revisionApplicable === 'function') ? (revisionApplicable(day?.date, b?.idx)?.id || 'R0') : 'R0';
+  return { ...x, s, revision: rev };
+}
+if(typeof window !== 'undefined') {
+  window.revisionAwareBlock = revisionAwareBlock;
+}
+
 /* ---------------- helpers ---------------- */
 function fmtMWh(x){ return (Math.round(x*1000)/1000).toLocaleString('en-IN',{minimumFractionDigits:3,maximumFractionDigits:3}); }
 function fmtMWh0(x){ return (Math.round(x*100)/100).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2}); }
@@ -1813,7 +1830,7 @@ function openDayDetail(date){
   renderDayDetailPanel();
   renderCharts();
   const panel=document.getElementById('dayDetailPanel');
-  if(panel) panel.scrollIntoView({behavior:'smooth', block:'start'});
+  if(panel && typeof panel.scrollIntoView==='function') panel.scrollIntoView({behavior:'smooth', block:'start'});
 }
 function closeDayDetail(){
   state.currentDate = null;
@@ -3062,10 +3079,12 @@ function applicableSchedule(day, b){
   return rev ? Number(rev.blocks[String(b.idx)]) : Number(b.s);
 }
 function revisionAwareBlock(day,b){
+  if(window.THDC_REVISION_AWARE) return window.THDC_REVISION_AWARE(day,b);
   const s=applicableSchedule(day,b);
   const x=computeBlock(s,b.a,b.f,b.r);
-  return {...x,s,revision:revisionApplicable(day,b.idx)?.id||'R0'};
+  return {...x,s,revision:revisionApplicable(day.date,b.idx)?.id||'R0'};
 }
+window.revisionAwareBlock=revisionAwareBlock;
 function openRevisionManager(){renderRevisionTable();document.getElementById('revisionModal').classList.add('show')}
 function closeRevisionManager(){document.getElementById('revisionModal').classList.remove('show')}
 function addRevisionRow(){
