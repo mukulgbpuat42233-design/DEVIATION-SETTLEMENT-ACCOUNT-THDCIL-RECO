@@ -1,0 +1,6 @@
+{
+  "name": "THDCIL Universal DSM Engine",
+  "description": "Deviation Settlement Account (DSM) Reconciliation and Analytics Engine for THDCIL power plants",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
