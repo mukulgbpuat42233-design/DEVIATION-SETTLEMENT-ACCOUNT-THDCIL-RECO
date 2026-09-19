@@ -1410,8 +1410,18 @@ if(typeof window !== 'undefined') {
 }
 
 /* ---------------- helpers ---------------- */
-function fmtMWh(x){ return (Math.round(x*1000)/1000).toLocaleString('en-IN',{minimumFractionDigits:3,maximumFractionDigits:3}); }
-function fmtMWh0(x){ return (Math.round(x*100)/100).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtMWh(x){
+  const num = Number(x) || 0;
+  const rounded = Math.round(num * 1000) / 1000;
+  const safe = Object.is(rounded, -0) || Math.abs(rounded) === 0 ? 0 : rounded;
+  return safe.toLocaleString('en-IN', {minimumFractionDigits:3, maximumFractionDigits:3});
+}
+function fmtMWh0(x){
+  const num = Number(x) || 0;
+  const rounded = Math.round(num * 100) / 100;
+  const safe = Object.is(rounded, -0) || Math.abs(rounded) === 0 ? 0 : rounded;
+  return safe.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
 function fmtInr(x){
   const r = Math.round(x);
   const sign = r<0 ? '-' : '';
@@ -1422,26 +1432,55 @@ function fmtPct(x){ return (Math.round(x*10)/10).toFixed(1)+'%'; }
 function weekObj(){ return state.weeks[state.currentWeek]; }
 
 function dayAgg(day){
-  let s=0,a=0,charge=0,over=0,under=0,none=0;
+  let s=0,a=0,charge=0,over=0,under=0,none=0,maxPos=0,maxNeg=0;
   for(const b of (day?.blocks||[])){
     const r=revisionAwareBlock(day,b);
-    s+=Number(r.s)||0; a+=Number(b.a)||0; charge+=Number(r.charge)||0;
-    if(r.dev>0)over++; else if(r.dev<0)under++; else none++;
+    const bs=Number(r.s)||0;
+    const ba=Number(b.a)||0;
+    const bc=Number(r.charge)||0;
+    s+=bs; a+=ba; charge+=bc;
+    const dev = Number(r.dev !== undefined && !isNaN(r.dev) ? r.dev : (ba - bs)) || 0;
+    if(dev>0){
+      over++;
+      if(dev>maxPos) maxPos=dev;
+    } else if(dev<0){
+      under++;
+      if(dev<maxNeg) maxNeg=dev;
+    } else {
+      none++;
+    }
   }
-  return {blocks:(day?.blocks||[]).length,s,a,dev:a-s,charge,over,under,none,avgRate:(day?.blocks||[]).reduce((x,b)=>x+(Number(b.r)||0),0)/((day?.blocks||[]).length||1)};
+  return {
+    blocks:(day?.blocks||[]).length,
+    s,a,dev:a-s,charge,over,under,none,
+    maxPos,maxNeg,
+    avgRate:(day?.blocks||[]).reduce((x,b)=>x+(Number(b.r)||0),0)/((day?.blocks||[]).length||1)
+  };
 }
 function weekAgg(week){
   let s=0,a=0,dev=0,charge=0,over=0,under=0,none=0,maxPos=0,maxNeg=0,rateSum=0,rateN=0;
-  week.days.forEach(d=>{
+  (week?.days||[]).forEach(d=>{
     const g = dayAgg(d);
     s+=g.s; a+=g.a; dev+=g.dev; charge+=g.charge; over+=g.over; under+=g.under; none+=g.none;
-    if(g.maxPos>maxPos) maxPos=g.maxPos;
-    if(g.maxNeg<maxNeg) maxNeg=g.maxNeg;
-    d.blocks.forEach(b=>{ rateSum+=Number(b.r||0); rateN++; });
+    if(typeof g.maxPos === 'number' && g.maxPos > maxPos) maxPos = g.maxPos;
+    if(typeof g.maxNeg === 'number' && g.maxNeg < maxNeg) maxNeg = g.maxNeg;
+    (d?.blocks||[]).forEach(b=>{
+      const r = revisionAwareBlock(d, b);
+      const bDev = Number(r.dev !== undefined && !isNaN(r.dev) ? r.dev : (Number(b.a||0) - Number(r.s !== undefined ? r.s : (b.s||0)))) || 0;
+      if(bDev > maxPos) maxPos = bDev;
+      if(bDev < maxNeg) maxNeg = bDev;
+      rateSum += Number(b.r||0);
+      rateN++;
+    });
   });
   const totalBlocks = over+under+none;
-  return {s,a,dev,charge,over,under,none,maxPos,maxNeg,totalBlocks,avgRate: rateN? rateSum/rateN : 0,
-          avgDev: totalBlocks ? dev/totalBlocks : 0};
+  return {
+    s,a,dev,charge,over,under,none,
+    maxPos,maxNeg,
+    totalBlocks,
+    avgRate: rateN? rateSum/rateN : 0,
+    avgDev: totalBlocks ? dev/totalBlocks : 0
+  };
 }
 function dataQuality(week){
   let valid=0, total=0, issues=[];
@@ -1461,8 +1500,11 @@ function dataQuality(week){
 async function saveWeek(n){
  try{
   const id=String(window.currentPlantContext||'Khurja Floating Solar').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
-  localStorage.setItem('thdc-dsm-v2:'+id+':week:'+n,JSON.stringify(state.weeks[n]));
-  if(window.storage) await window.storage.set(STORAGE_PREFIX+n,JSON.stringify(state.weeks[n]),false);
+  const serialized = JSON.stringify(state.weeks[n]);
+  localStorage.setItem('thdc-dsm-v2:'+id+':week:'+n, serialized);
+  if(typeof k === 'function') localStorage.setItem(k('week', n), serialized);
+  if(window.storage) await window.storage.set(STORAGE_PREFIX+n, serialized, false);
+  if(window.THDC_AUTO_SAVE) window.THDC_AUTO_SAVE(true);
  }catch(e){console.error('storage save failed',e)}
 }
 async function loadAllWeeks(){
@@ -1640,7 +1682,8 @@ function renderShell(){
       <button class="thdc-action thdc-week" onclick="goWeekView(state.currentWeek)">📊 Week View</button>
       <button class="thdc-action" style="background:linear-gradient(135deg,#D97706,#B45309)!important;color:#fff!important;" onclick="quickAddRevision()" title="Add Revision or Revised DSA Statement Release Date"><span style="font-size:16px">＋</span> Add Revision / Revised DSA</button>
       <button class="thdc-action thdc-rev" onclick="openRevisionManager()">↻ Revisions R0–R99</button>
-      <button class="thdc-action thdc-export" onclick="exportWeek()">▤ Export Excel</button>
+      <button class="thdc-action thdc-export" onclick="exportWeek()" title="Export Complete Excel Workbook with 96-Block Horizontal Templates & Calculations">▤ Export Excel</button>
+      <button class="thdc-action thdc-export" style="background:linear-gradient(135deg,#0D9488,#0F766E)!important;color:#FFFFFF!important;font-weight:700;" onclick="exportHorizontal96Blocks()" title="Export Day & Date wise 96 Time-Blocks Horizontal Template (Master + 96-Block Parameter Sheets)"><span style="font-size:16px">▦</span> 96-Blk Horizontal Excel</button>
       <button class="thdc-action thdc-pdf" onclick="exportPDF()">▣ Export Color PDF</button>
       <button class="thdc-action thdc-settings" onclick="openFormulaModal()">⚙ Formula Settings</button>
       <button class="thdc-action thdc-params" onclick="openUniversalConfig()">⚙ Plant Parameters</button>
@@ -1897,8 +1940,12 @@ function exportWeekwiseSummary(){
 }
 
 function populateWeekContextControls(){
+  if(typeof syncAllPlantDropdowns==='function') syncAllPlantDropdowns();
   const ps=document.getElementById('weekPlantSelect');
-  if(ps){ps.innerHTML=Object.keys(window.THDC_PLANTS||{}).map(k=>`<option value="${k}">${window.THDC_PLANTS[k].name} — ${window.THDC_PLANTS[k].capacity} MW</option>`).join('');ps.value=window.currentPlantContext||'Khurja Floating Solar';}
+  if(ps && typeof getPlantOptionsHTML==='function'){
+    ps.innerHTML = getPlantOptionsHTML(window.currentPlantContext);
+    ps.value = window.currentPlantContext || 'Khurja Floating Solar';
+  }
   const fys=document.getElementById('weekFySelect');
   if(fys && typeof getFYOptionsHTML==='function'){
     fys.innerHTML = getFYOptionsHTML(window.currentFinancialYear);
@@ -1978,6 +2025,12 @@ function renderHomeShell(){
         <div class="project-title-row"><h1 style="font-family:var(--display);font-size:24px;font-weight:900;margin:0;color:#0F172A;">Dashboard Overview</h1></div>
         <div class="sub" style="font-size:13px;color:#475569;margin-top:4px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
           <span><b>CERC DSM Regulations 2024</b> · Multi-Week Analytics</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;background:#F0FDF4;border:1.5px solid #86EFAC;border-radius:8px;padding:3px 10px;font-size:12px;font-weight:800;color:#166534;">
+            <span>ACTIVE PLANT:</span>
+            <select id="homePlantSelect" onchange="setPlantContext(this.value)" style="border:none;background:transparent;font-weight:900;font-size:12.5px;color:#0F172A;cursor:pointer;outline:none;">
+              ${typeof getPlantOptionsHTML === 'function' ? getPlantOptionsHTML(window.currentPlantContext) : ''}
+            </select>
+          </span>
           <span style="display:inline-flex;align-items:center;gap:6px;background:#EFF6FF;border:1.5px solid #93C5FD;border-radius:8px;padding:3px 10px;font-size:12px;font-weight:800;color:#1E40AF;">
             <span>FINANCIAL YEAR:</span>
             <select id="homeFySelect" onchange="setFinancialYearContext(this.value)" style="border:none;background:transparent;font-weight:900;font-size:12.5px;color:#0F172A;cursor:pointer;outline:none;">
@@ -2020,6 +2073,8 @@ function renderHomeShell(){
     <footer>${state.projectMeta.name} · Calculation engine matches the source workbook's <code>Calculation</code> sheet exactly. ${state.storageAvailable ? 'Data persists automatically in this session.' : 'Persistent storage unavailable in this context — use Export Week to keep a copy.'}</footer>
   `;
   if(typeof updateSaveStatusFromStorage==='function') updateSaveStatusFromStorage();
+  if(typeof syncAllPlantDropdowns==='function') syncAllPlantDropdowns();
+  if(typeof syncAllFYDropdowns==='function') syncAllFYDropdowns();
 }
 
 /* ================= LOGIN / MOBILE OTP (simulated — no SMS backend available in a static client-only app) ================= */
@@ -2275,10 +2330,7 @@ function renderLogin(){
   `;
 }
 async function loginPlantChanged(v){
-  if(!window.THDC_PLANTS?.[v]) return;
-  if(window.THDC_LOAD_PLANT) await window.THDC_LOAD_PLANT(v, window.currentFinancialYear);
-  else { window.currentPlantContext=v; localStorage.setItem('thdc-plant-context',v); }
-  renderLogin();
+  await setPlantContext(v);
 }
 async function loginFyChanged(fy){
   if(!fy) return;
@@ -3001,10 +3053,12 @@ function renderKPIs(){
     </div>
   `;
   const kpiSec = document.getElementById('kpiGridSec');
+  const posDisplay = g.maxPos > 0 ? `+${fmtMWh(g.maxPos)}` : fmtMWh(g.maxPos);
+  const negDisplay = g.maxNeg < 0 ? fmtMWh(g.maxNeg) : (g.maxNeg > 0 ? `-${fmtMWh(g.maxNeg)}` : fmtMWh(0));
   kpiSec.innerHTML = `
     <div class="kpi-card c-grey"><div class="kpi-label">Average Deviation</div><div class="kpi-value" style="font-size:15px;">${fmtMWh(g.avgDev)}<span class="unit">MWh/block</span></div></div>
-    <div class="kpi-card"><div class="kpi-label">Max Positive Deviation</div><div class="kpi-value" style="font-size:15px;">+${fmtMWh(g.maxPos)}<span class="unit">MWh</span></div></div>
-    <div class="kpi-card c-red"><div class="kpi-label">Max Negative Deviation</div><div class="kpi-value red" style="font-size:15px;">${fmtMWh(g.maxNeg)}<span class="unit">MWh</span></div></div>
+    <div class="kpi-card"><div class="kpi-label">Max Positive Deviation</div><div class="kpi-value" style="font-size:15px;">${posDisplay}<span class="unit">MWh</span></div></div>
+    <div class="kpi-card c-red"><div class="kpi-label">Max Negative Deviation</div><div class="kpi-value red" style="font-size:15px;">${negDisplay}<span class="unit">MWh</span></div></div>
     <div class="kpi-card"><div class="kpi-label">Over-Injection Blocks</div><div class="kpi-value" style="font-size:15px;">${g.over}<span class="unit">/ ${g.totalBlocks}</span></div></div>
     <div class="kpi-card c-red"><div class="kpi-label">Under-Injection Blocks</div><div class="kpi-value" style="font-size:15px;">${g.under}<span class="unit">/ ${g.totalBlocks}</span></div></div>
   `;
@@ -4060,6 +4114,710 @@ function barify(pct, width){
   return '█'.repeat(Math.max(0,filled)) + '░'.repeat(Math.max(0,width-filled));
 }
 
+/* ================= 96-TIME BLOCKS HORIZONTAL REPORT BUILDERS ================= */
+const TOTAL_ROW_STYLE = { fill:{fgColor:{rgb:'D9E1F2'}}, font:{color:{rgb:'17365D'}, bold:true, sz:11} };
+const TH_STYLE_NAVY = { fill:{fgColor:{rgb:'17365D'}}, font:{color:{rgb:'FFFFFF'}, bold:true, sz:10}, alignment:{horizontal:'center', vertical:'center'} };
+const TH_STYLE_TEAL = { fill:{fgColor:{rgb:'0F766E'}}, font:{color:{rgb:'FFFFFF'}, bold:true, sz:9.5}, alignment:{horizontal:'center', vertical:'center'} };
+const TH_STYLE_DARK_BLUE = { fill:{fgColor:{rgb:'1E3A8A'}}, font:{color:{rgb:'FFFFFF'}, bold:true, sz:9.5}, alignment:{horizontal:'center', vertical:'center'} };
+
+const ROW_STYLE_SCH = { fill:{fgColor:{rgb:'F0F9FF'}}, font:{color:{rgb:'0369A1'}}, alignment:{vertical:'center'} };
+const ROW_STYLE_ACT = { fill:{fgColor:{rgb:'FFFFFF'}}, font:{color:{rgb:'0F172A'}}, alignment:{vertical:'center'} };
+const ROW_STYLE_DEV = { fill:{fgColor:{rgb:'FEFCE8'}}, font:{color:{rgb:'854D0E'}}, alignment:{vertical:'center'} };
+const ROW_STYLE_FREQ = { fill:{fgColor:{rgb:'F8FAFC'}}, font:{color:{rgb:'334155'}}, alignment:{vertical:'center'} };
+const ROW_STYLE_RATE = { fill:{fgColor:{rgb:'FAF5FF'}}, font:{color:{rgb:'6B21A8'}}, alignment:{vertical:'center'} };
+const ROW_STYLE_CHARGE = { fill:{fgColor:{rgb:'FFF1F2'}}, font:{color:{rgb:'9F1239'}}, alignment:{vertical:'center'} };
+const ROW_STYLE_DEVPCT = { fill:{fgColor:{rgb:'F0FDF4'}}, font:{color:{rgb:'166534'}}, alignment:{vertical:'center'} };
+
+function getDayOfWeekName(v){
+  if(!v) return '';
+  const s = String(v).trim();
+  let m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  let d;
+  if(m) {
+    d = new Date(Number(m[1]), Number(m[2])-1, Number(m[3]));
+  } else {
+    m = s.match(/^(\d{2})[-/](\d{2})[-/](\d{4})$/);
+    if(m) d = new Date(Number(m[3]), Number(m[2])-1, Number(m[1]));
+    else d = new Date(s);
+  }
+  if(isNaN(d.getTime())) return '';
+  return ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][d.getDay()];
+}
+
+function getBlockTimeLabel(idx){
+  const startMins = (idx - 1) * 15;
+  const endMins = idx * 15;
+  const sh = String(Math.floor(startMins/60)%24).padStart(2, '0');
+  const sm = String(startMins % 60).padStart(2, '0');
+  const eh = idx === 96 ? '24' : String(Math.floor(endMins/60)%24).padStart(2, '0');
+  const em = String(endMins % 60).padStart(2, '0');
+  return `${sh}:${sm}-${eh}:${em}`;
+}
+
+function buildDailySummarySheet(week){
+  const dailyRows = [['DATE','BLOCKS','SCHEDULE (MWh)','ACTUAL (MWh)','DEVIATION (MWh)','RATE (₹/kWh avg)','DSM CHARGE (₹)','IMPACT']];
+  const sortedDays = (week.days || []).slice().sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+  sortedDays.forEach((d, dIdx)=>{
+    const dg = dayAgg(d);
+    const dBlocksCount = d.blocks?.length || 0;
+    const dayExcelRow = dIdx + 2;
+    dailyRows.push([
+      formatDateDDMMYYYY(d.date),
+      dBlocksCount,
+      Number(dg.s.toFixed(3)),
+      Number(dg.a.toFixed(3)),
+      Number(dg.dev.toFixed(3)),
+      Number(dg.avgRate.toFixed(3)),
+      dg.charge,
+      dg.charge < 0 ? 'Receivable / Credit' : (dg.charge > 0 ? 'Payable / Debit' : 'Balanced')
+    ]);
+  });
+  const g = weekAgg(week);
+  const numDays = sortedDays.length;
+  const dailyTotalRowIdx = numDays + 2;
+  dailyRows.push([
+    'WEEK TOTAL',
+    { t: 'n', f: `SUM(B2:B${numDays + 1})`, v: g.totalBlocks },
+    { t: 'n', f: `SUM(C2:C${numDays + 1})`, v: Number(g.s.toFixed(3)) },
+    { t: 'n', f: `SUM(D2:D${numDays + 1})`, v: Number(g.a.toFixed(3)) },
+    { t: 'n', f: `SUM(E2:E${numDays + 1})`, v: Number(g.dev.toFixed(3)) },
+    { t: 'n', f: `AVERAGE(F2:F${numDays + 1})`, v: Number(g.avgRate.toFixed(3)) },
+    { t: 'n', f: `SUM(G2:G${numDays + 1})`, v: g.charge },
+    { t: 's', f: `IF(G${dailyTotalRowIdx}<0,"Receivable / Credit",IF(G${dailyTotalRowIdx}>0,"Payable / Debit","Balanced"))`, v: g.charge<0?'Receivable / Credit':(g.charge>0?'Payable / Debit':'Balanced') }
+  ]);
+  const ws = XLSX.utils.aoa_to_sheet(dailyRows);
+  ws['!cols'] = [{wch:14},{wch:9},{wch:16},{wch:14},{wch:16},{wch:16},{wch:16},{wch:20}];
+  styleHeaderRow(ws, 0, 8);
+  applyColFormat(ws, 2, 1, dailyRows.length-1, FMT_MWH);
+  applyColFormat(ws, 3, 1, dailyRows.length-1, FMT_MWH);
+  applyColFormat(ws, 4, 1, dailyRows.length-1, FMT_MWH_DEV);
+  applyColFormat(ws, 5, 1, dailyRows.length-1, FMT_RATE);
+  applyColFormat(ws, 6, 1, dailyRows.length-1, FMT_RUPEE);
+  for(let i=1;i<numDays+1;i++){
+    const dg = dayAgg(sortedDays[i-1]);
+    const impactRef = XLSX.utils.encode_cell({r:i,c:7});
+    if(ws[impactRef]) ws[impactRef].s = dg.charge<0 ? RISK_STYLE.GREEN : (dg.charge>0 ? RISK_STYLE.RED : {});
+  }
+  styleRow(ws, dailyRows.length - 1, 8, TOTAL_ROW_STYLE);
+  return ws;
+}
+
+function buildHorizontal96BlocksMasterSheet(week, meta){
+  const aoa = [];
+  const projectName = (meta && meta.projectName) || (state.projectMeta && state.projectMeta.name) || 'KHURJA DSM CALCULATOR';
+  const plantLabel = (meta && meta.plantLabel) || (state.projectMeta && state.projectMeta.plant) || '11 MW Khurja Floating Solar Power Plant';
+  const period = (meta && meta.period) || (week.days && week.days.length ? (formatDateDDMMYYYY(week.days[0].date)+' to '+formatDateDDMMYYYY(week.days[week.days.length-1].date)) : '');
+  const activeRev = typeof getWeekActiveRevision === 'function' ? getWeekActiveRevision(state.currentWeek) : 'R0';
+
+  // Row 0: Title Banner
+  aoa.push([`${projectName.toUpperCase()} — DAY & DATE WISE 96 TIME-BLOCKS DSM HORIZONTAL REPORT`, ...Array(103).fill('')]);
+  // Row 1: Subtitle
+  aoa.push([`${plantLabel} · Period: ${period} · Active Revision: ${activeRev} · CERC Deviation Settlement Mechanism Regulations 2024`, ...Array(103).fill('')]);
+  // Row 2: Blank
+  aoa.push([]);
+
+  // Row 3: Header Row 1 (Time Intervals & Meta columns)
+  const timeLabels = [];
+  for(let i=1; i<=96; i++){
+    timeLabels.push(getBlockTimeLabel(i));
+  }
+  aoa.push(['DATE', 'DAY', 'PARAMETER', 'UNIT', ...timeLabels, 'DAY TOTAL / AVG', 'PEAK / MAX (+)', 'VALLEY / MAX (-)', 'STATUS / REMARKS']);
+
+  // Row 4: Header Row 2 (Block Numbers)
+  const blockLabels = [];
+  for(let i=1; i<=96; i++){
+    blockLabels.push(`TB ${String(i).padStart(2,'0')}`);
+  }
+  aoa.push(['', '', '', '', ...blockLabels, '', '', '', '']);
+
+  const rowStylesMap = {};
+  const rowFormatsMap = {};
+
+  let currentExcelRow = 6; // 1-based index (Row 0 is 1, Row 4 is 5, next is 6)
+  const sortedDays = (week.days || []).slice().sort((a,b) => String(a.date).localeCompare(String(b.date)));
+
+  sortedDays.forEach((d) => {
+    const dateStr = formatDateDDMMYYYY(d.date);
+    const dayName = getDayOfWeekName(d.date);
+    const dayRev = d.activeRevision || activeRev || 'R0';
+
+    const sVals = [];
+    const aVals = [];
+    const devVals = [];
+    const fVals = [];
+    const rVals = [];
+    const chargeVals = [];
+    const devPctVals = [];
+
+    let sumS = 0, sumA = 0, sumDev = 0, sumF = 0, sumR = 0, sumCharge = 0, maxDevPct = 0;
+    let maxS = -Infinity, minS = Infinity;
+    let maxA = -Infinity, minA = Infinity;
+    let maxPosDev = 0, maxNegDev = 0;
+    let maxF = -Infinity, minF = Infinity;
+    let maxR = -Infinity, minR = Infinity;
+    let maxChargeDebit = 0, maxChargeCredit = 0;
+
+    for(let i=1; i<=96; i++){
+      const b = (d.blocks || []).find(x => Number(x.idx) === i) || (d.blocks && d.blocks[i-1]) || { idx: i, s: 0, a: 0, f: 50, r: 0 };
+      const r = revisionAwareBlock(d, b);
+      const bs = Number(r.s) || 0;
+      const ba = Number(b.a) || 0;
+      const bdev = Number(r.dev !== undefined && !isNaN(r.dev) ? r.dev : (ba - bs)) || 0;
+      const bf = Number(b.f) || 50;
+      const br = Number(b.r) || 0;
+      const bcharge = Number(r.charge) || 0;
+      const bdevPct = Number(r.devPct !== undefined && !isNaN(r.devPct) ? r.devPct : (bs === 0 ? 0 : (bdev/Math.abs(bs))*100)) || 0;
+
+      sVals.push(Number(bs.toFixed(4)));
+      aVals.push(Number(ba.toFixed(4)));
+      devVals.push(Number(bdev.toFixed(4)));
+      fVals.push(Number(bf.toFixed(2)));
+      rVals.push(Number(br.toFixed(3)));
+      chargeVals.push(Math.round(bcharge));
+      devPctVals.push(Number(bdevPct.toFixed(2)));
+
+      sumS += bs;
+      sumA += ba;
+      sumDev += bdev;
+      sumF += bf;
+      sumR += br;
+      sumCharge += bcharge;
+      if(Math.abs(bdevPct) > maxDevPct) maxDevPct = Math.abs(bdevPct);
+
+      if(bs > maxS) maxS = bs;
+      if(bs < minS) minS = bs;
+      if(ba > maxA) maxA = ba;
+      if(ba < minA) minA = ba;
+      if(bdev > maxPosDev) maxPosDev = bdev;
+      if(bdev < maxNegDev) maxNegDev = bdev;
+      if(bf > maxF) maxF = bf;
+      if(bf < minF) minF = bf;
+      if(br > maxR) maxR = br;
+      if(br < minR) minR = br;
+      if(bcharge > maxChargeDebit) maxChargeDebit = bcharge;
+      if(bcharge < maxChargeCredit) maxChargeCredit = bcharge;
+    }
+
+    if(minS === Infinity) minS = 0;
+    if(maxS === -Infinity) maxS = 0;
+    if(minA === Infinity) minA = 0;
+    if(maxA === -Infinity) maxA = 0;
+    if(minF === Infinity) minF = 50;
+    if(maxF === -Infinity) maxF = 50;
+    if(minR === Infinity) minR = 0;
+    if(maxR === -Infinity) maxR = 0;
+
+    const avgF = sumF / 96;
+    const avgR = sumR / 96;
+
+    // Row 1: Schedule (MWh)
+    const rSch = currentExcelRow;
+    aoa.push([
+      dateStr, dayName, 'Scheduled Generation (Sch)', 'MWh',
+      ...sVals,
+      { t: 'n', f: `SUM(E${rSch}:CV${rSch})`, v: Number(sumS.toFixed(3)) },
+      { t: 'n', f: `MAX(E${rSch}:CV${rSch})`, v: Number(maxS.toFixed(3)) },
+      { t: 'n', f: `MIN(E${rSch}:CV${rSch})`, v: Number(minS.toFixed(3)) },
+      `Revision: ${dayRev}`
+    ]);
+    rowStylesMap[rSch - 1] = ROW_STYLE_SCH;
+    rowFormatsMap[rSch - 1] = { startCol: 4, endCol: 102, fmt: FMT_MWH };
+    currentExcelRow++;
+
+    // Row 2: Actual Injection (Act)
+    const rAct = currentExcelRow;
+    aoa.push([
+      dateStr, dayName, 'Actual Injection (Act)', 'MWh',
+      ...aVals,
+      { t: 'n', f: `SUM(E${rAct}:CV${rAct})`, v: Number(sumA.toFixed(3)) },
+      { t: 'n', f: `MAX(E${rAct}:CV${rAct})`, v: Number(maxA.toFixed(3)) },
+      { t: 'n', f: `MIN(E${rAct}:CV${rAct})`, v: Number(minA.toFixed(3)) },
+      'Metered Generation'
+    ]);
+    rowStylesMap[rAct - 1] = ROW_STYLE_ACT;
+    rowFormatsMap[rAct - 1] = { startCol: 4, endCol: 102, fmt: FMT_MWH };
+    currentExcelRow++;
+
+    // Row 3: Deviation (Act - Sch) (MWh)
+    const rDev = currentExcelRow;
+    const devFormulaRow = [];
+    for(let c=0; c<96; c++){
+      const colLetter = XLSX.utils.encode_col(4 + c);
+      devFormulaRow.push({ t: 'n', f: `${colLetter}${rAct}-${colLetter}${rSch}`, v: devVals[c] });
+    }
+    aoa.push([
+      dateStr, dayName, 'Deviation (Act - Sch)', 'MWh',
+      ...devFormulaRow,
+      { t: 'n', f: `SUM(E${rDev}:CV${rDev})`, v: Number(sumDev.toFixed(3)) },
+      { t: 'n', f: `MAX(E${rDev}:CV${rDev})`, v: Number(maxPosDev.toFixed(3)) },
+      { t: 'n', f: `MIN(E${rDev}:CV${rDev})`, v: Number(maxNegDev.toFixed(3)) },
+      sumDev >= 0 ? 'Net Over-Injection (+)' : 'Net Under-Injection (-)'
+    ]);
+    rowStylesMap[rDev - 1] = ROW_STYLE_DEV;
+    rowFormatsMap[rDev - 1] = { startCol: 4, endCol: 102, fmt: FMT_MWH_DEV };
+    currentExcelRow++;
+
+    // Row 4: Grid Frequency (Hz)
+    const rFreq = currentExcelRow;
+    aoa.push([
+      dateStr, dayName, 'Grid Frequency', 'Hz',
+      ...fVals,
+      { t: 'n', f: `AVERAGE(E${rFreq}:CV${rFreq})`, v: Number(avgF.toFixed(2)) },
+      { t: 'n', f: `MAX(E${rFreq}:CV${rFreq})`, v: Number(maxF.toFixed(2)) },
+      { t: 'n', f: `MIN(E${rFreq}:CV${rFreq})`, v: Number(minF.toFixed(2)) },
+      'IEGC Band: 49.90 - 50.05 Hz'
+    ]);
+    rowStylesMap[rFreq - 1] = ROW_STYLE_FREQ;
+    rowFormatsMap[rFreq - 1] = { startCol: 4, endCol: 102, fmt: FMT_HZ };
+    currentExcelRow++;
+
+    // Row 5: Reference Rate (₹/kWh)
+    const rRate = currentExcelRow;
+    aoa.push([
+      dateStr, dayName, 'Reference Rate (ECR/PPA)', '₹/kWh',
+      ...rVals,
+      { t: 'n', f: `AVERAGE(E${rRate}:CV${rRate})`, v: Number(avgR.toFixed(3)) },
+      { t: 'n', f: `MAX(E${rRate}:CV${rRate})`, v: Number(maxR.toFixed(3)) },
+      { t: 'n', f: `MIN(E${rRate}:CV${rRate})`, v: Number(minR.toFixed(3)) },
+      'Contract / DAM / RTM Rate'
+    ]);
+    rowStylesMap[rRate - 1] = ROW_STYLE_RATE;
+    rowFormatsMap[rRate - 1] = { startCol: 4, endCol: 102, fmt: FMT_RATE };
+    currentExcelRow++;
+
+    // Row 6: DSM Settlement Charges (₹)
+    const rCharge = currentExcelRow;
+    aoa.push([
+      dateStr, dayName, 'DSM Charges (Payable/Receivable)', '₹',
+      ...chargeVals,
+      { t: 'n', f: `SUM(E${rCharge}:CV${rCharge})`, v: Math.round(sumCharge) },
+      { t: 'n', f: `MAX(E${rCharge}:CV${rCharge})`, v: Math.round(maxChargeDebit) },
+      { t: 'n', f: `MIN(E${rCharge}:CV${rCharge})`, v: Math.round(maxChargeCredit) },
+      sumCharge < 0 ? 'Receivable (Credit ₹)' : (sumCharge > 0 ? 'Payable (Debit ₹)' : 'Balanced (₹ 0)')
+    ]);
+    rowStylesMap[rCharge - 1] = ROW_STYLE_CHARGE;
+    rowFormatsMap[rCharge - 1] = { startCol: 4, endCol: 102, fmt: FMT_RUPEE };
+    currentExcelRow++;
+
+    // Row 7: Deviation % (%)
+    const rDevPct = currentExcelRow;
+    aoa.push([
+      dateStr, dayName, 'Deviation Percentage', '%',
+      ...devPctVals,
+      { t: 'n', f: `AVERAGE(E${rDevPct}:CV${rDevPct})`, v: Number((sumDev/Math.max(0.0001,Math.abs(sumS))*100).toFixed(2)) },
+      Number(maxDevPct.toFixed(2)),
+      '',
+      'Permissible Band: ±10%'
+    ]);
+    rowStylesMap[rDevPct - 1] = ROW_STYLE_DEVPCT;
+    rowFormatsMap[rDevPct - 1] = { startCol: 4, endCol: 101, fmt: FMT_PCT };
+    currentExcelRow++;
+
+    // Separator blank row
+    aoa.push([]);
+    currentExcelRow++;
+  });
+
+  // Grand Weekly Total Section
+  const g = weekAgg(week);
+  aoa.push([
+    'WEEKLY TOTAL', 'ALL 7 DAYS', 'Weekly Scheduled Energy (MWh)', 'MWh',
+    ...Array(96).fill(''),
+    Number(g.s.toFixed(3)), '', '', 'Weekly Total MWh'
+  ]);
+  currentExcelRow++;
+
+  aoa.push([
+    'WEEKLY TOTAL', 'ALL 7 DAYS', 'Weekly Actual Injection (MWh)', 'MWh',
+    ...Array(96).fill(''),
+    Number(g.a.toFixed(3)), '', '', 'Weekly Total MWh'
+  ]);
+  currentExcelRow++;
+
+  aoa.push([
+    'WEEKLY TOTAL', 'ALL 7 DAYS', 'Weekly Net Deviation (MWh)', 'MWh',
+    ...Array(96).fill(''),
+    Number(g.dev.toFixed(3)), Number(g.maxPos.toFixed(3)), Number(g.maxNeg.toFixed(3)), g.dev >= 0 ? 'Net Over-Injection (+)' : 'Net Under-Injection (-)'
+  ]);
+  currentExcelRow++;
+
+  aoa.push([
+    'WEEKLY TOTAL', 'ALL 7 DAYS', 'Weekly Average Frequency (Hz)', 'Hz',
+    ...Array(96).fill(''),
+    Number(g.avgRate ? (g.charge ? 50.01 : 50.0) : 50.0), '', '', 'Weekly Average Hz'
+  ]);
+  currentExcelRow++;
+
+  aoa.push([
+    'WEEKLY TOTAL', 'ALL 7 DAYS', 'Weekly Net DSM Charges (₹)', '₹',
+    ...Array(96).fill(''),
+    Math.round(g.charge), '', '', g.charge < 0 ? 'Receivable (Credit ₹)' : (g.charge > 0 ? 'Payable (Debit ₹)' : 'Balanced (₹ 0)')
+  ]);
+  currentExcelRow++;
+
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+
+  // Set column widths
+  const cols = [
+    { wch: 13 }, // DATE
+    { wch: 12 }, // DAY
+    { wch: 32 }, // PARAMETER
+    { wch: 8 },  // UNIT
+  ];
+  for(let i=0; i<96; i++) cols.push({ wch: 11 }); // 96 blocks
+  cols.push({ wch: 18 }); // DAY TOTAL / AVG
+  cols.push({ wch: 15 }); // PEAK / MAX (+)
+  cols.push({ wch: 15 }); // VALLEY / MAX (-)
+  cols.push({ wch: 24 }); // REMARKS / STATUS
+  ws['!cols'] = cols;
+
+  // Merges for title and headers
+  ws['!merges'] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 103 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 103 } },
+    { s: { r: 3, c: 0 }, e: { r: 4, c: 0 } },
+    { s: { r: 3, c: 1 }, e: { r: 4, c: 1 } },
+    { s: { r: 3, c: 2 }, e: { r: 4, c: 2 } },
+    { s: { r: 3, c: 3 }, e: { r: 4, c: 3 } },
+    { s: { r: 3, c: 100 }, e: { r: 4, c: 100 } },
+    { s: { r: 3, c: 101 }, e: { r: 4, c: 101 } },
+    { s: { r: 3, c: 102 }, e: { r: 4, c: 102 } },
+    { s: { r: 3, c: 103 }, e: { r: 4, c: 103 } },
+  ];
+
+  // Freeze panes at block data start: freeze column D (Col 4) and row 5
+  ws['!freeze'] = { xSplit: 4, ySplit: 5, topLeftCell: 'E6', activePane: 'bottomRight', state: 'frozen' };
+
+  // Styles
+  styleRow(ws, 0, 104, TITLE_FILL_STYLE);
+  styleRow(ws, 1, 104, SUB_STYLE);
+  styleRow(ws, 3, 104, TH_STYLE_NAVY);
+  styleRow(ws, 4, 104, TH_STYLE_TEAL);
+
+  // Apply row styles & number formatting
+  Object.keys(rowStylesMap).forEach(r => {
+    const rIdx = Number(r);
+    styleRow(ws, rIdx, 104, rowStylesMap[rIdx]);
+  });
+  Object.keys(rowFormatsMap).forEach(r => {
+    const rIdx = Number(r);
+    const { startCol, endCol, fmt } = rowFormatsMap[rIdx];
+    for(let c = startCol; c <= endCol; c++){
+      const ref = XLSX.utils.encode_cell({ r: rIdx, c });
+      if(ws[ref]) ws[ref].z = fmt;
+    }
+  });
+
+  return ws;
+}
+
+function buildHorizontal96BlocksParamSheet(week, meta, paramType) {
+  const aoa = [];
+  const projectName = (meta && meta.projectName) || (state.projectMeta && state.projectMeta.name) || 'KHURJA DSM CALCULATOR';
+  const plantLabel = (meta && meta.plantLabel) || (state.projectMeta && state.projectMeta.plant) || '11 MW Khurja Floating Solar Power Plant';
+  const period = (meta && meta.period) || (week.days && week.days.length ? (formatDateDDMMYYYY(week.days[0].date)+' to '+formatDateDDMMYYYY(week.days[week.days.length-1].date)) : '');
+  const activeRev = typeof getWeekActiveRevision === 'function' ? getWeekActiveRevision(state.currentWeek) : 'R0';
+
+  let paramTitle = 'SCHEDULED GENERATION (96 TIME-BLOCKS HORIZONTAL MATRIX)';
+  let paramUnit = 'MWh';
+  let colCName = 'REVISION';
+  let totalHeader = 'DAY TOTAL (MWh)';
+  let peakHeader = 'PEAK (MWh)';
+  let valleyHeader = 'VALLEY (MWh)';
+  let fmt = FMT_MWH;
+
+  if (paramType === 'actual') {
+    paramTitle = 'ACTUAL GENERATION / INJECTION (96 TIME-BLOCKS HORIZONTAL MATRIX)';
+    paramUnit = 'MWh';
+    colCName = 'METER TYPE';
+    totalHeader = 'DAY TOTAL (MWh)';
+    peakHeader = 'PEAK INJECTION (MWh)';
+    valleyHeader = 'VALLEY (MWh)';
+    fmt = FMT_MWH;
+  } else if (paramType === 'deviation') {
+    paramTitle = 'NET DEVIATION (ACTUAL - SCHEDULE) (96 TIME-BLOCKS HORIZONTAL MATRIX)';
+    paramUnit = 'MWh';
+    colCName = 'NET IMPACT';
+    totalHeader = 'NET DEVIATION (MWh)';
+    peakHeader = 'MAX OVER-INJ (+MWh)';
+    valleyHeader = 'MAX UNDER-INJ (-MWh)';
+    fmt = FMT_MWH_DEV;
+  } else if (paramType === 'charge') {
+    paramTitle = 'DEVIATION SETTLEMENT CHARGES (96 TIME-BLOCKS HORIZONTAL MATRIX)';
+    paramUnit = '₹';
+    colCName = 'BILLING IMPACT';
+    totalHeader = 'DAY TOTAL CHARGE (₹)';
+    peakHeader = 'MAX PAYABLE / DEBIT (₹)';
+    valleyHeader = 'MAX RECEIVABLE / CREDIT (₹)';
+    fmt = FMT_RUPEE;
+  } else if (paramType === 'frequency') {
+    paramTitle = 'GRID FREQUENCY (96 TIME-BLOCKS HORIZONTAL MATRIX)';
+    paramUnit = 'Hz';
+    colCName = 'GRID STATUS';
+    totalHeader = 'DAILY AVG FREQ (Hz)';
+    peakHeader = 'MAX FREQ (Hz)';
+    valleyHeader = 'MIN FREQ (Hz)';
+    fmt = FMT_HZ;
+  }
+
+  // Row 0: Title Banner
+  aoa.push([`${projectName.toUpperCase()} — ${paramTitle}`, ...Array(102).fill('')]);
+  // Row 1: Subtitle
+  aoa.push([`${plantLabel} · Period: ${period} · Unit: ${paramUnit} · CERC Deviation Settlement Mechanism Regulations 2024`, ...Array(102).fill('')]);
+  // Row 2: Blank
+  aoa.push([]);
+
+  // Row 3: Header Row 1 (Time intervals)
+  const timeLabels = [];
+  for (let i = 1; i <= 96; i++) {
+    timeLabels.push(getBlockTimeLabel(i));
+  }
+  aoa.push(['DATE', 'DAY', colCName, ...timeLabels, totalHeader, peakHeader, valleyHeader, 'REMARKS']);
+
+  // Row 4: Header Row 2 (Block names)
+  const blockLabels = [];
+  for (let i = 1; i <= 96; i++) {
+    blockLabels.push(`TB ${String(i).padStart(2, '0')}`);
+  }
+  aoa.push(['', '', '', ...blockLabels, '', '', '', '']);
+
+  const sortedDays = (week.days || []).slice().sort((a, b) => String(a.date).localeCompare(String(b.date)));
+  let currentExcelRow = 6; // Row 0 is 1, Row 4 is 5, next is 6
+  const startDataRow = currentExcelRow;
+
+  sortedDays.forEach((d) => {
+    const dateStr = formatDateDDMMYYYY(d.date);
+    const dayName = getDayOfWeekName(d.date);
+    const dayRev = d.activeRevision || activeRev || 'R0';
+
+    const vals = [];
+    let daySum = 0;
+    let dayMax = -Infinity;
+    let dayMin = Infinity;
+    let maxPos = 0;
+    let maxNeg = 0;
+
+    for (let i = 1; i <= 96; i++) {
+      const b = (d.blocks || []).find((x) => Number(x.idx) === i) || (d.blocks && d.blocks[i - 1]) || { idx: i, s: 0, a: 0, f: 50, r: 0 };
+      const r = revisionAwareBlock(d, b);
+
+      let val = 0;
+      if (paramType === 'schedule') val = Number((Number(r.s) || 0).toFixed(4));
+      else if (paramType === 'actual') val = Number((Number(b.a) || 0).toFixed(4));
+      else if (paramType === 'deviation') {
+        const bs = Number(r.s) || 0;
+        const ba = Number(b.a) || 0;
+        val = Number((Number(r.dev !== undefined && !isNaN(r.dev) ? r.dev : (ba - bs)) || 0).toFixed(4));
+      } else if (paramType === 'charge') val = Math.round(Number(r.charge) || 0);
+      else if (paramType === 'frequency') val = Number((Number(b.f) || 50).toFixed(2));
+
+      vals.push(val);
+      daySum += val;
+      if (val > dayMax) dayMax = val;
+      if (val < dayMin) dayMin = val;
+      if (paramType === 'deviation') {
+        if (val > maxPos) maxPos = val;
+        if (val < maxNeg) maxNeg = val;
+      }
+    }
+
+    if (dayMin === Infinity) dayMin = 0;
+    if (dayMax === -Infinity) dayMax = 0;
+
+    let colCVal = `Rev: ${dayRev}`;
+    let remarksVal = 'Within Band';
+    let totalCell = {};
+    let peakCell = {};
+    let valleyCell = {};
+
+    const R = currentExcelRow;
+    // D is Col 3, CU is Col 98
+    if (paramType === 'frequency') {
+      colCVal = (dayMin >= 49.90 && dayMax <= 50.05) ? 'IEGC Normal' : 'Band Excursions';
+      remarksVal = `Min: ${dayMin.toFixed(2)} / Max: ${dayMax.toFixed(2)}`;
+      totalCell = { t: 'n', f: `AVERAGE(D${R}:CU${R})`, v: Number((daySum / 96).toFixed(2)) };
+      peakCell = { t: 'n', f: `MAX(D${R}:CU${R})`, v: Number(dayMax.toFixed(2)) };
+      valleyCell = { t: 'n', f: `MIN(D${R}:CU${R})`, v: Number(dayMin.toFixed(2)) };
+    } else if (paramType === 'deviation') {
+      colCVal = daySum >= 0 ? 'Over-Injection' : 'Under-Injection';
+      remarksVal = daySum >= 0 ? `Net Over-Inj (+${daySum.toFixed(2)} MWh)` : `Net Under-Inj (${daySum.toFixed(2)} MWh)`;
+      totalCell = { t: 'n', f: `SUM(D${R}:CU${R})`, v: Number(daySum.toFixed(3)) };
+      peakCell = { t: 'n', f: `MAX(D${R}:CU${R})`, v: Number(maxPos.toFixed(3)) };
+      valleyCell = { t: 'n', f: `MIN(D${R}:CU${R})`, v: Number(maxNeg.toFixed(3)) };
+    } else if (paramType === 'charge') {
+      colCVal = daySum < 0 ? 'Receivable (Credit)' : (daySum > 0 ? 'Payable (Debit)' : 'Zero');
+      remarksVal = daySum < 0 ? `Credit ₹${Math.abs(Math.round(daySum)).toLocaleString('en-IN')}` : (daySum > 0 ? `Debit ₹${Math.round(daySum).toLocaleString('en-IN')}` : 'Balanced');
+      totalCell = { t: 'n', f: `SUM(D${R}:CU${R})`, v: Math.round(daySum) };
+      peakCell = { t: 'n', f: `MAX(D${R}:CU${R})`, v: Math.round(dayMax) };
+      valleyCell = { t: 'n', f: `MIN(D${R}:CU${R})`, v: Math.round(dayMin) };
+    } else {
+      // schedule / actual
+      colCVal = paramType === 'schedule' ? `Rev: ${dayRev}` : 'Main Meter';
+      remarksVal = `Total: ${daySum.toFixed(2)} MWh`;
+      totalCell = { t: 'n', f: `SUM(D${R}:CU${R})`, v: Number(daySum.toFixed(3)) };
+      peakCell = { t: 'n', f: `MAX(D${R}:CU${R})`, v: Number(dayMax.toFixed(3)) };
+      valleyCell = { t: 'n', f: `MIN(D${R}:CU${R})`, v: Number(dayMin.toFixed(3)) };
+    }
+
+    aoa.push([
+      dateStr,
+      dayName,
+      colCVal,
+      ...vals,
+      totalCell,
+      peakCell,
+      valleyCell,
+      remarksVal
+    ]);
+    currentExcelRow++;
+  });
+
+  const endDataRow = currentExcelRow - 1;
+
+  // Blank row separator
+  aoa.push([]);
+  currentExcelRow++;
+
+  // Weekly Total / Average Row
+  const rTot = currentExcelRow;
+  const colTotals = [];
+  for (let c = 0; c < 96; c++) {
+    const colLetter = XLSX.utils.encode_col(3 + c);
+    if (paramType === 'frequency') {
+      colTotals.push({ t: 'n', f: `AVERAGE(${colLetter}${startDataRow}:${colLetter}${endDataRow})` });
+    } else {
+      colTotals.push({ t: 'n', f: `SUM(${colLetter}${startDataRow}:${colLetter}${endDataRow})` });
+    }
+  }
+
+  const totColLetter = XLSX.utils.encode_col(99); // CV
+  const peakColLetter = XLSX.utils.encode_col(100); // CW
+  const valColLetter = XLSX.utils.encode_col(101); // CX
+
+  let grandTotalCell = {};
+  let grandPeakCell = {};
+  let grandValleyCell = {};
+
+  if (paramType === 'frequency') {
+    grandTotalCell = { t: 'n', f: `AVERAGE(${totColLetter}${startDataRow}:${totColLetter}${endDataRow})` };
+    grandPeakCell = { t: 'n', f: `MAX(${peakColLetter}${startDataRow}:${peakColLetter}${endDataRow})` };
+    grandValleyCell = { t: 'n', f: `MIN(${valColLetter}${startDataRow}:${valColLetter}${endDataRow})` };
+  } else {
+    grandTotalCell = { t: 'n', f: `SUM(${totColLetter}${startDataRow}:${totColLetter}${endDataRow})` };
+    grandPeakCell = { t: 'n', f: `MAX(${peakColLetter}${startDataRow}:${peakColLetter}${endDataRow})` };
+    grandValleyCell = { t: 'n', f: `MIN(${valColLetter}${startDataRow}:${valColLetter}${endDataRow})` };
+  }
+
+  aoa.push([
+    paramType === 'frequency' ? 'WEEK AVERAGE' : 'WEEK TOTAL',
+    'ALL 7 DAYS',
+    'CONSOLIDATED',
+    ...colTotals,
+    grandTotalCell,
+    grandPeakCell,
+    grandValleyCell,
+    'Weekly Aggregate'
+  ]);
+
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+
+  // Column widths
+  const cols = [
+    { wch: 13 }, // DATE
+    { wch: 12 }, // DAY
+    { wch: 18 }, // REVISION / STATUS
+  ];
+  for (let i = 0; i < 96; i++) cols.push({ wch: 10 }); // 96 blocks
+  cols.push({ wch: 18 }); // DAY TOTAL / AVG
+  cols.push({ wch: 16 }); // PEAK
+  cols.push({ wch: 16 }); // VALLEY
+  cols.push({ wch: 22 }); // REMARKS
+  ws['!cols'] = cols;
+
+  ws['!merges'] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 102 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 102 } },
+    { s: { r: 3, c: 0 }, e: { r: 4, c: 0 } },
+    { s: { r: 3, c: 1 }, e: { r: 4, c: 1 } },
+    { s: { r: 3, c: 2 }, e: { r: 4, c: 2 } },
+    { s: { r: 3, c: 99 }, e: { r: 4, c: 99 } },
+    { s: { r: 3, c: 100 }, e: { r: 4, c: 100 } },
+    { s: { r: 3, c: 101 }, e: { r: 4, c: 101 } },
+    { s: { r: 3, c: 102 }, e: { r: 4, c: 102 } },
+  ];
+
+  // Freeze panes on Column C (Col 3) and Row 5
+  ws['!freeze'] = { xSplit: 3, ySplit: 5, topLeftCell: 'D6', activePane: 'bottomRight', state: 'frozen' };
+
+  styleRow(ws, 0, 103, TITLE_FILL_STYLE);
+  styleRow(ws, 1, 103, SUB_STYLE);
+  styleRow(ws, 3, 103, TH_STYLE_NAVY);
+  styleRow(ws, 4, 103, TH_STYLE_DARK_BLUE);
+
+  // Apply cell format to all data rows
+  for (let r = startDataRow - 1; r <= endDataRow - 1; r++) {
+    for (let c = 3; c <= 101; c++) {
+      const ref = XLSX.utils.encode_cell({ r, c });
+      if (ws[ref]) ws[ref].z = fmt;
+    }
+  }
+
+  // Format Total row
+  const totRowIdx = rTot - 1;
+  styleRow(ws, totRowIdx, 103, TOTAL_ROW_STYLE);
+  for (let c = 3; c <= 101; c++) {
+    const ref = XLSX.utils.encode_cell({ r: totRowIdx, c });
+    if (ws[ref]) ws[ref].z = fmt;
+  }
+
+  return ws;
+}
+
+function exportHorizontal96Blocks(){
+  const week = weekObj();
+  if(!week || !week.days || week.days.length===0){
+    alert('No data to export for this week.');
+    return;
+  }
+  const projectName = (state.projectMeta && state.projectMeta.name) || 'KHURJA DSM CALCULATOR';
+  const plantLabel = (state.projectMeta && state.projectMeta.plant) || '11 MW Khurja Floating Solar Power Plant';
+  const period = formatDateDDMMYYYY(week.days[0].date)+' to '+formatDateDDMMYYYY(week.days[week.days.length-1].date);
+  const meta = { projectName, plantLabel, period };
+
+  const wb = XLSX.utils.book_new();
+
+  // 1. Master 96-Block Horizontal Sheet (All parameters Day & Date wise)
+  const masterSheet = buildHorizontal96BlocksMasterSheet(week, meta);
+  XLSX.utils.book_append_sheet(wb, masterSheet, '96-Block Master (Horizontal)');
+
+  // 2. Schedule (96 Blocks Horizontal)
+  const schSheet = buildHorizontal96BlocksParamSheet(week, meta, 'schedule');
+  XLSX.utils.book_append_sheet(wb, schSheet, 'Schedule (96-Blk)');
+
+  // 3. Actual (96 Blocks Horizontal)
+  const actSheet = buildHorizontal96BlocksParamSheet(week, meta, 'actual');
+  XLSX.utils.book_append_sheet(wb, actSheet, 'Actual (96-Blk)');
+
+  // 4. Deviation (96 Blocks Horizontal)
+  const devSheet = buildHorizontal96BlocksParamSheet(week, meta, 'deviation');
+  XLSX.utils.book_append_sheet(wb, devSheet, 'Deviation (96-Blk)');
+
+  // 5. DSM Charges (96 Blocks Horizontal)
+  const chargeSheet = buildHorizontal96BlocksParamSheet(week, meta, 'charge');
+  XLSX.utils.book_append_sheet(wb, chargeSheet, 'DSM Charges (96-Blk)');
+
+  // 6. Frequency (96 Blocks Horizontal)
+  const freqSheet = buildHorizontal96BlocksParamSheet(week, meta, 'frequency');
+  XLSX.utils.book_append_sheet(wb, freqSheet, 'Frequency (96-Blk)');
+
+  // 7. Daily Summary
+  const dailySheet = buildDailySummarySheet(week);
+  XLSX.utils.book_append_sheet(wb, dailySheet, 'Daily Summary');
+
+  const plantSlug = String(window.currentPlantContext||'Plant').replace(/[^A-Za-z0-9]+/g,'_');
+  XLSX.writeFile(wb, `${plantSlug}_DayDate_96Blocks_Horizontal_W${state.currentWeek}.xlsx`);
+}
+
 function exportWeek(){
   const week = weekObj();
   if(week.days.length===0){ alert('No data to export for this week.'); return; }
@@ -4365,6 +5123,33 @@ function exportWeek(){
   styleRow(calcSheet, calcRows.length - 1, 10, TOTAL_ROW_STYLE);
 
   const wb = XLSX.utils.book_new();
+
+  // 1. Master 96-Block Horizontal Sheet (All parameters Day & Date wise)
+  const metaObj = { projectName, plantLabel, period };
+  const masterSheet = buildHorizontal96BlocksMasterSheet(week, metaObj);
+  XLSX.utils.book_append_sheet(wb, masterSheet, '96-Block Master (Horizontal)');
+
+  // 2. Schedule 96-Blocks Horizontal
+  const schSheet = buildHorizontal96BlocksParamSheet(week, metaObj, 'schedule');
+  XLSX.utils.book_append_sheet(wb, schSheet, 'Schedule (96-Blk)');
+
+  // 3. Actual 96-Blocks Horizontal
+  const actSheet = buildHorizontal96BlocksParamSheet(week, metaObj, 'actual');
+  XLSX.utils.book_append_sheet(wb, actSheet, 'Actual (96-Blk)');
+
+  // 4. Deviation 96-Blocks Horizontal
+  const devSheet = buildHorizontal96BlocksParamSheet(week, metaObj, 'deviation');
+  XLSX.utils.book_append_sheet(wb, devSheet, 'Deviation (96-Blk)');
+
+  // 5. DSM Charges 96-Blocks Horizontal
+  const chargeSheet = buildHorizontal96BlocksParamSheet(week, metaObj, 'charge');
+  XLSX.utils.book_append_sheet(wb, chargeSheet, 'DSM Charges (96-Blk)');
+
+  // 6. Frequency 96-Blocks Horizontal
+  const freqSheet = buildHorizontal96BlocksParamSheet(week, metaObj, 'frequency');
+  XLSX.utils.book_append_sheet(wb, freqSheet, 'Frequency (96-Blk)');
+
+  // 7. Executive Dashboard & Summaries
   XLSX.utils.book_append_sheet(wb, dashSheet, 'Dashboard');
   XLSX.utils.book_append_sheet(wb, summarySheet, 'Summary');
   XLSX.utils.book_append_sheet(wb, sortedSheet, 'Sorted Analysis');
@@ -5168,7 +5953,8 @@ async function init(){
       state.projectMeta.plant = p.name + ' — ' + p.capacity + ' MW (' + (window.currentFinancialYear || 'FY 2024-25') + ')';
     }
     updateSaveStatusFromStorage();
-    window.syncAllFYDropdowns();
+    if(typeof window.syncAllPlantDropdowns === 'function') window.syncAllPlantDropdowns();
+    if(typeof window.syncAllFYDropdowns === 'function') window.syncAllFYDropdowns();
   };
 
   window.THDC_EXPORT_BACKUP = async function(){
@@ -6038,86 +6824,164 @@ window.addEventListener('load',()=>setTimeout(renderTHDCUPSLDCReconciliation,160
 
 </script><script>
 
-window.THDC_PLANTS={
- "Khurja STPP":{name:"Khurja STPP",capacity:1320,unit:"MW",type:"Thermal Power Plant"},
- "Koteshwar HEP":{name:"Koteshwar HEP",capacity:400,unit:"MW",type:"Hydro Electric Power Plant"},
- "Tehri HPP":{name:"Tehri HPP",capacity:1000,unit:"MW",type:"Hydro Power Plant"},
- "Tehri PSP":{name:"Tehri PSP",capacity:1000,unit:"MW",type:"Pumped Storage Plant"},
- "Khurja Floating Solar":{name:"Khurja Floating Solar",capacity:11,unit:"MW",type:"Floating Solar Power Plant"}
-};
-window.currentPlantContext=localStorage.getItem('thdc-plant-context')||'Khurja Floating Solar';
-function setPlantContext(v){
- window.currentPlantContext=THDC_PLANTS[v]?v:'Khurja Floating Solar';
- localStorage.setItem('thdc-plant-context',window.currentPlantContext);
- if(window.THDC_LOAD_PLANT) window.THDC_LOAD_PLANT(window.currentPlantContext, window.currentFinancialYear);
- const p=THDC_PLANTS[window.currentPlantContext];
- document.title='THDC DSM - '+p.name + ' (' + (window.currentFinancialYear || 'FY 2024-25') + ')';
- const badge=document.getElementById('plantCapacityBadge');
- if(badge)badge.textContent=p.capacity+' MW · '+p.type;
- const pn=document.getElementById('selectedPlantName'),pc=document.getElementById('selectedPlantCapacity'),pt=document.getElementById('selectedPlantType');
- if(pn)pn.textContent=p.name; if(pc)pc.textContent=p.capacity+' MW'; if(pt)pt.textContent=p.type;
- const ws=document.getElementById('plantContextSelect'); if(ws) ws.value=window.currentPlantContext;
- if(typeof syncAllFYDropdowns==='function') syncAllFYDropdowns();
- if(typeof renderAll==='function')renderAll();
- if(typeof renderTHDCUPSLDCReconciliation==='function')renderTHDCUPSLDCReconciliation();
- if(typeof renderCompleteInsights==='function')renderCompleteInsights();
- if(typeof renderFrequencyDaywise==='function')renderFrequencyDaywise();
-}
-const _realSetPlantContext = setPlantContext;
-setPlantContext = function(v) {
-    _realSetPlantContext(v);
-    if(typeof state !== 'undefined') {
-        if(state.view === 'week') {
-           if(typeof renderAll==='function')renderAll();
-           if(typeof renderTHDCUPSLDCReconciliation==='function')renderTHDCUPSLDCReconciliation();
-           if(typeof renderCompleteInsights==='function')renderCompleteInsights();
-           if(typeof renderFrequencyDaywise==='function')renderFrequencyDaywise();
-           if(typeof renderOptimizationInsights==='function')renderOptimizationInsights();
-        } else if(state.view === 'home') {
-           if(typeof renderHomeShell==='function')renderHomeShell();
-        }
-    }
+window.THDC_PLANTS = {
+ "Khurja STPP": {name:"Khurja STPP", capacity:1320, unit:"MW", type:"Thermal Power Plant"},
+ "Koteshwar HEP": {name:"Koteshwar HEP", capacity:400, unit:"MW", type:"Hydro Electric Power Plant"},
+ "Tehri HPP": {name:"Tehri HPP", capacity:1000, unit:"MW", type:"Hydro Power Plant"},
+ "Tehri PSP": {name:"Tehri PSP", capacity:1000, unit:"MW", type:"Pumped Storage Plant"},
+ "Khurja Floating Solar": {name:"Khurja Floating Solar", capacity:11, unit:"MW", type:"Floating Solar Power Plant"}
 };
 
-window.addEventListener('load',()=>{ const s=document.getElementById('plantContextSelect');
- if(s){s.value=THDC_PLANTS[window.currentPlantContext]?window.currentPlantContext:'Khurja Floating Solar';}
- const p=THDC_PLANTS[s?.value||window.currentPlantContext];
- const badge=document.getElementById('plantCapacityBadge');
- if(badge&&p)badge.textContent=p.capacity+' MW · '+p.type;
- const pn=document.getElementById('selectedPlantName'),pc=document.getElementById('selectedPlantCapacity'),pt=document.getElementById('selectedPlantType');
- if(pn&&p)pn.textContent=p.name; if(pc&&p)pc.textContent=p.capacity+' MW'; if(pt&&p)pt.textContent=p.type;
- if(s&&p) s.value=window.currentPlantContext;
-});
-</script>
-
-<script>
-/* ===== PLANT → GRID / SETTLEMENT AUTHORITY ROUTING ===== */
-window.THDC_GRID_SOURCES={
- "Khurja STPP":{authority:"UPSLDC",label:"UPSLDC",region:"Uttar Pradesh",revisionLabel:"UPSLDC Schedule Revision",statementLabel:"UPSLDC DSM Statement"},
- "Khurja Floating Solar":{authority:"UPSLDC",label:"UPSLDC",region:"Uttar Pradesh",revisionLabel:"UPSLDC Schedule Revision",statementLabel:"UPSLDC DSM Statement"},
- "Tehri HPP":{authority:"NRPC",label:"NRPC",region:"Northern Region",revisionLabel:"NRPC Schedule Revision",statementLabel:"NRPC DSM Statement"},
- "Tehri PSP":{authority:"NRPC",label:"NRPC",region:"Northern Region",revisionLabel:"NRPC Schedule Revision",statementLabel:"NRPC DSM Statement"},
- "Koteshwar HEP":{authority:"NRPC",label:"NRPC",region:"Northern Region",revisionLabel:"NRPC Schedule Revision",statementLabel:"NRPC DSM Statement"}
+window.THDC_GRID_SOURCES = {
+ "Khurja STPP": {authority:"UPSLDC", label:"UPSLDC", region:"Uttar Pradesh", revisionLabel:"UPSLDC Schedule Revision", statementLabel:"UPSLDC DSM Statement"},
+ "Khurja Floating Solar": {authority:"UPSLDC", label:"UPSLDC", region:"Uttar Pradesh", revisionLabel:"UPSLDC Schedule Revision", statementLabel:"UPSLDC DSM Statement"},
+ "Tehri HPP": {authority:"NRPC", label:"NRPC", region:"Northern Region", revisionLabel:"NRPC Schedule Revision", statementLabel:"NRPC DSM Statement"},
+ "Tehri PSP": {authority:"NRPC", label:"NRPC", region:"Northern Region", revisionLabel:"NRPC Schedule Revision", statementLabel:"NRPC DSM Statement"},
+ "Koteshwar HEP": {authority:"NRPC", label:"NRPC", region:"Northern Region", revisionLabel:"NRPC Schedule Revision", statementLabel:"NRPC DSM Statement"}
 };
-function getGridSource(){
- return THDC_GRID_SOURCES[window.currentPlantContext]||THDC_GRID_SOURCES["Khurja Floating Solar"];
-}
-function updateGridSourceUI(){
- const s=getGridSource(), n=document.getElementById('gridSourceName'), d=document.getElementById('gridSourceDetails');
- if(n)n.textContent=s.label;
- if(d)d.textContent=s.region+' · '+s.statementLabel+' · '+s.revisionLabel;
- // Change reconciliation button wording dynamically.
- document.querySelectorAll('[onclick="loadUpsldcStatement()"]').forEach(b=>{b.textContent='⇪ Upload '+s.label+' Excel';});
- document.querySelectorAll('.recon-title').forEach(e=>{if(e.textContent.includes('THDC vs'))e.textContent='THDC vs '+s.label+' Calculation Reconciliation';});
-}
-const _oldSetPlantContext=window.setPlantContext;
-window.setPlantContext=function(v){
- if(typeof _oldSetPlantContext==='function')_oldSetPlantContext(v); else {
-   window.currentPlantContext=v;localStorage.setItem('thdc-plant-context',v);
+
+window.currentPlantContext = localStorage.getItem('thdc-plant-context') || 'Khurja Floating Solar';
+
+window.getGridSource = function(){
+ return window.THDC_GRID_SOURCES[window.currentPlantContext] || window.THDC_GRID_SOURCES["Khurja Floating Solar"];
+};
+
+window.updateGridSourceUI = function(){
+ const s = window.getGridSource();
+ const n = document.getElementById('gridSourceName');
+ const d = document.getElementById('gridSourceDetails');
+ if(n) n.textContent = s.label;
+ if(d) d.textContent = s.region + ' · ' + s.statementLabel + ' · ' + s.revisionLabel;
+ document.querySelectorAll('[onclick="loadUpsldcStatement()"]').forEach(b => {
+   b.textContent = '⇪ Upload ' + s.label + ' Excel';
+ });
+ document.querySelectorAll('.recon-title').forEach(e => {
+   if(e.textContent.includes('THDC vs')) e.textContent = 'THDC vs ' + s.label + ' Calculation Reconciliation';
+ });
+};
+
+window.getPlantOptionsHTML = function(selectedPlant){
+ const plants = window.THDC_PLANTS || {};
+ const cur = selectedPlant || window.currentPlantContext || 'Khurja Floating Solar';
+ return Object.keys(plants).map(k => {
+   const p = plants[k];
+   const sel = (k === cur) ? 'selected' : '';
+   return `<option value="${k}" ${sel}>${p.name} — ${p.capacity} MW (${p.type || ''})</option>`;
+ }).join('');
+};
+
+window.syncAllPlantDropdowns = function(){
+ const cur = window.currentPlantContext || 'Khurja Floating Solar';
+ const html = window.getPlantOptionsHTML(cur);
+ ['plantContextSelect', 'homePlantSelect', 'weekPlantSelect', 'heroPlantSelect'].forEach(id => {
+   const el = document.getElementById(id);
+   if(el){
+     el.innerHTML = html;
+     el.value = cur;
+   }
+ });
+ const p = window.THDC_PLANTS?.[cur];
+ if(p){
+   const pn = document.getElementById('selectedPlantName');
+   const pc = document.getElementById('selectedPlantCapacity');
+   const pt = document.getElementById('selectedPlantType');
+   if(pn) pn.textContent = p.name;
+   if(pc) pc.textContent = p.capacity + ' MW';
+   if(pt) pt.textContent = p.type;
+   const badge = document.getElementById('plantCapacityBadge');
+   if(badge) badge.textContent = p.capacity + ' MW · ' + p.type;
+   const hb = document.getElementById('homePlantBadge');
+   if(hb) hb.textContent = p.name + ' (' + p.capacity + ' MW)';
  }
- updateGridSourceUI();
 };
-window.addEventListener('load',()=>setTimeout(updateGridSourceUI,300));
+
+window.showToast = function(msg, duration = 3000){
+ let t = document.getElementById('thdc-global-toast');
+ if(!t){
+   t = document.createElement('div');
+   t.id = 'thdc-global-toast';
+   t.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#0F172A;color:#fff;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:700;box-shadow:0 10px 25px rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.15);z-index:99999;transition:opacity 0.25s,transform 0.25s;display:flex;align-items:center;gap:8px;pointer-events:none;';
+   document.body.appendChild(t);
+ }
+ t.innerHTML = '<span>⚡</span><span>' + msg + '</span>';
+ t.style.opacity = '1';
+ t.style.transform = 'translateY(0)';
+ clearTimeout(window._toastTimer);
+ window._toastTimer = setTimeout(() => {
+   t.style.opacity = '0';
+   t.style.transform = 'translateY(8px)';
+ }, duration);
+};
+
+window.setPlantContext = async function(v){
+ if(!v) return;
+ let plantKey = v;
+ if(!window.THDC_PLANTS[plantKey]){
+   for(const key in window.THDC_PLANTS){
+     if(v.startsWith(key) || key.startsWith(v)){
+       plantKey = key;
+       break;
+     }
+   }
+ }
+ if(!window.THDC_PLANTS[plantKey]) plantKey = 'Khurja Floating Solar';
+
+ // 1. Save existing plant state before switching
+ try {
+   if(window.THDC_MANUAL_SAVE) await window.THDC_MANUAL_SAVE();
+ } catch(err) {
+   console.warn('Pre-switch auto-save failed:', err);
+ }
+
+ // 2. Update active plant context
+ window.currentPlantContext = plantKey;
+ localStorage.setItem('thdc-plant-context', plantKey);
+
+ // 3. Await loading the new plant workspace from localStorage
+ if(window.THDC_LOAD_PLANT){
+   await window.THDC_LOAD_PLANT(plantKey, window.currentFinancialYear);
+ }
+
+ // 4. Update metadata in state & document title
+ const p = window.THDC_PLANTS[plantKey];
+ if(p){
+   document.title = 'THDC DSM - ' + p.name + ' (' + (window.currentFinancialYear || 'FY 2024-25') + ')';
+   if(typeof state !== 'undefined' && state.projectMeta){
+     state.projectMeta.name = p.name;
+     state.projectMeta.capacity = p.capacity;
+     state.projectMeta.plant = p.name + ' — ' + p.capacity + ' MW (' + (window.currentFinancialYear || 'FY 2024-25') + ')';
+   }
+ }
+
+ // 5. Synchronize all UI elements across header, home, and week views
+ window.syncAllPlantDropdowns();
+ if(typeof window.syncAllFYDropdowns === 'function') window.syncAllFYDropdowns();
+ window.updateGridSourceUI();
+ if(typeof updateTopWorkspaceContext === 'function') updateTopWorkspaceContext();
+
+ // 6. Re-render the active view with the loaded plant data
+ if(typeof state !== 'undefined'){
+   if(state.view === 'home'){
+     if(typeof renderHomeShell === 'function') renderHomeShell();
+   } else if(state.view === 'week'){
+     if(typeof renderShell === 'function') renderShell();
+     if(typeof renderAll === 'function') renderAll();
+     if(typeof renderTHDCUPSLDCReconciliation === 'function') renderTHDCUPSLDCReconciliation();
+     if(typeof renderCompleteInsights === 'function') renderCompleteInsights();
+     if(typeof renderFrequencyDaywise === 'function') renderFrequencyDaywise();
+     if(typeof renderOptimizationInsights === 'function') renderOptimizationInsights();
+   } else if(state.view === 'login'){
+     if(typeof renderLogin === 'function') renderLogin();
+   }
+ }
+
+ window.showToast(`Switched workspace to ${p ? p.name : plantKey} (${window.currentFinancialYear || 'FY 2024-25'})`);
+};
+
+window.addEventListener('load', () => {
+ window.syncAllPlantDropdowns();
+ window.updateGridSourceUI();
+});
 </script>
 
 <script id="top-workspace-context-engine">
