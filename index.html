@@ -3,7 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Khurja DSM Calculator</title>
+<title>THDCIL Universal DSM Engine</title>
+<meta property="og:title" content="THDCIL Universal DSM Engine">
+<meta name="description" content="Deviation Settlement Account (DSM) Reconciliation and Analytics Engine for THDCIL power plants">
+<meta property="og:description" content="Deviation Settlement Account (DSM) Reconciliation and Analytics Engine for THDCIL power plants">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script>
 // Global error handler
@@ -101,6 +104,7 @@ window.addEventListener('error', function(e) {
 </script>
 <script src="/vendor/jspdf.umd.min.js"></script>
 <script src="/vendor/jspdf.plugin.autotable.min.js"></script>
+<script src="/vendor/firebase-auth.bundle.js"></script>
 
 <style>
 :root{
@@ -128,6 +132,108 @@ window.addEventListener('error', function(e) {
   --shadow:0 1px 2px rgba(20,26,40,0.04),0 1px 8px rgba(20,26,40,0.03);
 }
 *{box-sizing:border-box;}
+
+/* Google Sign-In Button Brand Spec */
+.gsi-material-button {
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  -webkit-appearance: none;
+  background-color: #FFFFFF;
+  background-image: none;
+  border: 1px solid #747775;
+  -webkit-border-radius: 6px;
+  border-radius: 6px;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+  color: #1F1F1F;
+  cursor: pointer;
+  font-family: 'Inter', Roboto, arial, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  height: 48px;
+  letter-spacing: 0.2px;
+  outline: none;
+  overflow: hidden;
+  padding: 0 16px;
+  position: relative;
+  text-align: center;
+  transition: background-color .2s, border-color .2s, box-shadow .2s;
+  vertical-align: middle;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+.gsi-material-button:hover {
+  box-shadow: 0 2px 8px rgba(60, 64, 67, .2);
+  background-color: #F8FAFD;
+  border-color: #4285F4;
+}
+.gsi-material-button-icon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.gsi-material-button-contents {
+  font-weight: 700;
+  color: #1E293B;
+  font-size: 14px;
+}
+.thdc-gdrive-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  color: #0F172A;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 12px;
+}
+.thdc-gdrive-pill:hover {
+  background: #F1F5F9;
+  border-color: #94A3B8;
+}
+.thdc-gdrive-pill.connected {
+  background: #ECFDF5;
+  border-color: #10B981;
+  color: #065F46;
+}
+.gdrive-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #94A3B8;
+  display: inline-block;
+}
+.thdc-gdrive-pill.connected .gdrive-status-dot {
+  background: #10B981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25);
+}
+.otp-display-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: #022C22;
+  color: #34D399;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-family: var(--mono);
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: 4px;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+}
+
 html,body{margin:0;padding:0;}
 body{
   background:var(--bg);
@@ -294,6 +400,185 @@ tbody tr.active-row{background:var(--blue-dim);}
 
 .week-target{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:12.5px;}
 .week-target select{font-family:var(--mono);padding:5px 8px;border:1px solid var(--border);border-radius:6px;}
+
+/* ---------- bulk edit schedule ---------- */
+.bulk-edit-container {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 16px 18px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.03);
+}
+.bulk-edit-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+.bulk-edit-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--display);
+  font-size: 14.5px;
+  font-weight: 800;
+  color: #0f172a;
+}
+.bulk-badge {
+  background: #e0e7ff;
+  color: #3730a3;
+  padding: 3px 9px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-family: var(--mono);
+  font-weight: 700;
+}
+.bulk-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.bulk-preset-chip {
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.bulk-preset-chip:hover {
+  background: #f1f5f9;
+  border-color: #0073cf;
+  color: #0073cf;
+}
+.bulk-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 14px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+.bulk-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.bulk-label {
+  font-size: 11px;
+  font-weight: 800;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.bulk-mode-tabs {
+  display: flex;
+  background: #e2e8f0;
+  padding: 3px;
+  border-radius: 8px;
+  gap: 2px;
+}
+.bulk-mode-tab {
+  flex: 1;
+  text-align: center;
+  padding: 6px 4px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.bulk-mode-tab.active {
+  background: #fff;
+  color: #005bb5;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+}
+.bulk-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.bulk-input {
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+  background: #fff;
+  width: 100%;
+  box-sizing: border-box;
+}
+.bulk-input:focus {
+  outline: none;
+  border-color: #0073cf;
+  box-shadow: 0 0 0 2px rgba(0,115,207,0.15);
+}
+.bulk-preview-card {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 11px 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 12px;
+  margin-bottom: 14px;
+}
+.bulk-preview-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.bulk-preview-metric .lbl {
+  font-size: 10px;
+  color: #1e40af;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.bulk-preview-metric .val {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 800;
+  color: #1e3a8a;
+}
+.bulk-actions-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.row-selected {
+  background-color: #f0f7ff !important;
+}
+.row-selected td {
+  background-color: #f0f7ff !important;
+}
+.block-chk {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #0073cf;
+  margin: 0;
+  vertical-align: middle;
+}
 
 footer{margin-top:20px;font-size:11px;color:var(--muted-2);line-height:1.7;border-top:1px solid var(--border);padding-top:14px;}
 footer code{font-family:var(--mono);color:var(--muted);}
@@ -657,7 +942,7 @@ body:has(.login-wrap) #thdc-global-header{
 .thdc-action:hover{transform:translateY(-2px)!important;filter:saturate(1.08)!important;box-shadow:0 8px 18px rgba(15,23,42,.16)!important}
 .thdc-excel{background:linear-gradient(135deg,#16A34A,#07883F)!important}.thdc-week{background:linear-gradient(135deg,#2563EB,#0B63CE)!important}.thdc-rev{background:linear-gradient(135deg,#7C3AED,#5B21B6)!important}.thdc-save{background:linear-gradient(135deg,#F97316,#EA580C)!important}.thdc-export{background:linear-gradient(135deg,#0891B2,#0E7490)!important}.thdc-pdf{background:linear-gradient(135deg,#EF4444,#DC2626)!important}.thdc-settings{background:linear-gradient(135deg,#2563EB,#1D4ED8)!important}.thdc-params{background:linear-gradient(135deg,#64748B,#475569)!important}.thdc-backup{background:linear-gradient(135deg,#FBBF24,#EAB308)!important;color:#172554!important}.thdc-clear{background:linear-gradient(135deg,#EF4444,#B91C1C)!important}
 .thdc-top-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:12px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:14px;margin-bottom:14px}
-.thdc-context-grid{display:grid;grid-template-columns:1.05fr 1.05fr 1.05fr 1fr;gap:10px;margin-bottom:12px}
+.thdc-context-grid{display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:10px;margin-bottom:12px}
 .thdc-context-card{background:linear-gradient(180deg,#fff,#F8FBFF);border:1px solid #DCE6F0;border-radius:12px;padding:11px 13px;display:flex;align-items:center;gap:11px;min-width:0;box-shadow:0 4px 12px rgba(15,23,42,.035)}
 .thdc-context-icon{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;flex:0 0 38px;background:#EAF3FF;color:#0B63CE;font-size:20px}
 .thdc-context-card label{display:block;font-size:9px;text-transform:uppercase;letter-spacing:.06em;font-weight:900;color:#64748B;margin-bottom:4px}
@@ -688,25 +973,28 @@ body:has(.login-wrap) #thdc-global-header{
   overflow:hidden!important;
 }
 .thdc-context-header:after{content:"";position:absolute;right:-90px;top:-120px;width:340px;height:340px;border-radius:50%;background:rgba(255,255,255,.045);pointer-events:none}
-.thdc-context-main{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(260px,.9fr) minmax(290px,1fr);align-items:stretch;min-height:145px;padding:20px 22px;gap:0}
-.thdc-plant-identity{display:flex;flex-direction:column;justify-content:center;padding:0 28px 0 0;border-right:1px solid rgba(255,255,255,.18)}
+.thdc-context-main{display:grid;grid-template-columns:minmax(280px,1.05fr) minmax(230px,.85fr) minmax(360px,1.25fr);align-items:stretch;min-height:145px;padding:18px 22px;gap:18px}
+.thdc-plant-identity{display:flex;flex-direction:column;justify-content:center;padding:0 20px 0 0;border-right:1px solid rgba(255,255,255,.18)}
 .thdc-eyebrow{font-size:11px!important;line-height:1.2;color:#93C5FD!important;font-weight:900!important;letter-spacing:.13em!important;text-transform:uppercase;margin-bottom:8px}
 .thdc-plant-line{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .thdc-plant-line #selectedPlantName{font-size:28px!important;line-height:1.05;font-weight:950!important;letter-spacing:-.025em;color:#fff!important}
 .thdc-capacity{display:inline-flex;align-items:center;padding:6px 11px;border-radius:8px;background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.22);font-size:12px;font-weight:900;color:#fff}
 .thdc-context-note{margin-top:8px;font-size:10px;color:#CFE3FF;letter-spacing:.02em}
-.thdc-authority{display:flex;flex-direction:column;justify-content:center;padding:0 28px;border-right:1px solid rgba(255,255,255,.18)}
+.thdc-authority{display:flex;flex-direction:column;justify-content:center;padding:0 20px;border-right:1px solid rgba(255,255,255,.18)}
 .thdc-authority-label{font-size:10px;font-weight:900;letter-spacing:.12em;color:#93C5FD;margin-bottom:7px}
 .thdc-authority-name{font-size:22px;font-weight:950;color:#fff;line-height:1.05}
 .thdc-authority-details{font-size:10.5px;color:#D8E9FF;line-height:1.5;margin-top:7px;max-width:390px}
-.thdc-workspace-card{display:flex;flex-direction:column;justify-content:center;margin-left:22px;padding:16px 18px;border-radius:14px;background:rgba(0,0,0,.15);border:1px solid rgba(255,255,255,.14);box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
-.thdc-workspace-label{font-size:10px;font-weight:950;letter-spacing:.12em;color:#B9D7FF;margin-bottom:8px;display:flex;align-items:center;gap:7px}
-.thdc-workspace-dot{width:8px;height:8px;border-radius:50%;background:#F59E0B;box-shadow:0 0 0 4px rgba(245,158,11,.12)}
-.thdc-workspace-card select{width:100%;height:44px;padding:0 38px 0 13px;border-radius:10px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;font-size:14px;font-weight:850;outline:none;cursor:pointer;appearance:auto}
-.thdc-workspace-card select option{color:#0F172A;background:#fff}
-.thdc-workspace-card select:focus{border-color:#93C5FD;box-shadow:0 0 0 3px rgba(147,197,253,.15)}
-@media(max-width:900px){.thdc-context-main{grid-template-columns:1fr 1fr}.thdc-workspace-card{grid-column:1/-1;margin:14px 0 0;border-top:1px solid rgba(255,255,255,.14)}}
-@media(max-width:600px){.thdc-context-main{grid-template-columns:1fr;padding:16px}.thdc-plant-identity,.thdc-authority{border-right:0;border-bottom:1px solid rgba(255,255,255,.15);padding:0 0 14px;margin-bottom:14px}.thdc-authority{padding-bottom:14px}.thdc-workspace-card{grid-column:auto;margin:0}.thdc-plant-line #selectedPlantName{font-size:23px!important}}
+.thdc-workspace-card{display:flex;flex-direction:column;justify-content:center;margin-left:0;padding:12px 16px;border-radius:12px;background:rgba(0,0,0,.22);border:1px solid rgba(255,255,255,.18);box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
+.thdc-workspace-label{font-size:10px;font-weight:950;letter-spacing:.12em;color:#B9D7FF;margin-bottom:8px;display:flex;align-items:center;gap:7px;text-transform:uppercase}
+.thdc-workspace-dot{width:8px;height:8px;border-radius:50%;background:#F59E0B;box-shadow:0 0 0 4px rgba(245,158,11,.15);flex-shrink:0}
+.thdc-workspace-fields{display:grid;grid-template-columns:1fr;gap:6px;width:100%}
+.thdc-sel-group{display:flex;flex-direction:column;gap:2px;width:100%;min-width:0}
+.thdc-sel-sublabel{font-size:9.5px;font-weight:800;letter-spacing:.08em;color:#93C5FD;text-transform:uppercase;line-height:1}
+.thdc-workspace-card select{width:100%!important;max-width:100%!important;box-sizing:border-box!important;height:36px;padding:0 26px 0 10px;border-radius:8px;border:1px solid rgba(255,255,255,.32);background:rgba(255,255,255,.14);color:#fff;font-size:13.5px;font-weight:750;outline:none;cursor:pointer;appearance:auto}
+.thdc-workspace-card select option{color:#0F172A;background:#fff;font-weight:600}
+.thdc-workspace-card select:focus{border-color:#93C5FD;box-shadow:0 0 0 3px rgba(147,197,253,.25);background:rgba(255,255,255,.18)}
+@media(max-width:1050px){.thdc-context-main{grid-template-columns:1fr 1fr;gap:14px;padding:16px}.thdc-plant-identity{border-right:0;border-bottom:1px solid rgba(255,255,255,.18);padding-bottom:12px}.thdc-workspace-card{grid-column:1/-1;margin:0}}
+@media(max-width:650px){.thdc-context-main{grid-template-columns:1fr;padding:14px}.thdc-plant-identity,.thdc-authority{border-right:0;border-bottom:1px solid rgba(255,255,255,.15);padding:0 0 12px;margin-bottom:0}.thdc-authority{padding-bottom:12px}.thdc-workspace-card{grid-column:auto;margin:0}.thdc-plant-line #selectedPlantName{font-size:22px!important}}
 </style>
 
 </head>
@@ -733,14 +1021,25 @@ body:has(.login-wrap) #thdc-global-header{
     </div>
 
     <div class="thdc-workspace-card">
-      <div class="thdc-workspace-label"><span class="thdc-workspace-dot"></span> WORKSPACE</div>
-      <select id="plantContextSelect" onchange="setPlantContext(this.value)" aria-label="Select plant workspace">
-        <option value="Khurja STPP">Khurja STPP — 1320 MW</option>
-        <option value="Koteshwar HEP">Koteshwar HEP — 400 MW</option>
-        <option value="Tehri HPP">Tehri HPP — 1000 MW</option>
-        <option value="Tehri PSP">Tehri PSP — 1000 MW</option>
-        <option value="Khurja Floating Solar">Khurja Floating Solar — 11 MW</option>
-      </select>
+      <div class="thdc-workspace-label"><span class="thdc-workspace-dot"></span> PLANT &amp; FINANCIAL YEAR (FY)</div>
+      <div class="thdc-workspace-fields">
+        <div class="thdc-sel-group">
+          <label for="plantContextSelect" class="thdc-sel-sublabel">Plant Workspace</label>
+          <select id="plantContextSelect" onchange="setPlantContext(this.value)" aria-label="Select plant workspace">
+            <option value="Khurja STPP">Khurja STPP — 1320 MW (Thermal)</option>
+            <option value="Koteshwar HEP">Koteshwar HEP — 400 MW (Hydro)</option>
+            <option value="Tehri HPP">Tehri HPP — 1000 MW (Hydro)</option>
+            <option value="Tehri PSP">Tehri PSP — 1000 MW (Pumped Storage)</option>
+            <option value="Khurja Floating Solar">Khurja Floating Solar — 11 MW (Solar)</option>
+          </select>
+        </div>
+        <div class="thdc-sel-group">
+          <label for="headerFySelect" class="thdc-sel-sublabel">Financial Year (01-Apr to 31-Mar)</label>
+          <select id="headerFySelect" onchange="setFinancialYearContext(this.value)" aria-label="Select Financial Year">
+            <!-- Populated by syncAllFYDropdowns -->
+          </select>
+        </div>
+      </div>
     </div>
   </div>
 </header>
@@ -752,6 +1051,10 @@ body:has(.login-wrap) #thdc-global-header{
       <span class="wctx-plant" id="wctxPlant">—</span>
     </div>
     <div class="wctx-cap" id="wctxCapacity">— MW</div>
+    <div>
+      <span class="wctx-label">FINANCIAL YEAR</span>
+      <span class="wctx-chip" id="wctxFY" style="background:#EFF6FF;border-color:#BFDBFE;color:#1D4ED8;font-weight:900;cursor:pointer;" onclick="promptSwitchFY()" title="Click to change Financial Year">FY 2024-25 ▾</span>
+    </div>
     <span class="wctx-chip" id="wctxWeek">WEEK 01</span>
     <div>
       <span class="wctx-label">REPORTING PERIOD</span>
@@ -852,6 +1155,61 @@ body:has(.login-wrap) #thdc-global-header{
   </div>
 </div>
 
+<!-- Google Drive Cloud Storage Modal -->
+<div class="modal-overlay" id="driveModal">
+  <div class="modal-box" style="max-width:760px;width:95%;padding:24px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;border-bottom:1px solid #E2E8F0;padding-bottom:12px;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:40px;height:40px;border-radius:8px;background:#F0FDF4;border:1px solid #BBF7D0;display:flex;align-items:center;justify-content:center;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM19 18H6c-2.21 0-4-1.79-4-4 0-2.05 1.53-3.76 3.56-3.97l1.07-.11.5-.95C8.08 7.14 9.94 6 12 6c2.62 0 4.88 1.86 5.39 4.43l.3 1.5 1.53.11c1.56.1 2.78 1.41 2.78 2.96 0 1.65-1.35 3-3 3z" fill="#0F766E"/><path d="M8 13h2.55v3h2.9v-3H16l-4-4z" fill="#0F766E"/></svg>
+        </div>
+        <div>
+          <h3 style="margin:0;font-size:18px;font-weight:800;color:#0F172A;">Google Drive Cloud Storage</h3>
+          <div style="font-size:12px;color:#64748B;">Direct bidirectional synchronization with your Google Drive account</div>
+        </div>
+      </div>
+      <button class="btn btn-sm" onclick="closeModal('driveModal')" style="padding:4px 10px;">✕</button>
+    </div>
+
+    <!-- Connection Card -->
+    <div id="driveAuthSection" style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:16px;margin-bottom:20px;">
+      <!-- Populated dynamically by updateDriveModalUI() -->
+    </div>
+
+    <!-- Storage Action Toolbar -->
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;">
+      <button class="btn btn-primary" onclick="THDC_SAVE_TO_GDRIVE(true)" style="background:#0F766E;border-color:#0F766E;display:flex;align-items:center;gap:8px;">
+        <span>💾</span> Save Active Plant to GDrive
+      </button>
+      <button class="btn" onclick="THDC_SAVE_MASTER_TO_GDRIVE(true)" style="display:flex;align-items:center;gap:8px;">
+        <span>🌐</span> Save 5-Plant Master Backup
+      </button>
+      <button class="btn" onclick="refreshDriveFileList()" style="display:flex;align-items:center;gap:6px;margin-left:auto;">
+        <span>↻</span> Refresh List
+      </button>
+    </div>
+
+    <!-- Drive File Explorer -->
+    <div style="border:1px solid #E2E8F0;border-radius:8px;overflow:hidden;">
+      <div style="background:#F1F5F9;padding:10px 14px;font-size:12px;font-weight:800;color:#334155;letter-spacing:0.05em;display:flex;justify-content:space-between;align-items:center;">
+        <span>THDC WORKSPACE FILES ON YOUR GOOGLE DRIVE</span>
+        <span id="driveFileCountBadge" style="font-size:11px;font-weight:700;color:#64748B;">Loading...</span>
+      </div>
+      <div id="driveFileListContainer" style="max-height:260px;overflow-y:auto;padding:8px;">
+        <div style="text-align:center;padding:24px;color:#64748B;font-size:13px;">Connecting to Google Drive...</div>
+      </div>
+    </div>
+
+    <div class="modal-actions" style="margin-top:16px;justify-content:space-between;align-items:center;">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600;color:#334155;">
+        <input type="checkbox" id="driveAutoSyncToggle" onchange="toggleDriveAutoSync(this.checked)" checked style="width:16px;height:16px;">
+        Auto-sync active plant to Google Drive on save and every 5 minutes
+      </label>
+      <button class="btn" onclick="closeModal('driveModal')">Close</button>
+    </div>
+  </div>
+</div>
+
 <script>
 
 function formatDateDDMMYYYY(v){
@@ -880,8 +1238,26 @@ function formatDateDDMMYYYY(v){
    ========================================================================= */
 
 const BLOCKS_PER_DAY = 96;
-const WEEK_COUNT = 52;
+const WEEK_COUNT = 53;
 const STORAGE_PREFIX = 'khurja-week:';
+
+function getAllWeekNumbers(){
+  const base = Array.from({length: WEEK_COUNT}, (_, i) => i + 1);
+  if(typeof state !== 'undefined' && state && state.weeks){
+    const extra = Object.keys(state.weeks).map(Number).filter(n => !isNaN(n) && n > 0 && n > WEEK_COUNT);
+    return [...base, ...extra].sort((a,b) => a - b);
+  }
+  return base;
+}
+
+function ensureWeek(w){
+  w = parseInt(w, 10);
+  if(isNaN(w) || w < 1) w = 1;
+  if(!state.weeks[w]){
+    state.weeks[w] = { days: [], originalDays: [], dsaDate: '', revisedDsaDate: '', activeRevision: 'R0' };
+  }
+  return state.weeks[w];
+}
 
 window.THDC_PLANTS = window.THDC_PLANTS || {
   "Khurja STPP":{name:"Khurja STPP",capacity:1320,unit:"MW",type:"Thermal Power Plant"},
@@ -910,13 +1286,14 @@ const state = {
   charts: {},         // chart.js instances
   storageAvailable: !!(window.storage),
   view: 'home',        // 'home' | 'week'
-  auth: { loggedIn:false, mobile:null },
+  auth: { loggedIn:false, email:null, mobile:null, provider:null },
+  drive: { connected:false, email:null, name:null, photo:null, accessToken:null, autoSync:true, lastSyncTime:null, lastSyncFileId:null, lastSyncFileName:null },
   pendingOtp: null,    // in-memory only, never persisted
-  projectMeta: { name:'Khurja DSM Calculator', plant:'11 MW Khurja Floating Solar Power Plant' }
+  projectMeta: { name:'THDCIL Universal DSM Engine', plant:'11 MW Khurja Floating Solar Power Plant' }
 };
 window.state = state;
 
-for(let w=1; w<=WEEK_COUNT; w++){ state.weeks[w] = { days: [], originalDays: [], dsaDate: '' }; }
+for(let w=1; w<=WEEK_COUNT; w++){ state.weeks[w] = { days: [], originalDays: [], dsaDate: '', revisedDsaDate: '', activeRevision: 'R0' }; }
 
 /* ---------------- calculation engine (validated, now parameterized) ---------------- */
 const DEFAULT_FORMULA_PARAMS = {
@@ -1113,11 +1490,20 @@ async function loadAuth(){
   if(!window.storage) return;
   try{
     const res = await window.storage.get('khurja-auth', false);
-    if(res && res.value) state.auth = JSON.parse(res.value);
+    if(res && res.value) {
+      const parsed = JSON.parse(res.value);
+      state.auth = { ...state.auth, ...parsed };
+    }
   }catch(e){}
 }
 async function clearAuth(){
-  state.auth = { loggedIn:false, mobile:null };
+  state.auth = { loggedIn:false, email:null, mobile:null, provider:null };
+  if(window.THDC_FIREBASE && window.THDC_FIREBASE.logoutGoogle) {
+    try { await window.THDC_FIREBASE.logoutGoogle(); } catch(e){}
+  }
+  state.drive.connected = false;
+  state.drive.accessToken = null;
+  state.drive.email = null;
   if(!window.storage) return;
   try{ await window.storage.delete('khurja-auth', false); }catch(e){}
 }
@@ -1167,21 +1553,92 @@ function renderShell(){
       </div>
       <div class="topbar-right">
         <div class="nav-tabs"><div class="nav-tab" onclick="goHome()">🏠 Home</div><div class="nav-tab active">📊 Week View</div></div>
-        <div class="thdc-save-controls"><button class="thdc-action thdc-save" onclick="THDC_MANUAL_SAVE()" title="Manually save workspace state to browser localStorage">💾 Save Data</button><button class="thdc-action thdc-backup" onclick="THDC_EXPORT_BACKUP()" title="Export JSON backup file">⇩ Backup</button><button class="btn btn-sm" onclick="THDC_IMPORT_BACKUP()" title="Import JSON backup file">⇧ Restore</button><button class="btn btn-sm" onclick="THDC_RESTORE_AUTO_BACKUP()" title="Restore from last automatic 5-minute backup snapshot">↻ Auto-Backup</button><span class="thdc-save-status" data-save-status title="Auto-backup saves workspace to localStorage every 5 minutes"><span class="save-dot"></span><span data-save-text>${window.getCurrentSaveStatusText ? window.getCurrentSaveStatusText() : 'Not saved yet'}</span></span></div>
+        <div class="thdc-save-controls"><button class="thdc-action thdc-save" onclick="THDC_MANUAL_SAVE()" title="Manually save workspace state to browser localStorage and Google Drive">💾 Save Data</button><button class="btn btn-sm thdc-gdrive-pill ${state.drive && state.drive.connected ? 'connected' : ''}" onclick="openDriveModal()" title="Google Drive Cloud Storage"><span class="gdrive-status-dot"></span> <span>${state.drive && state.drive.connected ? ('GDrive: ' + (state.drive.email ? state.drive.email.split('@')[0] : 'Connected')) : 'Connect GDrive'}</span></button><button class="btn btn-sm" onclick="THDC_SAVE_TO_GDRIVE(true)" title="Save active workspace directly to Google Drive">☁ GDrive Save</button><button class="btn btn-sm" onclick="openDriveModal()" title="Browse files on Google Drive">📂 GDrive Files</button><button class="thdc-action thdc-backup" onclick="THDC_EXPORT_BACKUP()" title="Export JSON backup file">⇩ Backup</button><button class="btn btn-sm" onclick="THDC_IMPORT_BACKUP()" title="Import JSON backup file">⇧ Restore</button><button class="btn btn-sm" onclick="THDC_RESTORE_AUTO_BACKUP()" title="Restore from last automatic 5-minute backup snapshot">↻ Auto-Backup</button><span class="thdc-save-status" data-save-status title="Auto-backup saves workspace to localStorage every 5 minutes"><span class="save-dot"></span><span data-save-text>${window.getCurrentSaveStatusText ? window.getCurrentSaveStatusText() : 'Not saved yet'}</span></span></div>
       </div>
     </div>
 
     <div class="thdc-context-grid">
-      <div class="thdc-context-card"><div class="thdc-context-icon">🏭</div><div style="flex:1;min-width:0"><label>Active Plant</label><select id="weekPlantSelect" onchange="setPlantContext(this.value)"></select></div></div>
-      <div class="thdc-context-card"><div class="thdc-context-icon">📅</div><div style="flex:1;min-width:0"><label>Week Selection</label><select id="weekSelect" onchange="onWeekChange(this.value)"></select><div class="thdc-dsa-note">Customizable Week No. · 96 blocks/day</div></div></div>
-      <div class="thdc-context-card"><div class="thdc-context-icon">🗓️</div><div style="flex:1;min-width:0"><label>DSA Dated — Settlement Account Release Date</label><input type="date" id="weekDsaDate" onchange="setWeekDsaDate(this.value)"><div class="thdc-dsa-note">Deviation Settlement Account (DSA) release date</div></div></div>
-      <div class="thdc-context-card"><div class="thdc-context-icon" style="background:#ECFDF5;color:#059669">📜</div><div style="flex:1;min-width:0"><label>Settlement Authority</label><div id="weekAuthorityDisplay" style="font-size:13px;font-weight:900;color:#0F172A;padding-top:5px">—</div><div class="thdc-dsa-note" id="weekAuthoritySub">—</div></div></div>
+      <div class="thdc-context-card">
+        <div class="thdc-context-icon">🏭</div>
+        <div style="flex:1;min-width:0">
+          <label>Active Plant</label>
+          <select id="weekPlantSelect" onchange="setPlantContext(this.value)"></select>
+        </div>
+      </div>
+
+      <div class="thdc-context-card" style="border-left:3px solid #2563EB;">
+        <div class="thdc-context-icon" style="background:#EFF6FF;color:#1D4ED8;">📅</div>
+        <div style="flex:1;min-width:0">
+          <label>Financial Year (FY)</label>
+          <select id="weekFySelect" onchange="setFinancialYearContext(this.value)"></select>
+          <div class="thdc-dsa-note" id="weekFyNote">01-Apr to 31-Mar · 52/53 Weeks</div>
+        </div>
+      </div>
+
+      <div class="thdc-context-card" style="border-left:3px solid #0073CF;">
+        <div class="thdc-context-icon" style="background:#EFF6FF;color:#0073CF;">🗓️</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <label style="margin-bottom:2px;">Week Selection</label>
+            <span style="font-size:9.5px;font-weight:700;color:#0284C7;background:#E0F2FE;padding:1px 5px;border-radius:4px;">Manual W#</span>
+          </div>
+          <div style="display:flex;gap:5px;align-items:center;">
+            <select id="weekSelect" onchange="onWeekChange(this.value)" style="flex:1.2;"></select>
+            <input type="number" id="manualWeekNo" min="1" max="99" value="${state.currentWeek}" placeholder="W#" title="Type Week Number directly (e.g. 51, 52)" style="width:52px;padding:4px 5px;font-family:var(--mono);font-size:11.5px;font-weight:800;border:1px solid #CBD5E1;border-radius:6px;text-align:center;" onkeydown="if(event.key==='Enter')onManualWeekInput(this.value)">
+            <button class="btn btn-sm" onclick="onManualWeekInput(document.getElementById('manualWeekNo').value)" style="padding:3px 7px;font-size:11px;font-weight:700;background:#0073CF;color:#fff;border-color:#0073CF;" title="Jump to manually entered Week">Go</button>
+          </div>
+          <div style="display:flex;gap:4px;margin-top:4px;flex-wrap:wrap;align-items:center;">
+            <span style="font-size:9.5px;color:#64748B;">Quick:</span>
+            <button class="bulk-preset-chip" style="padding:1px 5px;font-size:9.5px;" onclick="onManualWeekInput(51)">W51</button>
+            <button class="bulk-preset-chip" style="padding:1px 5px;font-size:9.5px;" onclick="onManualWeekInput(52)">W52</button>
+            <button class="bulk-preset-chip" style="padding:1px 5px;font-size:9.5px;" onclick="onManualWeekInput(1)">W01</button>
+            <button class="bulk-preset-chip" style="padding:1px 5px;font-size:9.5px;color:#0073CF;" onclick="promptCustomWeekInput()">+ Custom</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="thdc-context-card" style="border-left:3px solid #0D9488;">
+        <div class="thdc-context-icon" style="background:#CCFBF1;color:#0F766E;">🗓️</div>
+        <div style="flex:1;min-width:0">
+          <label>Original DSA Release Date</label>
+          <input type="date" id="weekDsaDate" onchange="setWeekDsaDate(this.value)">
+          <div class="thdc-dsa-note" style="display:flex;justify-content:space-between;align-items:center;margin-top:3px;">
+            <span>Initial Statement Release Date</span>
+            <span class="bulk-badge" style="font-size:9px;padding:0 5px;background:#ECFDF5;color:#065F46;" title="W51/W52 released in April is fully supported">April Release OK</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="thdc-context-card" style="border-left:3px solid #F59E0B;">
+        <div class="thdc-context-icon" style="background:#FEF3C7;color:#B45309;">↻</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <label style="margin-bottom:2px;">Revised DSA Release Date</label>
+            <button class="btn btn-sm" onclick="quickAddRevision()" style="padding:0 5px;font-size:9.5px;font-weight:800;background:#FFF;border-color:#F59E0B;color:#B45309;" title="Add / View schedule revisions">+ Rev</button>
+          </div>
+          <input type="date" id="weekRevisedDsaDate" onchange="setWeekRevisedDsaDate(this.value)">
+          <div class="thdc-dsa-note" style="margin-top:3px;color:#92400E;display:flex;justify-content:space-between;align-items:center;">
+            <span id="activeRevBadge" style="font-weight:700;">Revision: R0</span>
+            <span style="font-size:9px;color:#78350F;">Revised Statement</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="thdc-context-card" style="border-left:3px solid #10B981;">
+        <div class="thdc-context-icon" style="background:#ECFDF5;color:#059669">📜</div>
+        <div style="flex:1;min-width:0">
+          <label>Settlement Authority</label>
+          <div id="weekAuthorityDisplay" style="font-size:13px;font-weight:900;color:#0F172A;padding-top:4px">—</div>
+          <div class="thdc-dsa-note" id="weekAuthoritySub">—</div>
+        </div>
+      </div>
     </div>
 
     <div class="thdc-top-actions">
       <button class="thdc-action" style="background:#0F766E;color:#FFFFFF;border-color:#0F766E;font-weight:700;" onclick="THDC_ALIGN_OFFICIAL_STATEMENT()" title="Align Deviation Charge with official UPSLDC statement (-₹ 10,74,678)"><span style="font-size:16px">🎯</span> Official Statement (-₹ 10.75 L)</button>
       <button class="thdc-action thdc-excel" onclick="openModal('pasteModal')"><span style="font-size:18px">▣</span> Upload / Paste Excel</button>
       <button class="thdc-action thdc-week" onclick="goWeekView(state.currentWeek)">📊 Week View</button>
+      <button class="thdc-action" style="background:linear-gradient(135deg,#D97706,#B45309)!important;color:#fff!important;" onclick="quickAddRevision()" title="Add Revision or Revised DSA Statement Release Date"><span style="font-size:16px">＋</span> Add Revision / Revised DSA</button>
       <button class="thdc-action thdc-rev" onclick="openRevisionManager()">↻ Revisions R0–R99</button>
       <button class="thdc-action thdc-export" onclick="exportWeek()">▤ Export Excel</button>
       <button class="thdc-action thdc-pdf" onclick="exportPDF()">▣ Export Color PDF</button>
@@ -1192,7 +1649,7 @@ function renderShell(){
       <button class="thdc-action thdc-clear" onclick="confirmResetWeek()">↺ Reset Week</button>
       <button class="thdc-action thdc-clear" onclick="confirmClearWeek()">▣ Clear Week</button>
       <button class="thdc-action thdc-clear" onclick="confirmClearAll()">▣ Clear All</button>
-      <div class="user-chip">📱 <b>${state.auth.mobile||''}</b><button onclick="logout()">Logout</button></div>
+      <div class="user-chip">✉ <b>${state.auth.email || state.auth.mobile || 'Authorized User'}</b><button onclick="logout()">Logout</button></div>
     </div>
     <div id="qualityBanner"></div>
     <div class="panel" id="heatstripPanel"></div>
@@ -1276,46 +1733,203 @@ function setWeekDsaDate(v){
   renderWeekwiseSummary();
   updateTopWorkspaceContext();
 }
-function getWeekDsaDate(wk){return wk?.dsaDate||wk?.dsaDated||''}
+
+function setWeekRevisedDsaDate(v){
+  const wk=weekObj(); if(!wk) return;
+  wk.revisedDsaDate=v||'';
+  // Also associate with any revisions active for this week's dates
+  const dates = new Set((wk.days||[]).map(d=>d.date));
+  (state.revisions||[]).forEach(r => {
+    if(dates.has(r.date) && r.active !== false){
+      r.revisedDsaDate = v || '';
+    }
+  });
+  saveRevisions();
+  saveWeek(state.currentWeek);
+  renderWeekwiseSummary();
+  updateTopWorkspaceContext();
+}
+
+function getWeekDsaDate(wk){ return wk?.dsaDate || wk?.dsaDated || ''; }
+
+function getWeekRevisedDsaDate(wk){
+  if(wk?.revisedDsaDate) return wk.revisedDsaDate;
+  const dates = new Set((wk?.days||[]).map(d=>d.date));
+  const rev = (state.revisions||[]).find(r => r.active !== false && dates.has(r.date) && r.revisedDsaDate);
+  return rev?.revisedDsaDate || '';
+}
+
+function getWeekActiveRevision(w){
+  const wk = state.weeks[w];
+  if(wk?.activeRevision && wk.activeRevision !== 'R0') return wk.activeRevision;
+  const dates = new Set((wk?.days||[]).map(d=>d.date));
+  const revs = (state.revisions||[]).filter(r => r.active !== false && dates.has(r.date));
+  if(!revs.length) return wk?.activeRevision || 'R0';
+  revs.sort((a,b)=>revisionRank(b.id)-revisionRank(a.id));
+  return revs[0].id;
+}
+
 function isoToDisplay(v){
   if(!v) return '—';
   const m=String(v).match(/^(\d{4})-(\d{2})-(\d{2})$/);
   return m?`${m[3]}-${m[2]}-${m[1]}`:formatDateDDMMYYYY(v);
 }
+
+function onManualWeekInput(val){
+  let w = parseInt(val, 10);
+  if(isNaN(w) || w < 1) {
+    alert('Please enter a valid week number (e.g. 51, 52, 1).');
+    return;
+  }
+  ensureWeek(w);
+  state.currentWeek = w;
+  state.currentDate = null;
+  populateWeekContextControls();
+  renderAll();
+  if(typeof updateTopWorkspaceContext === 'function') setTimeout(updateTopWorkspaceContext, 20);
+  if(window.THDC_MANUAL_SAVE) THDC_MANUAL_SAVE();
+}
+
+function promptCustomWeekInput(){
+  const cur = state.currentWeek || 1;
+  const res = prompt(`Enter Week Number to view or edit:\n(For example, 51 or 52 for year-end weeks whose DSA was released in April, or any week 1–53):`, cur);
+  if(res !== null && res.trim() !== '') {
+    onManualWeekInput(res.trim());
+  }
+}
+
 function renderWeekwiseSummary(){
   const el=document.getElementById('weekwiseSummary'); if(!el) return;
   const filter=document.getElementById('summaryWeekFilter')?.value||'all';
   const rows=[]; let ts=0,ta=0,td=0,tc=0;
-  for(let w=1;w<=WEEK_COUNT;w++){
-    const wk=state.weeks[w]; const has=wk.days&&wk.days.length;
+  const weekNums = getAllWeekNumbers();
+  for(const w of weekNums){
+    const wk=state.weeks[w]; const has=wk&&wk.days&&wk.days.length;
     if(filter==='loaded'&&!has) continue;
-    const g=weekAgg(wk); if(!has&&filter==='all') continue;
+    const g=has ? weekAgg(wk) : {s:0,a:0,dev:0,charge:0,avgRate:0};
+    if(!has&&filter==='all') continue;
     if(has){ts+=g.s;ta+=g.a;td+=g.dev;tc+=g.charge;}
     const dates=(wk.days||[]).map(d=>d.date).filter(Boolean).sort();
-    rows.push({w,g,from:dates[0]||'',to:dates[dates.length-1]||'',has});
+    const dsaDate = getWeekDsaDate(wk);
+    const revDsaDate = getWeekRevisedDsaDate(wk);
+    const actRev = getWeekActiveRevision(w);
+    rows.push({w,g,from:dates[0]||'',to:dates[dates.length-1]||'',has,dsaDate,revDsaDate,actRev});
   }
   if(!rows.length){el.innerHTML='<div class="qbanner empty">No weekly data loaded yet. Upload an Excel file to populate the weekwise summary.</div>';return;}
-  const body=rows.map(x=>`<tr onclick="goWeekView(${x.w})" style="cursor:pointer"><td><b>W${String(x.w).padStart(2,'0')}</b></td><td>${x.from?formatDateDDMMYYYY(x.from):'—'}</td><td>${x.to?formatDateDDMMYYYY(x.to):'—'}</td><td class="num">${fmtMWh0(x.g.s)}</td><td class="num">${fmtMWh0(x.g.a)}</td><td class="num ${x.g.dev<0?'debit':x.g.dev>0?'credit':''}">${x.g.dev>=0?'+':''}${fmtMWh0(x.g.dev)}</td><td class="num ${x.g.charge>0?'debit':x.g.charge<0?'credit':''}">${fmtInr(x.g.charge)}</td><td class="num">${fmtRate(x.g.avgRate)}</td><td class="thdc-dsa-cell">${isoToDisplay(getWeekDsaDate(x.w?state.weeks[x.w]:null))}</td><td><span class="thdc-status">${x.has?'Loaded':'—'}</span></td></tr>`).join('');
-  el.innerHTML=`<div style="overflow:auto"><table class="thdc-weekwise-table"><thead><tr><th>Week</th><th>From Date</th><th>To Date</th><th>Scheduled MWh</th><th>Actual MWh</th><th>Deviation MWh</th><th>DSM Charges ₹</th><th>Avg Ref. Rate</th><th>DSA Dated</th><th>Status</th></tr></thead><tbody>${body}<tr class="thdc-tilldate"><td colspan="3">Till Date Total</td><td class="num">${fmtMWh0(ts)}</td><td class="num">${fmtMWh0(ta)}</td><td class="num ${td<0?'debit':td>0?'credit':''}">${td>=0?'+':''}${fmtMWh0(td)}</td><td class="num ${tc>0?'debit':tc<0?'credit':''}">${fmtInr(tc)}</td><td class="num">—</td><td>—</td><td>—</td></tr></tbody></table></div>`;
+  const body=rows.map(x=>`<tr onclick="goWeekView(${x.w})" style="cursor:pointer">
+    <td><b>W${String(x.w).padStart(2,'0')}</b></td>
+    <td>${x.from?formatDateDDMMYYYY(x.from):'—'}</td>
+    <td>${x.to?formatDateDDMMYYYY(x.to):'—'}</td>
+    <td class="num">${fmtMWh0(x.g.s)}</td>
+    <td class="num">${fmtMWh0(x.g.a)}</td>
+    <td class="num ${x.g.dev<0?'debit':x.g.dev>0?'credit':''}">${x.g.dev>=0?'+':''}${fmtMWh0(x.g.dev)}</td>
+    <td class="num ${x.g.charge>0?'debit':x.g.charge<0?'credit':''}">${fmtInr(x.g.charge)}</td>
+    <td class="num">${fmtRate(x.g.avgRate)}</td>
+    <td class="thdc-dsa-cell">${isoToDisplay(x.dsaDate)}</td>
+    <td class="thdc-dsa-cell" style="color:#0f766e;font-weight:700;">${isoToDisplay(x.revDsaDate)}</td>
+    <td><span class="rev-chip ${x.actRev!=='R0'?'info':'ok'}" style="font-size:10px;">${x.actRev}</span></td>
+    <td><span class="thdc-status">${x.has?'Loaded':'—'}</span></td>
+  </tr>`).join('');
+  el.innerHTML=`<div style="overflow:auto"><table class="thdc-weekwise-table"><thead><tr>
+    <th>Week</th><th>From Date</th><th>To Date</th><th>Scheduled MWh</th><th>Actual MWh</th><th>Deviation MWh</th><th>DSM Charges ₹</th><th>Avg Ref. Rate</th><th>Original DSA Dated</th><th>Revised DSA Dated</th><th>Revision</th><th>Status</th>
+  </tr></thead><tbody>${body}<tr class="thdc-tilldate"><td colspan="3">Till Date Total</td><td class="num">${fmtMWh0(ts)}</td><td class="num">${fmtMWh0(ta)}</td><td class="num ${td<0?'debit':td>0?'credit':''}">${td>=0?'+':''}${fmtMWh0(td)}</td><td class="num ${tc>0?'debit':tc<0?'credit':''}">${fmtInr(tc)}</td><td class="num">—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr></tbody></table></div>`;
 }
+
 function exportWeekwiseSummary(){
   if(typeof XLSX==='undefined'){alert('Excel library not loaded.');return;}
-  const rows=[['Week No.','From Date','To Date','Scheduled (MWh)','Actual (MWh)','Deviation (MWh)','DSM Charges (₹)','Avg Ref Rate (₹/kWh)','DSA Dated','Status']];
-  for(let w=1;w<=WEEK_COUNT;w++){const wk=state.weeks[w];if(!wk.days?.length)continue;const g=weekAgg(wk),ds=wk.days.map(d=>d.date).filter(Boolean).sort();rows.push([`W${String(w).padStart(2,'0')}`,ds[0]?formatDateDDMMYYYY(ds[0]):'',ds.at(-1)?formatDateDDMMYYYY(ds.at(-1)):'',g.s,g.a,g.dev,g.charge,g.avgRate,isoToDisplay(getWeekDsaDate(wk)),'Loaded'])}
-  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'Weekwise Summary');XLSX.writeFile(wb,`THDCIL_${String(window.currentPlantContext||'Plant').replace(/[^A-Za-z0-9]+/g,'_')}_Weekwise_Summary.xlsx`);
+  const rows=[['Week No.','From Date','To Date','Scheduled (MWh)','Actual (MWh)','Deviation (MWh)','DSM Charges (₹)','Avg Ref Rate (₹/kWh)','Original DSA Dated','Revised DSA Dated','Revision','Status']];
+  let rIdx = 2;
+  let totalS = 0, totalA = 0, totalDev = 0, totalCharge = 0, totalAvgRate = 0, countWeeks = 0;
+  const weekNums = getAllWeekNumbers();
+  for(const w of weekNums){
+    const wk=state.weeks[w];
+    if(!wk?.days?.length)continue;
+    const g=weekAgg(wk), ds=wk.days.map(d=>d.date).filter(Boolean).sort();
+    countWeeks++;
+    totalS += (g.s || 0);
+    totalA += (g.a || 0);
+    totalDev += (g.dev || 0);
+    totalCharge += (g.charge || 0);
+    totalAvgRate += (g.avgRate || 0);
+    const R = rIdx;
+    rows.push([
+      `W${String(w).padStart(2,'0')}`,
+      ds[0]?formatDateDDMMYYYY(ds[0]):'',
+      ds.at(-1)?formatDateDDMMYYYY(ds.at(-1)):'',
+      Number(g.s.toFixed(3)),
+      Number(g.a.toFixed(3)),
+      { t: 'n', f: `E${R}-D${R}`, v: Number(g.dev.toFixed(3)) },
+      g.charge,
+      Number(g.avgRate.toFixed(3)),
+      isoToDisplay(getWeekDsaDate(wk)),
+      isoToDisplay(getWeekRevisedDsaDate(wk)),
+      getWeekActiveRevision(w),
+      'Loaded'
+    ]);
+    rIdx++;
+  }
+  const lastR = rIdx - 1;
+  if(countWeeks > 0){
+    rows.push([
+      'Till Date Total',
+      '',
+      '',
+      { t: 'n', f: `SUM(D2:D${lastR})`, v: Number(totalS.toFixed(3)) },
+      { t: 'n', f: `SUM(E2:E${lastR})`, v: Number(totalA.toFixed(3)) },
+      { t: 'n', f: `SUM(F2:F${lastR})`, v: Number(totalDev.toFixed(3)) },
+      { t: 'n', f: `SUM(G2:G${lastR})`, v: totalCharge },
+      { t: 'n', f: `AVERAGE(H2:H${lastR})`, v: Number((totalAvgRate / countWeeks).toFixed(3)) },
+      '—',
+      '—',
+      '—',
+      '—'
+    ]);
+  }
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{wch:10},{wch:12},{wch:12},{wch:16},{wch:14},{wch:16},{wch:16},{wch:16},{wch:18},{wch:18},{wch:10},{wch:10}];
+  if(rows.length > 2){
+    const TOTAL_ROW_STYLE = { fill:{fgColor:{rgb:'D9E1F2'}}, font:{color:{rgb:'17365D'}, bold:true, sz:11} };
+    if(typeof styleRow === 'function') styleRow(ws, rows.length - 1, 12, TOTAL_ROW_STYLE);
+  }
+  XLSX.utils.book_append_sheet(wb,ws,'Weekwise Summary');
+  XLSX.writeFile(wb,`THDCIL_${String(window.currentPlantContext||'Plant').replace(/[^A-Za-z0-9]+/g,'_')}_Weekwise_Summary.xlsx`);
 }
+
 function populateWeekContextControls(){
   const ps=document.getElementById('weekPlantSelect');
   if(ps){ps.innerHTML=Object.keys(window.THDC_PLANTS||{}).map(k=>`<option value="${k}">${window.THDC_PLANTS[k].name} — ${window.THDC_PLANTS[k].capacity} MW</option>`).join('');ps.value=window.currentPlantContext||'Khurja Floating Solar';}
+  const fys=document.getElementById('weekFySelect');
+  if(fys && typeof getFYOptionsHTML==='function'){
+    fys.innerHTML = getFYOptionsHTML(window.currentFinancialYear);
+    fys.value = window.currentFinancialYear || 'FY 2024-25';
+  }
   const ws=document.getElementById('weekSelect');
-  if(ws) ws.innerHTML=Array.from({length:WEEK_COUNT},(_,i)=>{const n=i+1,has=state.weeks[n].days.length>0;return `<option value="${n}" ${n===state.currentWeek?'selected':''}>W${String(n).padStart(2,'0')}${has?' •':''}</option>`}).join('');
-  const d=document.getElementById('weekDsaDate'); if(d)d.value=getWeekDsaDate(weekObj());
+  const weekNums = getAllWeekNumbers();
+  if(ws) ws.innerHTML=weekNums.map(n=>{
+    const wk = state.weeks[n];
+    const has = wk && wk.days && wk.days.length>0;
+    const rev = getWeekActiveRevision ? getWeekActiveRevision(n) : 'R0';
+    const revBadge = rev !== 'R0' ? ` [${rev}]` : '';
+    return `<option value="${n}" ${n===state.currentWeek?'selected':''}>W${String(n).padStart(2,'0')}${has?' •':''}${revBadge}</option>`;
+  }).join('');
+  const manualInp = document.getElementById('manualWeekNo');
+  if(manualInp) manualInp.value = state.currentWeek;
+  const d=document.getElementById('weekDsaDate'); if(d) d.value=getWeekDsaDate(weekObj());
+  const rd=document.getElementById('weekRevisedDsaDate'); if(rd) rd.value=getWeekRevisedDsaDate(weekObj());
+  const revNote=document.getElementById('activeRevBadge');
+  if(revNote) {
+    const actRev = getWeekActiveRevision(state.currentWeek);
+    revNote.textContent = 'Revision: ' + actRev + (actRev === 'R0' ? ' (Base Schedule)' : ' (Revised DSA)');
+  }
   const src=getGridSource?.()||{}; const a=document.getElementById('weekAuthorityDisplay'),sub=document.getElementById('weekAuthoritySub');if(a)a.textContent=src.label||src.authority||'—';if(sub)sub.textContent=(src.region||'')+' · '+(src.statementLabel||'Settlement Statement');
 }
 
 function onWeekChange(v){
   state.currentWeek = parseInt(v,10);
+  ensureWeek(state.currentWeek);
   state.currentDate = null;
+  populateWeekContextControls();
   renderAll();
   if(typeof updateTopWorkspaceContext==='function') setTimeout(updateTopWorkspaceContext,20);
   if(window.THDC_MANUAL_SAVE) THDC_MANUAL_SAVE();
@@ -1336,6 +1950,7 @@ function goWeekView(weekNum){
 /* ================= HOME DASHBOARD ================= */
 function renderHomeShell(){
   const app = document.getElementById('app');
+  const curFY = window.currentFinancialYear || 'FY 2024-25';
   let totalWeeksLoaded=0, totalBlocks=0, totalS=0, totalA=0, totalDev=0, totalCharge=0;
   for(let w=1; w<=WEEK_COUNT; w++){
     const wk = state.weeks[w];
@@ -1361,16 +1976,25 @@ function renderHomeShell(){
     <div class="home-hero">
       <div>
         <div class="project-title-row"><h1 style="font-family:var(--display);font-size:24px;font-weight:900;margin:0;color:#0F172A;">Dashboard Overview</h1></div>
-        <div class="sub" style="font-size:13px;color:#475569;margin-top:4px;"><b>CERC DSM Regulations 2024</b> · Multi-Week Analytics</div>
+        <div class="sub" style="font-size:13px;color:#475569;margin-top:4px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <span><b>CERC DSM Regulations 2024</b> · Multi-Week Analytics</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;background:#EFF6FF;border:1.5px solid #93C5FD;border-radius:8px;padding:3px 10px;font-size:12px;font-weight:800;color:#1E40AF;">
+            <span>FINANCIAL YEAR:</span>
+            <select id="homeFySelect" onchange="setFinancialYearContext(this.value)" style="border:none;background:transparent;font-weight:900;font-size:12.5px;color:#0F172A;cursor:pointer;outline:none;">
+              ${typeof getFYOptionsHTML === 'function' ? getFYOptionsHTML(curFY) : `<option value="${curFY}">${curFY}</option>`}
+            </select>
+          </span>
+        </div>
       </div>
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-        <div class="nav-tabs"><div class="nav-tab active">🏠 Home</div><div class="nav-tab" onclick="goWeekView(${state.currentWeek})">📊 Week View</div></div><div class="thdc-save-controls"><button class="btn btn-primary btn-sm" onclick="THDC_MANUAL_SAVE()" title="Manually save workspace state to browser localStorage">💾 Save Data</button><button class="btn btn-sm" onclick="THDC_EXPORT_BACKUP()" title="Export JSON backup file">⇩ Backup</button><button class="btn btn-sm" onclick="THDC_IMPORT_BACKUP()" title="Import JSON backup file">⇧ Restore</button><button class="btn btn-sm" onclick="THDC_RESTORE_AUTO_BACKUP()" title="Restore from last automatic 5-minute backup snapshot">↻ Auto-Backup</button><span class="thdc-save-status" data-save-status title="Auto-backup saves workspace to localStorage every 5 minutes"><span class="save-dot"></span><span data-save-text>${window.getCurrentSaveStatusText ? window.getCurrentSaveStatusText() : 'Not saved yet'}</span></span></div>
+        <div class="nav-tabs"><div class="nav-tab active">🏠 Home</div><div class="nav-tab" onclick="goWeekView(${state.currentWeek})">📊 Week View</div></div><div class="thdc-save-controls"><button class="btn btn-primary btn-sm" onclick="THDC_MANUAL_SAVE()" title="Manually save workspace state to browser localStorage and Google Drive">💾 Save Data</button><button class="btn btn-sm thdc-gdrive-pill ${state.drive && state.drive.connected ? 'connected' : ''}" onclick="openDriveModal()" title="Google Drive Cloud Storage"><span class="gdrive-status-dot"></span> <span>${state.drive && state.drive.connected ? ('GDrive: ' + (state.drive.email ? state.drive.email.split('@')[0] : 'Connected')) : 'Connect GDrive'}</span></button><button class="btn btn-sm" onclick="THDC_SAVE_TO_GDRIVE(true)" title="Save active workspace directly to Google Drive">☁ GDrive Save</button><button class="btn btn-sm" onclick="openDriveModal()" title="Browse files on Google Drive">📂 GDrive Files</button><button class="btn btn-sm" onclick="THDC_EXPORT_BACKUP()" title="Export JSON backup file">⇩ Backup</button><button class="btn btn-sm" onclick="THDC_IMPORT_BACKUP()" title="Import JSON backup file">⇧ Restore</button><button class="btn btn-sm" onclick="THDC_RESTORE_AUTO_BACKUP()" title="Restore from last automatic 5-minute backup snapshot">↻ Auto-Backup</button><span class="thdc-save-status" data-save-status title="Auto-backup saves workspace to localStorage every 5 minutes"><span class="save-dot"></span><span data-save-text>${window.getCurrentSaveStatusText ? window.getCurrentSaveStatusText() : 'Not saved yet'}</span></span></div>
+        <button class="btn btn-sm" style="background:#4338CA;color:white;font-weight:700;" onclick="generateProjectPDFReport()" title="Generate multi-plant summary PDF report">📑 Generate Project PDF Report</button>
         <button class="btn btn-sm" onclick="openFormulaModal()">⚙ Formula Settings</button>
-        <div class="user-chip">📱 <b>${state.auth.mobile||''}</b><button onclick="logout()">Logout</button></div>
+        <div class="user-chip">✉ <b>${state.auth.email || state.auth.mobile || 'Authorized User'}</b><button onclick="logout()">Logout</button></div>
       </div>
     </div>
     <div class="kpi-grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:20px;">
-      <div class="kpi-card"><div class="kpi-label">Weeks Loaded</div><div class="kpi-value">${totalWeeksLoaded}<span class="unit">/ 52</span></div></div>
+      <div class="kpi-card"><div class="kpi-label">Weeks Loaded (${curFY})</div><div class="kpi-value">${totalWeeksLoaded}<span class="unit">/ 52</span></div></div>
       <div class="kpi-card"><div class="kpi-label">Total Blocks</div><div class="kpi-value">${totalBlocks.toLocaleString('en-IN')}</div></div>
       <div class="kpi-card"><div class="kpi-label">Cumulative Scheduled</div><div class="kpi-value" style="font-size:16px;">${fmtMWh0(totalS)}<span class="unit">MWh</span></div></div>
       <div class="kpi-card"><div class="kpi-label">Cumulative Deviation</div><div class="kpi-value" style="font-size:16px;">${totalDev>=0?'+':''}${fmtMWh0(totalDev)}<span class="unit">MWh</span></div></div>
@@ -1378,8 +2002,18 @@ function renderHomeShell(){
     </div>
     <div class="panel">
       <div class="panel-head">
-        <div class="panel-title">All Weeks <span class="n">click any week to open its dashboard</span></div>
-        <button class="btn btn-primary btn-sm" onclick="goWeekView(${state.currentWeek}); openModal('pasteModal');">⇪ Paste Excel Data</button>
+        <div class="panel-title">All Weeks (${curFY}) <span class="n">click any week to open its dashboard · 01-Apr to 31-Mar</span></div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <div style="display:inline-flex;align-items:center;gap:4px;background:#F8FAFC;border:1px solid #CBD5E1;border-radius:6px;padding:2px 6px;">
+            <span style="font-size:11px;font-weight:700;color:#64748B;">Week:</span>
+            <input type="number" id="homeManualWeekInput" min="1" max="99" value="${state.currentWeek||52}" style="width:48px;padding:2px 4px;font-family:var(--mono);font-size:11px;font-weight:800;border:1px solid #CBD5E1;border-radius:4px;text-align:center;" onkeydown="if(event.key==='Enter')goWeekView(this.value)">
+            <button class="btn btn-sm" onclick="goWeekView(document.getElementById('homeManualWeekInput').value)" style="padding:2px 6px;font-size:10px;font-weight:700;background:#0073CF;color:#fff;border-color:#0073CF;">Go</button>
+            <button class="bulk-preset-chip" style="padding:1px 5px;font-size:9.5px;" onclick="goWeekView(51)">W51</button>
+            <button class="bulk-preset-chip" style="padding:1px 5px;font-size:9.5px;" onclick="goWeekView(52)">W52</button>
+          </div>
+          <button class="btn btn-sm" onclick="promptSwitchFY()" style="background:#F1F5F9;color:#334155;border:1px solid #CBD5E1;font-weight:700;">📅 Switch FY</button>
+          <button class="btn btn-primary btn-sm" onclick="goWeekView(${state.currentWeek}); openModal('pasteModal');">⇪ Paste Excel Data</button>
+        </div>
       </div>
       <div class="home-grid">${weekCards}</div>
     </div>
@@ -1393,6 +2027,7 @@ function renderLogin(){
   state.view = 'login';
   const app = document.getElementById('app'); 
   const ctx = window.currentPlantContext || 'Khurja Floating Solar'; 
+  const curFY = window.currentFinancialYear || 'FY 2024-25';
   const plant = window.THDC_PLANTS?.[ctx] || {name:'Khurja Floating Solar',capacity:11,type:'Floating Solar Power Plant', unit:'MW'};  
   
   if (!state.projectMeta) state.projectMeta = {};  
@@ -1403,6 +2038,10 @@ function renderLogin(){
     return `<option value="${k}" ${k===ctx?'selected':''}>${window.THDC_PLANTS[k].name} (${window.THDC_PLANTS[k].capacity} MW)</option>`;
   }).join('');
 
+  const fys = window.THDC_FINANCIAL_YEARS || ['FY 2026-27', 'FY 2025-26', 'FY 2024-25', 'FY 2023-24', 'FY 2022-23'];
+  const fyOptions = fys.map(f => `<option value="${f}" ${f===curFY?'selected':''}>${f} (01-Apr to 31-Mar)</option>`).join('') + `<option value="__add_new__">+ Add Custom Financial Year...</option>`;
+  const quickFysHTML = fys.slice(0, 4).map(f => `<button type="button" onclick="loginFyChanged('${f}')" style="background:${f===curFY?'#1D4ED8':'#EFF6FF'};color:${f===curFY?'#fff':'#1D4ED8'};border:1px solid ${f===curFY?'#1D4ED8':'#BFDBFE'};padding:4px 10px;border-radius:6px;font-size:11.5px;font-weight:800;cursor:pointer;">${f}</button>`).join(' ');
+
   app.innerHTML = `
   <div class="login-wrap" style="background:#F8FAFC; min-height:100vh; font-family:'Inter', sans-serif; display:flex; flex-direction:column; align-items:center;">
       
@@ -1411,46 +2050,145 @@ function renderLogin(){
           <div style="display: flex; align-items: center; gap: 20px;">
               <img src="/vendor/thdcil-logo.png" alt="THDCIL Logo" onerror="this.onerror=null;this.src='https://upload.wikimedia.org/wikipedia/en/9/9a/Logo_of_THDCIL.png'" style="height: 60px; object-fit: contain;">
               <div style="border-left: 2px solid #E2E8F0; padding-left: 20px;">
-                  <h1 style="margin: 0; font-size: 22px; font-weight: 900; color: #0A2E7A; letter-spacing: -0.02em;">DSM RECONCILIATION PORTAL</h1>
-                  <div style="font-size: 13px; color: #64748B; font-weight: 700; margin-top: 4px;">THDC INDIA LIMITED</div>
+                  <h1 style="margin: 0; font-size: 21px; font-weight: 900; color: #0A2E7A; letter-spacing: -0.02em;">DSM (DEVIATION SETTLEMENT MECHANISM) RECONCILIATION PORTAL</h1>
+                  <div style="font-size: 13px; color: #1E40AF; font-weight: 700; margin-top: 4px;">THDC INDIA LIMITED · DEVIATION SETTLEMENT MECHANISM (CERC / REGULATORY COMPLIANCE)</div>
               </div>
+          </div>
+          <div style="text-align: right;">
+              <span style="display: inline-block; padding: 5px 12px; background: #EEF2FF; border: 1px solid #C7D2FE; border-radius: 999px; font-size: 12px; font-weight: 800; color: #3730A3;">
+                Active FY: <b>${curFY}</b>
+              </span>
           </div>
       </div>
 
       <!-- Main Content -->
-      <div style="width: 100%; max-width: 1100px; padding: 40px 20px; display: flex; flex-direction: column; gap: 24px; box-sizing: border-box;">
+      <div style="width: 100%; max-width: 1100px; padding: 30px 20px; display: flex; flex-direction: column; gap: 20px; box-sizing: border-box;">
           
-          <!-- Plant Selector -->
-          <div style="background: white; border-radius: 12px; padding: 24px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #E2E8F0;">
-              <div style="font-size: 14px; font-weight: 800; color: #475569; margin-bottom: 12px; letter-spacing: 0.05em;">WORKSPACE SELECTION</div>
-              <select id="heroPlantSelect" onchange="loginPlantChanged(this.value)" style="width: 100%; font-size: 24px; font-weight: 800; color: #0F172A; padding: 16px 20px; border: 2px solid #CBD5E1; border-radius: 8px; appearance: none; background: url('data:image/svg+xml;utf8,<svg width=\"24\" height=\"24\" fill=\"none\" stroke=\"%230F172A\" stroke-width=\"2\" viewBox=\"0 0 24 24\"><path d=\"M6 9l6 6 6-6\"/></svg>') no-repeat right 20px center; background-color: #F1F5F9; cursor: pointer; outline: none; transition: border-color 0.2s;">
-                  ${plantOptions}
-              </select>
+          <!-- DSM Full Form & Information Banner -->
+          <div style="background: linear-gradient(135deg, #EFF6FF 0%, #F0FDF4 100%); border: 1.5px solid #93C5FD; border-radius: 12px; padding: 16px 22px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; box-shadow: 0 4px 15px rgba(37,99,235,0.04);">
+              <div style="display: flex; align-items: center; gap: 14px;">
+                  <div style="width: 44px; height: 44px; border-radius: 10px; background: #1D4ED8; color: white; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 16px; box-shadow: 0 4px 10px rgba(29,78,216,0.25);">DSM</div>
+                  <div>
+                      <div style="font-size: 15px; font-weight: 900; color: #0F172A; letter-spacing: -0.01em;">DSM = DEVIATION SETTLEMENT MECHANISM</div>
+                      <div style="font-size: 12.5px; color: #475569; font-weight: 600; margin-top: 2px;">
+                          Central Electricity Regulatory Commission (CERC) Regulations 2024 · Universal Multi-Plant &amp; Multi-Financial Year Billing Engine
+                      </div>
+                  </div>
+              </div>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                  <span style="font-size: 11px; font-weight: 800; color: #1E40AF; background: #DBEAFE; border: 1px solid #BFDBFE; padding: 4px 11px; border-radius: 999px;">
+                      Financial Year-wise Storage
+                  </span>
+                  <span style="font-size: 11px; font-weight: 800; color: #065F46; background: #D1FAE5; border: 1px solid #A7F3D0; padding: 4px 11px; border-radius: 999px;">
+                      52 Weeks / FY · 672 Blocks
+                  </span>
+              </div>
           </div>
 
-          <!-- Access Workspace Bar -->
-          <div style="background: #0B224A; border-radius: 12px; padding: 24px 30px; display: flex; align-items: center; justify-content: space-between; gap: 24px; color: white;">
-              <div>
-                  <div style="font-size: 20px; font-weight: 900; letter-spacing: 0.02em;">ACCESS WORKSPACE</div>
-                  <div style="font-size: 14px; color: #93C5FD; margin-top: 4px;">Enter your registered mobile number to proceed.</div>
-              </div>
-
-              <div style="display: flex; gap: 12px; width: 450px;">
-                  <div id="loginStep1" style="display: flex; gap: 12px; width: 100%;">
-                      <div style="flex: 1; display: flex; flex-direction: column;">
-                          <input class="login-input" type="tel" id="loginMobile" placeholder="10-digit mobile" maxlength="10" style="width: 100%; box-sizing: border-box; padding: 14px 20px; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; color: #0F172A; background: white; outline: none;">
-                          <div id="loginErr" class="err-msg" style="display:none; font-size:13px; color:#FCA5A5; margin-top:8px;"></div>
+          <!-- Dual Workspace Selection (Plant + Financial Year) -->
+          <div style="background: white; border-radius: 12px; padding: 22px 24px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #E2E8F0;">
+              <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 18px;">
+                  <!-- Plant Selector -->
+                  <div>
+                      <div style="font-size: 12.5px; font-weight: 800; color: #475569; margin-bottom: 8px; letter-spacing: 0.04em; display:flex; align-items:center; gap:6px;">
+                          <span>🏭</span> <span>SELECT POWER PLANT WORKSPACE</span>
                       </div>
-                      <button onclick="sendOtp()" style="background: #3B82F6; color: white; border: none; border-radius: 8px; padding: 0 24px; font-weight: bold; font-size: 16px; cursor: pointer; transition: background 0.2s; white-space: nowrap; height: 50px;">Send OTP</button>
+                      <select id="heroPlantSelect" onchange="loginPlantChanged(this.value)" style="width: 100%; font-size: 18px; font-weight: 800; color: #0F172A; padding: 13px 18px; border: 2px solid #CBD5E1; border-radius: 8px; appearance: none; background: url('data:image/svg+xml;utf8,<svg width=\"24\" height=\"24\" fill=\"none\" stroke=\"%230F172A\" stroke-width=\"2\" viewBox=\"0 0 24 24\"><path d=\"M6 9l6 6 6-6\"/></svg>') no-repeat right 16px center; background-color: #F1F5F9; cursor: pointer; outline: none; transition: border-color 0.2s;">
+                          ${plantOptions}
+                      </select>
                   </div>
 
-                  <div id="loginStep2" style="display:none; width: 100%; align-items: center; gap: 12px;">
-                      <div style="flex: 1; display: flex; flex-direction: column;">
-                          <div class="otp-banner" id="otpDisplay" style="font-size:13px; font-weight:bold; color:#A7F3D0; margin-bottom:8px;"></div>
-                          <input class="login-input" type="tel" id="loginOtpInput" placeholder="6-digit OTP" maxlength="6" style="width: 100%; box-sizing: border-box; padding: 14px 20px; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; color: #0F172A; background: white; outline: none; letter-spacing: 2px;">
-                          <div id="otpErr" class="err-msg" style="display:none; font-size:13px; color:#FCA5A5; margin-top:8px;"></div>
+                  <!-- Financial Year Selector -->
+                  <div>
+                      <div style="font-size: 12.5px; font-weight: 800; color: #1D4ED8; margin-bottom: 8px; letter-spacing: 0.04em; display:flex; align-items:center; gap:6px;">
+                          <span>📅</span> <span>SELECT FINANCIAL YEAR (FY)</span>
                       </div>
-                      <button onclick="verifyOtp()" style="background: #10B981; color: white; border: none; border-radius: 8px; padding: 0 24px; font-weight: bold; font-size: 16px; cursor: pointer; transition: background 0.2s; white-space: nowrap; height: 50px; margin-top: auto; margin-bottom: auto;">Verify</button>
+                      <select id="heroFySelect" onchange="loginFyChanged(this.value)" style="width: 100%; font-size: 18px; font-weight: 800; color: #1E3A8A; padding: 13px 18px; border: 2px solid #93C5FD; border-radius: 8px; appearance: none; background: url('data:image/svg+xml;utf8,<svg width=\"24\" height=\"24\" fill=\"none\" stroke=\"%231D4ED8\" stroke-width=\"2\" viewBox=\"0 0 24 24\"><path d=\"M6 9l6 6 6-6\"/></svg>') no-repeat right 16px center; background-color: #EFF6FF; cursor: pointer; outline: none; transition: border-color 0.2s;">
+                          ${fyOptions}
+                      </select>
+                  </div>
+              </div>
+
+              <!-- Quick FY chips -->
+              <div style="display:flex; align-items:center; gap:8px; margin-top:14px; flex-wrap:wrap;">
+                  <span style="font-size:11.5px; font-weight:800; color:#64748B;">Quick FY Switch:</span>
+                  ${quickFysHTML}
+                  <button type="button" onclick="loginFyChanged('__add_new__')" style="background:#F1F5F9; border:1px dashed #94A3B8; color:#475569; padding:4px 10px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer;">+ Add Custom FY</button>
+              </div>
+          </div>
+
+          <!-- Access Workspace Card (Email OTP & Google Workspace) -->
+          <div style="background: #0B224A; border-radius: 12px; padding: 28px 32px; color: white; box-shadow: 0 4px 20px rgba(11,34,74,0.15);">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; flex-wrap: wrap;">
+                  <div style="max-width: 460px;">
+                      <div style="display: flex; align-items: center; gap: 8px;">
+                          <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #34D399;"></span>
+                          <div style="font-size: 13px; font-weight: 800; color: #93C5FD; letter-spacing: 0.08em; text-transform: uppercase;">SECURE AUTHENTICATION</div>
+                      </div>
+                      <div style="font-size: 22px; font-weight: 900; letter-spacing: -0.01em; margin-top: 4px;">OFFICIAL EMAIL OTP VERIFICATION</div>
+                      <div style="font-size: 14px; color: #CBD5E1; margin-top: 6px; line-height: 1.5;">
+                          Enter your registered official email address to receive your 6-digit one-time password (OTP) or connect directly with Google Workspace to enable automatic Google Drive data persistence.
+                      </div>
+                  </div>
+
+                  <!-- Email OTP Controls -->
+                  <div style="flex: 1; min-width: 320px; max-width: 480px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 18px;">
+                      <!-- Step 1: Enter Email -->
+                      <div id="loginStep1" style="display: flex; flex-direction: column; gap: 10px;">
+                          <label style="font-size: 12px; font-weight: 700; color: #93C5FD; letter-spacing: 0.04em;">ENTER OFFICIAL EMAIL ID</label>
+                          <div style="display: flex; gap: 8px;">
+                              <input class="login-input" type="email" id="loginEmail" value="mukulgbpuat42233@gmail.com" placeholder="name@company.com" style="flex: 1; box-sizing: border-box; padding: 12px 16px; border: none; border-radius: 6px; font-weight: 600; font-size: 14px; color: #0F172A; background: white; outline: none;">
+                              <button id="sendOtpBtn" onclick="sendEmailOtp()" style="background: #2563EB; color: white; border: none; border-radius: 6px; padding: 0 18px; font-weight: 700; font-size: 14px; cursor: pointer; transition: background 0.2s; white-space: nowrap;">Send OTP</button>
+                          </div>
+                          <div id="loginErr" class="err-msg" style="display:none; font-size:13px; color:#FCA5A5;"></div>
+                      </div>
+
+                      <!-- Step 2: Verify OTP -->
+                      <div id="loginStep2" style="display:none; flex-direction: column; gap: 12px;">
+                          <div style="background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.3); border-radius: 6px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                              <div>
+                                  <div style="font-size: 11px; font-weight: 800; color: #6EE7B7; text-transform: uppercase;">SECURITY CODE GENERATED</div>
+                                  <div style="font-size: 12px; color: #A7F3D0; margin-top: 2px;" id="otpSentEmailLabel">Valid for 10 minutes</div>
+                              </div>
+                              <div style="display: flex; align-items: center; gap: 6px;">
+                                  <div class="otp-display-badge" id="otpDisplay">000000</div>
+                                  <button onclick="copyGeneratedOtp()" title="Copy OTP code" style="background: #065F46; border: 1px solid #10B981; color: #A7F3D0; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer;">📋 Copy</button>
+                              </div>
+                          </div>
+
+                          <div style="display: flex; gap: 8px;">
+                              <input class="login-input" type="text" id="loginOtpInput" placeholder="Enter 6-digit OTP" maxlength="6" style="flex: 1; box-sizing: border-box; padding: 12px 16px; border: none; border-radius: 6px; font-weight: 800; font-size: 16px; color: #0F172A; background: white; outline: none; letter-spacing: 3px;">
+                              <button id="verifyOtpBtn" onclick="verifyEmailOtp()" style="background: #10B981; color: white; border: none; border-radius: 6px; padding: 0 20px; font-weight: 800; font-size: 14px; cursor: pointer; transition: background 0.2s; white-space: nowrap;">Verify</button>
+                          </div>
+                          <div id="otpErr" class="err-msg" style="display:none; font-size:13px; color:#FCA5A5;"></div>
+
+                          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+                              <button onclick="backToEmailStep()" style="background: none; border: none; color: #93C5FD; font-size: 12px; font-weight: 600; cursor: pointer; padding: 0; text-decoration: underline;">← Change Email</button>
+                              <button onclick="sendEmailOtp()" style="background: none; border: none; color: #93C5FD; font-size: 12px; font-weight: 600; cursor: pointer; padding: 0;">Resend OTP</button>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+
+              <!-- OR Divider & Google Sign-In & Drive -->
+              <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.12); display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap;">
+                  <div>
+                      <div style="font-size: 14px; font-weight: 700; color: #F1F5F9;">OR SIGN IN WITH GOOGLE &amp; CONNECT GDRIVE</div>
+                      <div style="font-size: 12px; color: #94A3B8; margin-top: 2px;">Authenticate directly to enable real-time cloud workspace persistence in Google Drive.</div>
+                  </div>
+                  <div>
+                      <button class="gsi-material-button" onclick="loginWithGoogleAndConnectDrive()">
+                        <div class="gsi-material-button-icon">
+                          <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" style="display: block; width: 20px; height: 20px;">
+                            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
+                            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
+                            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
+                            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
+                            <path fill="none" d="M0 0h48v48H0z"></path>
+                          </svg>
+                        </div>
+                        <span class="gsi-material-button-contents">Sign in with Google &amp; Connect Drive</span>
+                      </button>
                   </div>
               </div>
           </div>
@@ -1481,12 +2219,13 @@ function renderLogin(){
 
               <!-- Card 3 -->
               <div style="background: white; border-radius: 12px; padding: 20px; border: 1px solid #E2E8F0; display: flex; align-items: center; gap: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
-                  <div style="width: 48px; height: 48px; border-radius: 50%; background: #1D4ED8; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                      <svg width="24" height="24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                  <div style="width: 48px; height: 48px; border-radius: 50%; background: #1D4ED8; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: white; font-weight: 900; font-size: 15px; box-shadow: 0 4px 10px rgba(29,78,216,0.2);">
+                      DSM
                   </div>
                   <div>
-                      <div style="font-size: 11px; font-weight: 800; color: #1D4ED8; letter-spacing: 0.05em; text-transform: uppercase;">DSM Engine</div>
-                      <div style="font-size: 13px; font-weight: 600; color: #0F172A; margin-top: 2px; line-height: 1.3;">Same DSM engine<br>plant-specific Excel mapping.</div>
+                      <div style="font-size: 11px; font-weight: 800; color: #1D4ED8; letter-spacing: 0.05em; text-transform: uppercase;">Deviation Settlement Mechanism (DSM)</div>
+                      <div style="font-size: 13.5px; font-weight: 850; color: #0F172A; margin-top: 2px; line-height: 1.3;">Full Form: Deviation Settlement Mechanism</div>
+                      <div style="font-size: 11.5px; color: #475569; font-weight: 500; margin-top: 2px;">CERC Deviation Settlement Mechanism Regulations 2024 compliance engine.</div>
                   </div>
               </div>
 
@@ -1537,59 +2276,613 @@ function renderLogin(){
 }
 async function loginPlantChanged(v){
   if(!window.THDC_PLANTS?.[v]) return;
-  if(window.THDC_LOAD_PLANT) await window.THDC_LOAD_PLANT(v);
+  if(window.THDC_LOAD_PLANT) await window.THDC_LOAD_PLANT(v, window.currentFinancialYear);
   else { window.currentPlantContext=v; localStorage.setItem('thdc-plant-context',v); }
   renderLogin();
 }
-function sendOtp(){
-  const mobileInput = document.getElementById('loginMobile');
-  const mobile = mobileInput.value.trim();
+async function loginFyChanged(fy){
+  if(!fy) return;
+  if(fy === '__add_new__'){
+    const newFy = prompt('Enter new Financial Year (e.g. FY 2027-28):', 'FY 2027-28');
+    if(!newFy) { renderLogin(); return; }
+    const cleanFy = newFy.trim().toUpperCase();
+    if(!window.THDC_FINANCIAL_YEARS.includes(cleanFy)){
+      window.THDC_FINANCIAL_YEARS.unshift(cleanFy);
+      localStorage.setItem('thdc-fy-list', JSON.stringify(window.THDC_FINANCIAL_YEARS));
+    }
+    fy = cleanFy;
+  }
+  if(window.setFinancialYearContext){
+    await window.setFinancialYearContext(fy);
+  } else {
+    window.currentFinancialYear = fy;
+    localStorage.setItem('thdc-financial-year', fy);
+    if(window.THDC_LOAD_PLANT) await window.THDC_LOAD_PLANT(window.currentPlantContext, fy);
+  }
+  renderLogin();
+}
+/* ================= EMAIL OTP & GOOGLE WORKSPACE AUTHENTICATION ================= */
+async function sendEmailOtp(){
+  const emailInput = document.getElementById('loginEmail');
+  const email = (emailInput ? emailInput.value : '').trim().toLowerCase();
   const err = document.getElementById('loginErr');
-  if(!/^[6-9]\d{9}$/.test(mobile)){
-    err.textContent = 'Enter a valid 10-digit Indian mobile number.';
-    err.style.display = 'block';
+  const btn = document.getElementById('sendOtpBtn');
+
+  if(!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+    if(err){
+      err.textContent = 'Please enter a valid official email address (e.g., mukulgbpuat42233@gmail.com).';
+      err.style.display = 'block';
+    }
     return;
   }
-  err.style.display = 'none';
-  state.pendingOtp = { mobile, code: String(Math.floor(100000+Math.random()*900000)) };
-  document.getElementById('loginStep1').style.display = 'none';
-  document.getElementById('loginStep2').style.display = 'block';
-  document.getElementById('otpDisplay').textContent = state.pendingOtp.code;
+  if(err) err.style.display = 'none';
+  if(btn){ btn.disabled = true; btn.textContent = 'Sending...'; }
+
+  try{
+    let otpCode = null;
+    let expirySec = 600;
+
+    try {
+      const res = await fetch('/api/send-email-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      const data = await res.json();
+      if(data && data.success){
+        otpCode = data.otp;
+        expirySec = data.expiresIn || 600;
+      }
+    } catch(netErr) {
+      console.warn('API send-email-otp fetch error, using local fallback generator:', netErr);
+    }
+
+    if(!otpCode){
+      // Robust client fallback if offline
+      otpCode = String(Math.floor(100000 + Math.random() * 900000));
+    }
+
+    state.pendingOtp = { email, code: String(otpCode), expiresAt: Date.now() + (expirySec * 1000) };
+
+    const step1 = document.getElementById('loginStep1');
+    const step2 = document.getElementById('loginStep2');
+    const otpDisplay = document.getElementById('otpDisplay');
+    const emailLabel = document.getElementById('otpSentEmailLabel');
+    const otpInput = document.getElementById('loginOtpInput');
+
+    if(step1) step1.style.display = 'none';
+    if(step2) step2.style.display = 'flex';
+    if(otpDisplay) otpDisplay.textContent = state.pendingOtp.code;
+    if(emailLabel) emailLabel.textContent = 'Sent to ' + email + ' · Valid for 10 min';
+    if(otpInput){ otpInput.value = ''; otpInput.focus(); }
+
+  }catch(e){
+    if(err){ err.textContent = 'Error generating OTP: ' + (e.message || e); err.style.display = 'block'; }
+  }finally{
+    if(btn){ btn.disabled = false; btn.textContent = 'Send OTP'; }
+  }
 }
-function backToMobileStep(){
+
+function copyGeneratedOtp(){
+  if(state.pendingOtp && state.pendingOtp.code){
+    navigator.clipboard.writeText(state.pendingOtp.code).then(()=>{
+      const disp = document.getElementById('otpDisplay');
+      if(disp){
+        const orig = disp.textContent;
+        disp.textContent = 'COPIED!';
+        setTimeout(()=>{ if(disp) disp.textContent = state.pendingOtp?.code || orig; }, 1200);
+      }
+    }).catch(()=>{});
+  }
+}
+
+function backToEmailStep(){
   state.pendingOtp = null;
-  document.getElementById('loginStep1').style.display = 'block';
-  document.getElementById('loginStep2').style.display = 'none';
+  const step1 = document.getElementById('loginStep1');
+  const step2 = document.getElementById('loginStep2');
+  if(step1) step1.style.display = 'flex';
+  if(step2) step2.style.display = 'none';
 }
-async function verifyOtp(){
+
+async function verifyEmailOtp(){
   const chosenPlant = window.currentPlantContext || 'Khurja Floating Solar';
   const chosenInfo = window.THDC_PLANTS?.[chosenPlant];
   if(chosenInfo && state.projectMeta){
     state.projectMeta.name = chosenInfo.name;
-    state.projectMeta.plant = chosenInfo.name+' — '+chosenInfo.capacity+' MW';
+    state.projectMeta.plant = chosenInfo.name + ' — ' + chosenInfo.capacity + ' MW';
     await saveProjectMeta();
   }
 
-  const entered = document.getElementById('loginOtpInput').value.trim();
+  const otpInput = document.getElementById('loginOtpInput');
+  const entered = (otpInput ? otpInput.value : '').trim();
   const err = document.getElementById('otpErr');
-  if(!state.pendingOtp || entered !== state.pendingOtp.code){
-    err.textContent = 'Incorrect OTP. Please try again.';
-    err.style.display = 'block';
+  const btn = document.getElementById('verifyOtpBtn');
+
+  if(!entered || entered.length !== 6){
+    if(err){ err.textContent = 'Please enter the 6-digit OTP code.'; err.style.display = 'block'; }
     return;
   }
-  state.auth = { loggedIn:true, mobile:'+91-'+state.pendingOtp.mobile };
+
+  if(btn){ btn.disabled = true; btn.textContent = 'Verifying...'; }
+
+  let verified = false;
+  if(state.pendingOtp && entered === state.pendingOtp.code){
+    verified = true;
+  } else if(state.pendingOtp && state.pendingOtp.email) {
+    try {
+      const res = await fetch('/api/verify-email-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: state.pendingOtp.email, otp: entered })
+      });
+      const data = await res.json();
+      if(data && data.success) verified = true;
+    } catch(netErr) {
+      console.warn('API verify-email-otp error:', netErr);
+    }
+  }
+
+  if(btn){ btn.disabled = false; btn.textContent = 'Verify'; }
+
+  if(!verified){
+    if(err){ err.textContent = 'Invalid or expired OTP code. Please check and try again.'; err.style.display = 'block'; }
+    return;
+  }
+
+  if(err) err.style.display = 'none';
+  state.auth = {
+    loggedIn: true,
+    email: state.pendingOtp ? state.pendingOtp.email : 'mukulgbpuat42233@gmail.com',
+    provider: 'email-otp'
+  };
   state.pendingOtp = null;
   await saveAuth();
   state.view = 'home';
   renderHomeShell();
 }
+
+async function loginWithGoogleAndConnectDrive(){
+  try {
+    const res = await THDC_CONNECT_GDRIVE();
+    if(res && res.user){
+      state.auth = {
+        loggedIn: true,
+        email: res.user.email,
+        name: res.user.displayName,
+        photo: res.user.photoURL,
+        provider: 'google'
+      };
+      await saveAuth();
+      state.view = 'home';
+      renderHomeShell();
+    }
+  } catch(e) {
+    alert('Google Sign-In failed: ' + (e.message || e));
+  }
+}
+
 function logout(){
-  showConfirm('Log out?', 'You will need to verify your mobile number again to access the app.', async ()=>{
+  showConfirm('Log out?', 'You will need to verify your email address again to access the portal.', async ()=>{
     await clearAuth();
     closeModal('confirmModal');
     renderLogin();
   });
 }
+
+/* ================= GOOGLE DRIVE CLOUD STORAGE ENGINE ================= */
+let _driveConfigLoaded = false;
+
+async function initFirebaseAndDriveClient(){
+  if(_driveConfigLoaded) return;
+  try{
+    let config = null;
+    try {
+      const res = await fetch('/api/firebase-config');
+      if(res.ok) config = await res.json();
+    } catch(e){}
+
+    if(!config) {
+      try {
+        const res = await fetch('/firebase-applet-config.json');
+        if(res.ok) config = await res.json();
+      } catch(e){}
+    }
+
+    if(config && window.THDC_FIREBASE){
+      await window.THDC_FIREBASE.initFirebase(config);
+      _driveConfigLoaded = true;
+
+      // Listen for auth state
+      if(window.THDC_FIREBASE.auth){
+        window.THDC_FIREBASE.onAuthStateChanged(window.THDC_FIREBASE.auth, (user)=>{
+          if(user){
+            state.drive.connected = true;
+            state.drive.email = user.email;
+            state.drive.name = user.displayName;
+            state.drive.photo = user.photoURL;
+            updateDrivePills();
+          } else {
+            state.drive.connected = false;
+            state.drive.accessToken = null;
+            updateDrivePills();
+          }
+        });
+      }
+    }
+  }catch(e){
+    console.warn('Firebase & Drive client init:', e);
+  }
+}
+
+async function THDC_CONNECT_GDRIVE(){
+  await initFirebaseAndDriveClient();
+  if(!window.THDC_FIREBASE || !window.THDC_FIREBASE.loginWithGoogle){
+    throw new Error('Google Drive integration bundle is loading. Please try again in a moment.');
+  }
+  const result = await window.THDC_FIREBASE.loginWithGoogle();
+  if(result && result.user){
+    state.drive.connected = true;
+    state.drive.email = result.user.email;
+    state.drive.name = result.user.displayName;
+    state.drive.photo = result.user.photoURL;
+    state.drive.accessToken = result.accessToken;
+
+    updateDrivePills();
+    if(document.getElementById('driveModal')?.classList.contains('show')){
+      updateDriveModalUI();
+      refreshDriveFileList();
+    }
+    return result;
+  }
+  return null;
+}
+
+async function THDC_DISCONNECT_GDRIVE(){
+  if(window.THDC_FIREBASE && window.THDC_FIREBASE.logoutGoogle){
+    await window.THDC_FIREBASE.logoutGoogle();
+  }
+  state.drive.connected = false;
+  state.drive.accessToken = null;
+  state.drive.email = null;
+  updateDrivePills();
+  updateDriveModalUI();
+}
+
+function updateDrivePills(){
+  const labels = document.querySelectorAll('#gdriveLabel');
+  labels.forEach(el => {
+    if(state.drive && state.drive.connected){
+      el.textContent = 'GDrive: ' + (state.drive.email ? state.drive.email.split('@')[0] : 'Connected');
+    } else {
+      el.textContent = 'Connect GDrive';
+    }
+  });
+  const pills = document.querySelectorAll('.thdc-gdrive-pill');
+  pills.forEach(p => {
+    if(state.drive && state.drive.connected) p.classList.add('connected');
+    else p.classList.remove('connected');
+  });
+}
+
+function openDriveModal(){
+  openModal('driveModal');
+  updateDriveModalUI();
+  if(state.drive && state.drive.connected){
+    refreshDriveFileList();
+  }
+}
+
+function updateDriveModalUI(){
+  const container = document.getElementById('driveAuthSection');
+  if(!container) return;
+
+  if(state.drive && state.drive.connected){
+    container.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:42px;height:42px;border-radius:50%;background:#10B981;color:white;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:18px;">
+            ${(state.drive.name || state.drive.email || 'G')[0].toUpperCase()}
+          </div>
+          <div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="font-size:14px;font-weight:800;color:#0F172A;">${state.drive.name || 'Google Workspace User'}</span>
+              <span style="background:#DCFCE7;color:#15803D;font-size:11px;font-weight:800;padding:2px 8px;border-radius:12px;">CONNECTED</span>
+            </div>
+            <div style="font-size:12px;color:#64748B;">${state.drive.email || ''}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-sm" onclick="THDC_DISCONNECT_GDRIVE()" style="color:#C1403A;border-color:#FCA5A5;">Disconnect</button>
+        </div>
+      </div>
+      ${state.drive.lastSyncTime ? `
+        <div style="margin-top:12px;padding-top:10px;border-top:1px solid #E2E8F0;font-size:12px;color:#059669;display:flex;align-items:center;gap:6px;">
+          <span>✓</span> Last synced to Google Drive: <b>${new Date(state.drive.lastSyncTime).toLocaleTimeString()}</b> (${state.drive.lastSyncFileName || 'Current plant'})
+        </div>
+      ` : ''}
+    `;
+  } else {
+    container.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+        <div>
+          <div style="font-size:14px;font-weight:800;color:#0F172A;">Google Drive Disconnected</div>
+          <div style="font-size:12px;color:#64748B;margin-top:2px;">Sign in with your Google account to read, save, and sync DSM files.</div>
+        </div>
+        <button class="gsi-material-button" onclick="THDC_CONNECT_GDRIVE()">
+          <div class="gsi-material-button-icon">
+            <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" style="display:block;width:20px;height:20px;">
+              <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
+              <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
+              <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
+              <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
+              <path fill="none" d="M0 0h48v48H0z"></path>
+            </svg>
+          </div>
+          <span class="gsi-material-button-contents">Connect Google Drive</span>
+        </button>
+      </div>
+    `;
+  }
+}
+
+function toggleDriveAutoSync(checked){
+  state.drive.autoSync = !!checked;
+}
+
+async function refreshDriveFileList(){
+  const container = document.getElementById('driveFileListContainer');
+  const badge = document.getElementById('driveFileCountBadge');
+  if(!container) return;
+
+  if(!state.drive || !state.drive.connected){
+    container.innerHTML = `<div style="text-align:center;padding:24px;color:#64748B;font-size:13px;">Please connect Google Drive above to view your saved DSM files.</div>`;
+    if(badge) badge.textContent = '0 files';
+    return;
+  }
+
+  container.innerHTML = `<div style="text-align:center;padding:24px;color:#64748B;font-size:13px;">Fetching files from Google Drive...</div>`;
+
+  try {
+    const files = await window.THDC_GDRIVE.listDriveFiles(state.drive.accessToken);
+    if(badge) badge.textContent = `${files.length} files found`;
+
+    if(!files || files.length === 0){
+      container.innerHTML = `
+        <div style="text-align:center;padding:28px 16px;color:#64748B;">
+          <div style="font-size:24px;margin-bottom:6px;">📂</div>
+          <div style="font-weight:700;color:#334155;">No THDC DSM files in Google Drive yet</div>
+          <div style="font-size:12px;margin-top:4px;">Click "Save Active Plant to GDrive" to create your first cloud workspace backup.</div>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = `
+      <table style="width:100%;border-collapse:collapse;font-size:13px;text-align:left;">
+        <thead>
+          <tr style="border-bottom:1px solid #E2E8F0;color:#64748B;font-size:11px;font-weight:800;text-transform:uppercase;">
+            <th style="padding:8px 10px;">File Name</th>
+            <th style="padding:8px 10px;">Modified</th>
+            <th style="padding:8px 10px;">Size</th>
+            <th style="padding:8px 10px;text-align:right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${files.map(f => {
+            const dateStr = f.modifiedTime ? new Date(f.modifiedTime).toLocaleString() : '—';
+            const sizeStr = f.size ? `${(f.size/1024).toFixed(1)} KB` : 'JSON';
+            return `
+              <tr style="border-bottom:1px solid #F1F5F9;">
+                <td style="padding:10px;font-weight:700;color:#0F172A;">
+                  <div style="display:flex;align-items:center;gap:6px;">
+                    <span style="color:#0F766E;">📄</span>
+                    <span>${f.name}</span>
+                  </div>
+                </td>
+                <td style="padding:10px;color:#64748B;font-size:12px;">${dateStr}</td>
+                <td style="padding:10px;color:#64748B;font-size:12px;">${sizeStr}</td>
+                <td style="padding:10px;text-align:right;white-space:nowrap;">
+                  <button class="btn btn-sm" onclick="THDC_LOAD_FROM_GDRIVE('${f.id}', '${f.name}')" style="background:#0F766E;color:white;font-weight:700;padding:4px 10px;margin-right:4px;">⬇ Load</button>
+                  ${f.webViewLink ? `<a href="${f.webViewLink}" target="_blank" class="btn btn-sm" style="text-decoration:none;padding:4px 8px;margin-right:4px;" title="Open in Google Drive">🔗 View</a>` : ''}
+                  <button class="btn btn-sm" onclick="THDC_DELETE_GDRIVE_FILE('${f.id}', '${f.name}')" style="color:#DC2626;border-color:#FCA5A5;padding:4px 8px;" title="Delete file">🗑</button>
+                </td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    `;
+  } catch(e) {
+    container.innerHTML = `
+      <div style="padding:20px;color:#DC2626;text-align:center;font-size:13px;">
+        Error loading Google Drive files: ${e.message || e}<br>
+        <button class="btn btn-sm" onclick="THDC_CONNECT_GDRIVE()" style="margin-top:10px;">Re-authenticate Google Drive</button>
+      </div>
+    `;
+  }
+}
+
+// Save active plant to Google Drive
+async function THDC_SAVE_TO_GDRIVE(interactive = true){
+  if(!state.drive || !state.drive.connected){
+    if(interactive){
+      const confirmConnect = confirm('Google Drive is not connected yet. Would you like to connect your Google account now?');
+      if(confirmConnect) {
+        await THDC_CONNECT_GDRIVE();
+        if(!state.drive.connected) return;
+      } else {
+        return;
+      }
+    } else {
+      return;
+    }
+  }
+
+  const plantKey = window.currentPlantContext || 'Khurja Floating Solar';
+  const plantSlug = plantKey.replace(/[^a-zA-Z0-9]+/g, '_');
+  const fileName = `THDCIL_DSM_Workspace_${plantSlug}.json`;
+
+  const workspacePayload = {
+    version: '2.0-universal',
+    app: 'THDCIL Universal DSM Engine',
+    plant: plantKey,
+    authority: window.THDC_GRID_SOURCES?.[plantKey]?.authority || 'UPSLDC',
+    savedAt: new Date().toISOString(),
+    projectMeta: state.projectMeta || {},
+    formulaParams: window.FP || {},
+    revisions: state.revisions || [],
+    weeks: state.weeks || {}
+  };
+
+  try {
+    const result = await window.THDC_GDRIVE.saveFileToDrive(fileName, workspacePayload, state.drive.accessToken, {
+      confirmOverwrite: async (existing) => {
+        if(!interactive) return true;
+        return confirm(`File '${fileName}' already exists in your Google Drive.\n\nDo you want to update it with the current workspace data?`);
+      }
+    });
+
+    if(result.cancelled) return;
+
+    state.drive.lastSyncTime = result.modifiedTime || new Date().toISOString();
+    state.drive.lastSyncFileId = result.id;
+    state.drive.lastSyncFileName = fileName;
+
+    updateDriveModalUI();
+    if(document.getElementById('driveModal')?.classList.contains('show')){
+      refreshDriveFileList();
+    }
+
+    if(interactive){
+      alert(`Workspace successfully saved to Google Drive!\n\nFile: ${fileName}\nID: ${result.id}\nStatus: ${result.isNew ? 'Created new file' : 'Updated existing file'}`);
+    }
+  } catch(e) {
+    if(interactive){
+      alert('Failed to save to Google Drive: ' + (e.message || e));
+    } else {
+      console.warn('Auto-save to Google Drive error:', e);
+    }
+  }
+}
+
+// Save all 5 plants master bundle to Google Drive
+async function THDC_SAVE_MASTER_TO_GDRIVE(interactive = true){
+  if(!state.drive || !state.drive.connected){
+    if(interactive){
+      await THDC_CONNECT_GDRIVE();
+      if(!state.drive.connected) return;
+    } else return;
+  }
+
+  const masterPayload = {
+    version: '2.0-universal-master',
+    app: 'THDCIL Universal DSM Engine',
+    savedAt: new Date().toISOString(),
+    currentPlantContext: window.currentPlantContext,
+    activePlantWorkspace: {
+      plant: window.currentPlantContext,
+      weeks: state.weeks,
+      revisions: state.revisions,
+      formulaParams: window.FP
+    },
+    plantWorkspaces: {}
+  };
+
+  const plants = Object.keys(window.THDC_PLANTS || {});
+  plants.forEach(p => {
+    try {
+      const stored = localStorage.getItem('thdc-plant:' + p + ':workspace');
+      if(stored) masterPayload.plantWorkspaces[p] = JSON.parse(stored);
+    } catch(e){}
+  });
+
+  const fileName = 'THDCIL_Universal_DSM_Master_Data.json';
+  try {
+    const result = await window.THDC_GDRIVE.saveFileToDrive(fileName, masterPayload, state.drive.accessToken, {
+      confirmOverwrite: async () => {
+        return confirm(`Master Backup file '${fileName}' already exists in Google Drive. Overwrite with all plant data?`);
+      }
+    });
+    if(result.cancelled) return;
+    alert(`Master backup successfully saved to Google Drive!\n\nFile: ${fileName}`);
+    if(document.getElementById('driveModal')?.classList.contains('show')){
+      refreshDriveFileList();
+    }
+  } catch(e) {
+    alert('Master backup to Google Drive failed: ' + (e.message || e));
+  }
+}
+
+// Restore workspace from Google Drive file
+async function THDC_LOAD_FROM_GDRIVE(fileId, fileName){
+  showConfirm(
+    'Restore from Google Drive?',
+    `Restoring '${fileName}' will overwrite your active workspace data in the browser. Any unsaved changes will be replaced. Proceed?`,
+    async () => {
+      closeModal('confirmModal');
+      try {
+        const payload = await window.THDC_GDRIVE.getDriveFileContent(fileId, state.drive.accessToken);
+        if(!payload){
+          alert('Failed to read data from Google Drive file.');
+          return;
+        }
+
+        if(payload.plant && window.THDC_PLANTS && window.THDC_PLANTS[payload.plant]){
+          window.currentPlantContext = payload.plant;
+          localStorage.setItem('thdc-plant-context', payload.plant);
+        }
+
+        if(payload.weeks) state.weeks = payload.weeks;
+        if(payload.revisions) state.revisions = payload.revisions;
+        if(payload.formulaParams && window.FP) Object.assign(window.FP, payload.formulaParams);
+        if(payload.projectMeta && state.projectMeta) Object.assign(state.projectMeta, payload.projectMeta);
+
+        // Also update local storage for this plant
+        const plantKey = window.currentPlantContext || 'Khurja Floating Solar';
+        localStorage.setItem('thdc-plant:' + plantKey + ':workspace', JSON.stringify(payload));
+        localStorage.setItem('thdc-plant:' + plantKey + ':last-saved', new Date().toISOString());
+
+        closeModal('driveModal');
+        if(state.view === 'home') renderHomeShell();
+        else { renderShell(); if(typeof renderAll==='function') renderAll(); }
+
+        alert(`Workspace successfully loaded and restored from Google Drive: ${fileName}`);
+      } catch(e) {
+        alert('Error loading workspace from Google Drive: ' + (e.message || e));
+      }
+    }
+  );
+}
+
+// Delete file from Google Drive
+async function THDC_DELETE_GDRIVE_FILE(fileId, fileName){
+  showConfirm(
+    'Delete from Google Drive?',
+    `Are you sure you want to permanently delete '${fileName}' from your Google Drive? This action cannot be undone.`,
+    async () => {
+      closeModal('confirmModal');
+      try {
+        await window.THDC_GDRIVE.deleteDriveFile(fileId, state.drive.accessToken);
+        refreshDriveFileList();
+        alert(`File '${fileName}' was deleted from Google Drive.`);
+      } catch(e) {
+        alert('Failed to delete file: ' + (e.message || e));
+      }
+    }
+  );
+}
+
+// Debounced Google Drive Auto-Sync
+let _driveSyncTimer = null;
+function THDC_DEBOUNCED_GDRIVE_SYNC(){
+  if(_driveSyncTimer) clearTimeout(_driveSyncTimer);
+  _driveSyncTimer = setTimeout(() => {
+    if(state.drive && state.drive.connected && state.drive.autoSync){
+      THDC_SAVE_TO_GDRIVE(false);
+    }
+  }, 4000);
+}
+
 
 /* ================= FORMULA SETTINGS/* ================= FORMULA SETTINGS (editable calculation engine) ================= */
 const FP_FIELDS = [
@@ -1844,12 +3137,181 @@ function renderDayDetailPanel(){
   const day = week.days.find(d=>d.date===state.currentDate);
   if(!day){ panel.style.display='none'; return; }
   panel.style.display='block';
+  initBulkEditState(day);
   const g = dayAgg(day);
+  const impact = getBulkEditImpact(day);
+  const mode = state.bulkEdit.mode;
+  const isBulkOpen = state.bulkEdit.isOpen;
+  const selectedCount = state.bulkEdit.selectedBlocks ? state.bulkEdit.selectedBlocks.size : 0;
+
+  let modeHelperText = '';
+  if(mode === 'fixed') modeHelperText = 'Sets scheduled generation (MWh) to a uniform fixed value for all selected blocks.';
+  else if(mode === 'delta') modeHelperText = 'Adds or subtracts the specified MWh offset to/from each selected block\'s current schedule.';
+  else if(mode === 'percent') modeHelperText = 'Scales the schedule of each selected block by the specified percentage (+/- %).';
+  else if(mode === 'ramp') modeHelperText = 'Linearly ramps scheduled generation from Start MWh to End MWh across selected blocks.';
+
+  let paramInputHtml = '';
+  if(mode === 'fixed'){
+    paramInputHtml = `
+      <div class="bulk-input-wrap">
+        <input type="number" step="0.001" min="0" class="bulk-input" id="bulkFixedVal" value="${state.bulkEdit.fixedVal}" oninput="updateBulkParam('fixedVal', this.value)">
+        <span style="font-size:12px;font-weight:700;color:#64748b;white-space:nowrap;">MWh</span>
+      </div>`;
+  } else if(mode === 'delta'){
+    paramInputHtml = `
+      <div class="bulk-input-wrap">
+        <input type="number" step="0.001" class="bulk-input" id="bulkDeltaVal" value="${state.bulkEdit.deltaVal}" oninput="updateBulkParam('deltaVal', this.value)">
+        <span style="font-size:12px;font-weight:700;color:#64748b;white-space:nowrap;">MWh offset</span>
+      </div>`;
+  } else if(mode === 'percent'){
+    paramInputHtml = `
+      <div class="bulk-input-wrap">
+        <input type="number" step="0.1" class="bulk-input" id="bulkPercentVal" value="${state.bulkEdit.percentVal}" oninput="updateBulkParam('percentVal', this.value)">
+        <span style="font-size:12px;font-weight:700;color:#64748b;white-space:nowrap;">%</span>
+      </div>`;
+  } else if(mode === 'ramp'){
+    paramInputHtml = `
+      <div style="display:flex;gap:8px;align-items:center;">
+        <div style="flex:1;">
+          <div style="font-size:10px;font-weight:700;color:#64748b;margin-bottom:3px;">Start (#${impact.startBlock || 1})</div>
+          <div class="bulk-input-wrap">
+            <input type="number" step="0.001" min="0" class="bulk-input" id="bulkRampStartVal" value="${state.bulkEdit.rampStartVal}" oninput="updateBulkParam('rampStartVal', this.value)">
+            <span style="font-size:11px;font-weight:700;color:#64748b;">MWh</span>
+          </div>
+        </div>
+        <div style="color:#94a3b8;font-weight:bold;margin-top:14px;">➔</div>
+        <div style="flex:1;">
+          <div style="font-size:10px;font-weight:700;color:#64748b;margin-bottom:3px;">End (#${impact.endBlock || 96})</div>
+          <div class="bulk-input-wrap">
+            <input type="number" step="0.001" min="0" class="bulk-input" id="bulkRampEndVal" value="${state.bulkEdit.rampEndVal}" oninput="updateBulkParam('rampEndVal', this.value)">
+            <span style="font-size:11px;font-weight:700;color:#64748b;">MWh</span>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  const deltaSign = impact.delta > 0 ? '+' : '';
+  const deltaColor = impact.delta > 0 ? '#1e40af' : (impact.delta < 0 ? '#dc2626' : '#64748b');
+
+  const bulkContainerHtml = isBulkOpen ? `
+    <div class="bulk-edit-container" id="bulkEditContainer">
+      <div class="bulk-edit-head">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <div class="bulk-edit-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0073cf" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+            <span>Bulk Schedule Adjuster (Scheduled MWh)</span>
+          </div>
+          <span class="bulk-badge">${selectedCount} Blocks Selected ${selectedCount > 0 ? `(#${impact.startBlock} to #${impact.endBlock})` : '(None)'}</span>
+        </div>
+        <div class="bulk-presets">
+          <span style="font-size:11px;font-weight:700;color:#64748b;margin-right:2px;">Quick Presets:</span>
+          <button class="bulk-preset-chip" onclick="applyBulkPreset('all')">All 96</button>
+          <button class="bulk-preset-chip" onclick="applyBulkPreset('solar')">☀️ Solar (25–72)</button>
+          <button class="bulk-preset-chip" onclick="applyBulkPreset('morning')">🌅 Morning Peak (25–36)</button>
+          <button class="bulk-preset-chip" onclick="applyBulkPreset('evening')">🌆 Evening Peak (73–92)</button>
+          <button class="bulk-preset-chip" onclick="applyBulkPreset('night')">🌙 Night (1–24, 93–96)</button>
+          <button class="bulk-preset-chip" onclick="applyBulkPreset('clear')" style="color:#dc2626;">Clear</button>
+        </div>
+      </div>
+
+      <div class="bulk-grid">
+        <div class="bulk-field">
+          <label class="bulk-label">Block Range (1–96)</label>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <div style="flex:1;">
+              <input type="number" min="1" max="96" class="bulk-input" id="bulkRangeStart" value="${state.bulkEdit.rangeStart}" onchange="onBulkRangeInputChange()" placeholder="From">
+            </div>
+            <span style="color:#64748b;font-weight:bold;font-size:12px;">to</span>
+            <div style="flex:1;">
+              <input type="number" min="1" max="96" class="bulk-input" id="bulkRangeEnd" value="${state.bulkEdit.rangeEnd}" onchange="onBulkRangeInputChange()" placeholder="To">
+            </div>
+          </div>
+          <div style="font-size:10.5px;color:#64748b;margin-top:2px;">Click or Shift-click row checkboxes in the table below to select ranges</div>
+        </div>
+
+        <div class="bulk-field">
+          <label class="bulk-label">Adjustment Mode</label>
+          <div class="bulk-mode-tabs">
+            <button class="bulk-mode-tab ${mode==='fixed'?'active':''}" onclick="setBulkEditMode('fixed')">Set Value</button>
+            <button class="bulk-mode-tab ${mode==='delta'?'active':''}" onclick="setBulkEditMode('delta')">± Offset</button>
+            <button class="bulk-mode-tab ${mode==='percent'?'active':''}" onclick="setBulkEditMode('percent')">% Scale</button>
+            <button class="bulk-mode-tab ${mode==='ramp'?'active':''}" onclick="setBulkEditMode('ramp')">📈 Ramp</button>
+          </div>
+          <div style="font-size:10.5px;color:#64748b;margin-top:2px;">${modeHelperText}</div>
+        </div>
+
+        <div class="bulk-field">
+          <label class="bulk-label">${mode === 'ramp' ? 'Ramp Parameters' : (mode === 'percent' ? 'Percentage Factor' : (mode === 'delta' ? 'Offset Value' : 'Target Schedule'))}</label>
+          ${paramInputHtml}
+        </div>
+      </div>
+
+      <div class="bulk-preview-card" id="bulkImpactPreview">
+        <div class="bulk-preview-metric">
+          <span class="lbl">Selected Scope</span>
+          <span class="val">${impact.count} Blocks ${impact.count > 0 ? `(#${impact.startBlock}–#${impact.endBlock})` : ''}</span>
+        </div>
+        <div class="bulk-preview-metric">
+          <span class="lbl">Time Interval</span>
+          <span class="val">${impact.startTime && impact.endTime ? `${impact.startTime} – ${impact.endTime}` : '—'}</span>
+        </div>
+        <div class="bulk-preview-metric">
+          <span class="lbl">Current Range Total</span>
+          <span class="val">${fmtMWh0(impact.curSum)} MWh</span>
+        </div>
+        <div class="bulk-preview-metric">
+          <span class="lbl">Projected Range Total</span>
+          <span class="val">${fmtMWh0(impact.newSum)} MWh</span>
+        </div>
+        <div class="bulk-preview-metric">
+          <span class="lbl">Net Shift</span>
+          <span class="val" style="color:${deltaColor};">${deltaSign}${fmtMWh0(impact.delta)} MWh</span>
+        </div>
+        <div class="bulk-preview-metric">
+          <span class="lbl">New Day Schedule</span>
+          <span class="val">${fmtMWh0(impact.dayCur)} ➔ <b>${fmtMWh0(impact.dayNew)} MWh</b></span>
+        </div>
+      </div>
+
+      <div class="bulk-actions-row">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <button class="btn btn-primary" onclick="applyBulkSchedule()" style="display:inline-flex;align-items:center;gap:6px;padding:0 18px;font-weight:700;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <span>Apply Schedule to Selected Blocks</span>
+          </button>
+          ${state.bulkEdit.lastUndo ? `
+            <button class="btn" onclick="undoBulkSchedule()" style="display:inline-flex;align-items:center;gap:6px;padding:0 14px;color:#dc2626;border-color:#fca5a5;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13"></path></svg>
+              <span>Undo Last Bulk Edit</span>
+            </button>
+          ` : ''}
+        </div>
+        <div>
+          <button class="btn btn-sm" onclick="applyBulkPreset('clear')">Reset Selection</button>
+        </div>
+      </div>
+
+      ${state.bulkEdit.statusMsg ? `
+        <div class="qbanner ok" style="margin-top:12px;margin-bottom:0;display:flex;justify-content:space-between;align-items:center;">
+          <span>${state.bulkEdit.statusMsg}</span>
+          <span style="cursor:pointer;font-size:16px;line-height:1;opacity:0.7;" onclick="state.bulkEdit.statusMsg='';renderDayDetailPanel();">✕</span>
+        </div>
+      ` : ''}
+    </div>
+  ` : '';
+
   panel.innerHTML = `
     <div class="day-detail-head">
-      <h3>${day.date} — 96-block analysis</h3>
-      <div style="display:flex;gap:10px;align-items:center;">
+      <div>
+        <h3>${day.date} — 96-block analysis</h3>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px;">Detailed time-block generation, deviation, DSM settlement & schedule adjustments</div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
         <div class="search-box"><input type="text" id="blockSearch" placeholder="Search block / time…" oninput="renderBlockTable()"></div>
+        <button class="btn btn-sm ${isBulkOpen ? 'btn-primary' : ''}" onclick="toggleBulkEditPanel()" id="btnToggleBulkEdit" style="display:inline-flex;align-items:center;gap:6px;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+          <span>${isBulkOpen ? 'Hide Bulk Edit' : '⚡ Bulk Edit Schedule'}</span>
+        </button>
         <button class="btn btn-sm" onclick="closeDayDetail()">Close ✕</button>
       </div>
     </div>
@@ -1870,24 +3332,342 @@ function renderDayDetailPanel(){
         <div class="chart-box" style="height:220px;width:100%;"><canvas id="chartBlockCharge"></canvas></div>
       </div>
     </div>
+    ${bulkContainerHtml}
     <div id="blockTableWrap"></div>
   `;
   renderBlockTable();
 }
+
+/* ================= BULK EDIT SCHEDULE ENGINE ================= */
+function initBulkEditState(day){
+  if(!state.bulkEdit){
+    state.bulkEdit = {
+      isOpen: true,
+      mode: 'fixed', // 'fixed' | 'delta' | 'percent' | 'ramp'
+      rangeStart: 1,
+      rangeEnd: 96,
+      selectedBlocks: new Set(),
+      lastClickedBlock: null,
+      fixedVal: 250,
+      deltaVal: 10,
+      percentVal: 5,
+      rampStartVal: 100,
+      rampEndVal: 250,
+      lastUndo: null,
+      statusMsg: ''
+    };
+  }
+  if(!state.bulkEdit.selectedBlocks || state.bulkEdit.selectedBlocks.size === 0){
+    state.bulkEdit.selectedBlocks = new Set();
+    const s = Math.max(1, Math.min(96, state.bulkEdit.rangeStart || 1));
+    const e = Math.max(1, Math.min(96, state.bulkEdit.rangeEnd || 96));
+    for(let i = s; i <= e; i++) state.bulkEdit.selectedBlocks.add(i);
+  }
+}
+
+function toggleBulkEditPanel(){
+  initBulkEditState();
+  state.bulkEdit.isOpen = !state.bulkEdit.isOpen;
+  renderDayDetailPanel();
+}
+
+function setBulkEditMode(mode){
+  initBulkEditState();
+  state.bulkEdit.mode = mode;
+  renderDayDetailPanel();
+}
+
+function updateBulkParam(field, val){
+  initBulkEditState();
+  const num = parseFloat(val);
+  state.bulkEdit[field] = isNaN(num) ? 0 : num;
+  updateBulkImpactPreviewUI();
+}
+
+function onBulkRangeInputChange(){
+  initBulkEditState();
+  const sEl = document.getElementById('bulkRangeStart');
+  const eEl = document.getElementById('bulkRangeEnd');
+  if(!sEl || !eEl) return;
+  let s = parseInt(sEl.value, 10);
+  let e = parseInt(eEl.value, 10);
+  if(isNaN(s) || s < 1) s = 1;
+  if(s > 96) s = 96;
+  if(isNaN(e) || e < 1) e = 1;
+  if(e > 96) e = 96;
+  if(s > e){ const tmp = s; s = e; e = tmp; }
+  state.bulkEdit.rangeStart = s;
+  state.bulkEdit.rangeEnd = e;
+  state.bulkEdit.selectedBlocks.clear();
+  for(let i = s; i <= e; i++) state.bulkEdit.selectedBlocks.add(i);
+  renderDayDetailPanel();
+}
+
+function applyBulkPreset(presetName){
+  initBulkEditState();
+  state.bulkEdit.selectedBlocks.clear();
+  if(presetName === 'all'){
+    state.bulkEdit.rangeStart = 1;
+    state.bulkEdit.rangeEnd = 96;
+    for(let i = 1; i <= 96; i++) state.bulkEdit.selectedBlocks.add(i);
+  } else if(presetName === 'solar'){
+    state.bulkEdit.rangeStart = 25;
+    state.bulkEdit.rangeEnd = 72;
+    for(let i = 25; i <= 72; i++) state.bulkEdit.selectedBlocks.add(i);
+  } else if(presetName === 'morning'){
+    state.bulkEdit.rangeStart = 25;
+    state.bulkEdit.rangeEnd = 36;
+    for(let i = 25; i <= 36; i++) state.bulkEdit.selectedBlocks.add(i);
+  } else if(presetName === 'evening'){
+    state.bulkEdit.rangeStart = 73;
+    state.bulkEdit.rangeEnd = 92;
+    for(let i = 73; i <= 92; i++) state.bulkEdit.selectedBlocks.add(i);
+  } else if(presetName === 'night'){
+    state.bulkEdit.rangeStart = 1;
+    state.bulkEdit.rangeEnd = 24;
+    for(let i = 1; i <= 24; i++) state.bulkEdit.selectedBlocks.add(i);
+    for(let i = 93; i <= 96; i++) state.bulkEdit.selectedBlocks.add(i);
+  } else if(presetName === 'clear'){
+    state.bulkEdit.selectedBlocks.clear();
+    state.bulkEdit.rangeStart = 1;
+    state.bulkEdit.rangeEnd = 1;
+  }
+  renderDayDetailPanel();
+}
+
+function handleBlockCheckboxClick(event, blockIdx){
+  initBulkEditState();
+  const checked = event.target.checked;
+  if(event.shiftKey && state.bulkEdit.lastClickedBlock != null){
+    const start = Math.min(state.bulkEdit.lastClickedBlock, blockIdx);
+    const end = Math.max(state.bulkEdit.lastClickedBlock, blockIdx);
+    for(let i = start; i <= end; i++){
+      if(checked) state.bulkEdit.selectedBlocks.add(i);
+      else state.bulkEdit.selectedBlocks.delete(i);
+    }
+  } else {
+    if(checked) state.bulkEdit.selectedBlocks.add(blockIdx);
+    else state.bulkEdit.selectedBlocks.delete(blockIdx);
+  }
+  state.bulkEdit.lastClickedBlock = blockIdx;
+  if(state.bulkEdit.selectedBlocks.size > 0){
+    const arr = Array.from(state.bulkEdit.selectedBlocks).sort((a,b)=>a-b);
+    state.bulkEdit.rangeStart = arr[0];
+    state.bulkEdit.rangeEnd = arr[arr.length - 1];
+  }
+  renderDayDetailPanel();
+}
+
+function toggleSelectAllBlocks(checked){
+  initBulkEditState();
+  state.bulkEdit.selectedBlocks.clear();
+  if(checked){
+    for(let i = 1; i <= 96; i++) state.bulkEdit.selectedBlocks.add(i);
+    state.bulkEdit.rangeStart = 1;
+    state.bulkEdit.rangeEnd = 96;
+  }
+  renderDayDetailPanel();
+}
+
+function calculateNewSchedule(currentVal, mode, blockIdx, sortedSelectedList){
+  currentVal = Number(currentVal) || 0;
+  let nextVal = currentVal;
+  if(mode === 'fixed'){
+    nextVal = Number(state.bulkEdit.fixedVal) || 0;
+  } else if(mode === 'delta'){
+    nextVal = currentVal + (Number(state.bulkEdit.deltaVal) || 0);
+  } else if(mode === 'percent'){
+    const pct = Number(state.bulkEdit.percentVal) || 0;
+    nextVal = currentVal * (1 + pct / 100);
+  } else if(mode === 'ramp'){
+    const startV = Number(state.bulkEdit.rampStartVal) || 0;
+    const endV = Number(state.bulkEdit.rampEndVal) || 0;
+    const total = sortedSelectedList.length;
+    const pos = sortedSelectedList.indexOf(blockIdx);
+    if(total <= 1 || pos <= 0) nextVal = startV;
+    else if(pos === total - 1) nextVal = endV;
+    else nextVal = startV + (endV - startV) * (pos / (total - 1));
+  }
+  return Math.max(0, Number(nextVal.toFixed(3)));
+}
+
+function getBulkEditImpact(day){
+  if(!day) return { count: 0, curSum: 0, newSum: 0, delta: 0, dayCur: 0, dayNew: 0, startBlock: 1, endBlock: 1, startTime: '00:00', endTime: '00:15' };
+  initBulkEditState(day);
+  const selected = Array.from(state.bulkEdit.selectedBlocks).sort((a,b)=>a-b);
+  if(selected.length === 0){
+    const dayCur = (day.blocks||[]).reduce((acc, b) => acc + (Number(b.s) || 0), 0);
+    return { count: 0, curSum: 0, newSum: 0, delta: 0, dayCur: Number(dayCur.toFixed(3)), dayNew: Number(dayCur.toFixed(3)), startBlock: 1, endBlock: 1, startTime: '', endTime: '' };
+  }
+  let curSum = 0;
+  let newSum = 0;
+  selected.forEach(idx => {
+    const b = day.blocks[idx - 1];
+    if(!b) return;
+    const curS = Number(b.s) || 0;
+    const newS = calculateNewSchedule(curS, state.bulkEdit.mode, idx, selected);
+    curSum += curS;
+    newSum += newS;
+  });
+  const dayCur = (day.blocks||[]).reduce((acc, b) => acc + (Number(b.s) || 0), 0);
+  const delta = newSum - curSum;
+  const dayNew = Math.max(0, dayCur + delta);
+  const startB = selected[0];
+  const endB = selected[selected.length - 1];
+  const startTime = (day.blocks[startB - 1]?.t || '').split('-')[0] || '';
+  const endTime = (day.blocks[endB - 1]?.t || '').split('-')[1] || '';
+  return {
+    count: selected.length,
+    startBlock: startB,
+    endBlock: endB,
+    startTime,
+    endTime,
+    curSum: Number(curSum.toFixed(3)),
+    newSum: Number(newSum.toFixed(3)),
+    delta: Number(delta.toFixed(3)),
+    dayCur: Number(dayCur.toFixed(3)),
+    dayNew: Number(dayNew.toFixed(3))
+  };
+}
+
+function updateBulkImpactPreviewUI(){
+  const week = weekObj();
+  const day = week?.days?.find(d => d.date === state.currentDate);
+  if(!day) return;
+  const impact = getBulkEditImpact(day);
+  const previewEl = document.getElementById('bulkImpactPreview');
+  if(!previewEl) return;
+  const deltaSign = impact.delta > 0 ? '+' : '';
+  const deltaColor = impact.delta > 0 ? '#1e40af' : (impact.delta < 0 ? '#dc2626' : '#64748b');
+  previewEl.innerHTML = `
+    <div class="bulk-preview-metric">
+      <span class="lbl">Selected Scope</span>
+      <span class="val">${impact.count} Blocks ${impact.count > 0 ? `(#${impact.startBlock}–#${impact.endBlock})` : ''}</span>
+    </div>
+    <div class="bulk-preview-metric">
+      <span class="lbl">Time Interval</span>
+      <span class="val">${impact.startTime && impact.endTime ? `${impact.startTime} – ${impact.endTime}` : '—'}</span>
+    </div>
+    <div class="bulk-preview-metric">
+      <span class="lbl">Current Range Total</span>
+      <span class="val">${fmtMWh0(impact.curSum)} MWh</span>
+    </div>
+    <div class="bulk-preview-metric">
+      <span class="lbl">Projected Range Total</span>
+      <span class="val">${fmtMWh0(impact.newSum)} MWh</span>
+    </div>
+    <div class="bulk-preview-metric">
+      <span class="lbl">Net Shift</span>
+      <span class="val" style="color:${deltaColor};">${deltaSign}${fmtMWh0(impact.delta)} MWh</span>
+    </div>
+    <div class="bulk-preview-metric">
+      <span class="lbl">New Day Schedule</span>
+      <span class="val">${fmtMWh0(impact.dayCur)} ➔ <b>${fmtMWh0(impact.dayNew)} MWh</b></span>
+    </div>
+  `;
+}
+
+function applyBulkSchedule(){
+  const week = weekObj();
+  const day = week?.days?.find(d => d.date === state.currentDate);
+  if(!day || !state.bulkEdit) return;
+  const selected = Array.from(state.bulkEdit.selectedBlocks).sort((a,b)=>a-b);
+  if(selected.length === 0){
+    alert('Please select at least one block to adjust schedule.');
+    return;
+  }
+
+  // Save undo snapshot
+  const previousSchedules = day.blocks.map(b => ({ idx: b.idx, s: b.s }));
+  const previousRevisions = (state.revisions || []).map(r => ({
+    id: r.id,
+    date: r.date,
+    blocks: { ...(r.blocks || {}) }
+  }));
+  state.bulkEdit.lastUndo = {
+    date: day.date,
+    previousSchedules,
+    previousRevisions,
+    timestamp: new Date().toLocaleTimeString()
+  };
+
+  // Apply to day.blocks
+  selected.forEach(idx => {
+    const b = day.blocks[idx - 1];
+    if(!b) return;
+    const newS = calculateNewSchedule(b.s, state.bulkEdit.mode, idx, selected);
+    b.s = newS;
+  });
+
+  // Also update active revisions for this date if present
+  if(state.revisions && state.revisions.length){
+    state.revisions.forEach(r => {
+      if(r.active && r.date === day.date && r.blocks){
+        selected.forEach(idx => {
+          if(r.blocks[String(idx)] != null && r.blocks[String(idx)] !== ''){
+            const newS = calculateNewSchedule(r.blocks[String(idx)], state.bulkEdit.mode, idx, selected);
+            r.blocks[String(idx)] = newS;
+          }
+        });
+      }
+    });
+    if(typeof saveRevisions === 'function') saveRevisions();
+  }
+
+  saveWeek(state.currentWeek);
+  const updatedDayAgg = dayAgg(day);
+  state.bulkEdit.statusMsg = `✓ Successfully updated scheduled generation for ${selected.length} blocks (#${selected[0]} to #${selected[selected.length - 1]}). New day schedule: ${fmtMWh0(updatedDayAgg.s)} MWh`;
+  renderAll();
+}
+
+function undoBulkSchedule(){
+  if(!state.bulkEdit || !state.bulkEdit.lastUndo) return;
+  const undo = state.bulkEdit.lastUndo;
+  const week = weekObj();
+  const day = week?.days?.find(d => d.date === undo.date);
+  if(!day) return;
+
+  undo.previousSchedules.forEach(item => {
+    const b = day.blocks[item.idx - 1];
+    if(b) b.s = item.s;
+  });
+
+  if(undo.previousRevisions && state.revisions){
+    undo.previousRevisions.forEach(prevR => {
+      const target = state.revisions.find(r => r.id === prevR.id && r.date === prevR.date);
+      if(target) target.blocks = { ...prevR.blocks };
+    });
+    if(typeof saveRevisions === 'function') saveRevisions();
+  }
+
+  state.bulkEdit.lastUndo = null;
+  state.bulkEdit.statusMsg = `↩ Reverted bulk schedule adjustments for ${undo.date}.`;
+  saveWeek(state.currentWeek);
+  renderAll();
+}
+
 function renderBlockTable(){
   const wrap = document.getElementById('blockTableWrap');
   if(!wrap) return;
   const week = weekObj();
   const day = week.days.find(d=>d.date===state.currentDate);
   if(!day) return;
+  initBulkEditState(day);
   const q = (document.getElementById('blockSearch')||{}).value?.toLowerCase() || '';
+  const allSelected = day.blocks.length > 0 && day.blocks.every(b => state.bulkEdit.selectedBlocks.has(b.idx));
+
   let rows = day.blocks.map((b,i)=>{
     if(q && !(String(b.idx).includes(q) || (b.t||'').toLowerCase().includes(q))) return '';
     const r = revisionAwareBlock(day,b);
     const pillClass = r.dev>0?'over':(r.dev<0?'under':'none');
     const pillLabel = r.dev>0?'Over':(r.dev<0?'Under':'None');
-    return `<tr>
-      <td>#${b.idx}</td><td>${b.t}</td>
+    const isSelected = state.bulkEdit.selectedBlocks.has(b.idx);
+    return `<tr class="${isSelected ? 'row-selected' : ''}">
+      <td style="text-align:center;width:38px;">
+        <input type="checkbox" class="block-chk" data-block="${b.idx}" ${isSelected ? 'checked' : ''} onclick="handleBlockCheckboxClick(event, ${b.idx})" title="Click (or Shift-click for range)">
+      </td>
+      <td>#${b.idx}</td>
+      <td>${b.t}</td>
       <td><input class="editable-input" type="number" step="0.001" value="${r.s}" onchange="editBlock('${day.date}',${i},'s',this.value)"></td>
       <td><input class="editable-input" type="number" step="0.001" value="${b.a}" onchange="editBlock('${day.date}',${i},'a',this.value)"></td>
       <td class="${r.dev>0?'cell-pos':(r.dev<0?'cell-neg':'')}">${r.dev>=0?'+':''}${fmtMWh(r.dev)}</td>
@@ -1900,7 +3680,12 @@ function renderBlockTable(){
   wrap.innerHTML = `
     <div class="table-scroll">
       <table>
-        <thead><tr><th>Block</th><th>Time</th><th>Sch MWh</th><th>Act MWh</th><th>Deviation MWh</th><th>Freq Hz</th><th>Rate ₹/kWh</th><th>DSM ₹</th><th>Type</th></tr></thead>
+        <thead><tr>
+          <th style="width:38px;text-align:center;">
+            <input type="checkbox" id="selectAllBlocksChk" ${allSelected ? 'checked' : ''} onchange="toggleSelectAllBlocks(this.checked)" title="Select / Deselect All 96 Blocks">
+          </th>
+          <th>Block</th><th>Time</th><th>Sch MWh</th><th>Act MWh</th><th>Deviation MWh</th><th>Freq Hz</th><th>Rate ₹/kWh</th><th>DSM ₹</th><th>Type</th>
+        </tr></thead>
         <tbody>${rows}</tbody>
       </table>
     </div>
@@ -2129,14 +3914,33 @@ function showPreview(days){
     applyBtn.style.display='none';
     return;
   }
-  let html = `<div class="preview-box">` + days.map(d=>{
+  let fyNotice = '';
+  const firstDate = days.find(d=>d.date)?.date;
+  if(firstDate && typeof detectFYFromDate === 'function'){
+    const detected = detectFYFromDate(firstDate);
+    const cur = window.currentFinancialYear || 'FY 2024-25';
+    if(detected && detected !== cur){
+      fyNotice = `<div style="background:#EFF6FF;border:1px solid #93C5FD;border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:12px;color:#1E40AF;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+        <span>📅 <b>Detected Financial Year:</b> Dates belong to <b>${detected}</b> (Active FY is <b>${cur}</b>).</span>
+        <button type="button" class="btn btn-sm" onclick="setFinancialYearContext('${detected}').then(()=>showPreview(pendingImport))" style="background:#1D4ED8;color:white;font-weight:700;padding:3px 8px;font-size:11px;">Switch to ${detected}</button>
+      </div>`;
+    }
+  }
+  let html = fyNotice + `<div class="preview-box">` + days.map(d=>{
     const status = d.blocks.length===BLOCKS_PER_DAY ? `<span style="color:var(--green);">✓ ${d.blocks.length}/96</span>` : `<span style="color:var(--amber);">⚠ ${d.blocks.length}/96</span>`;
     const trunc = d.truncatedCols ? `<span style="color:var(--muted-2);font-size:10.5px;margin-left:8px;">(${d.truncatedCols} trailing empty/zero column(s) beyond block 96 ignored)</span>` : '';
     return `<div class="preview-row"><span>${formatDateDDMMYYYY(d.date)}</span><span>${status}${trunc}</span></div>`;
-  }).join('') + `</div>
-  <div class="week-target">
-    <span>Apply into:</span>
-    <select id="targetWeekSelect">${Array.from({length:WEEK_COUNT},(_,i)=>i+1).map(n=>`<option value="${n}" ${n===state.currentWeek?'selected':''}>W${n}</option>`).join('')}</select>
+  }).join('') + `</div>`;
+  const allWeekNums = typeof getAllWeekNumbers === 'function' ? getAllWeekNumbers() : Array.from({length:WEEK_COUNT},(_,i)=>i+1);
+  const weekOptions = allWeekNums.map(n=>`<option value="${n}" ${n===state.currentWeek?'selected':''}>W${String(n).padStart(2,'0')}</option>`).join('');
+  html += `
+  <div class="week-target" style="display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap;">
+    <span style="font-weight:700;">Apply into Week:</span>
+    <select id="targetWeekSelect" onchange="const m=document.getElementById('targetWeekManual');if(m)m.value=this.value;">${weekOptions}</select>
+    <span style="font-size:11px;color:#64748B;">or Type W#:</span>
+    <input type="number" id="targetWeekManual" min="1" max="99" value="${state.currentWeek}" style="width:52px;padding:3px 5px;font-family:var(--mono);font-size:11.5px;font-weight:800;border:1px solid #CBD5E1;border-radius:4px;text-align:center;" oninput="const s=document.getElementById('targetWeekSelect');if(s)s.value=this.value;">
+    <button type="button" class="bulk-preset-chip" style="padding:2px 6px;font-size:10px;" onclick="document.getElementById('targetWeekManual').value=51;const s=document.getElementById('targetWeekSelect');if(s)s.value=51;">W51</button>
+    <button type="button" class="bulk-preset-chip" style="padding:2px 6px;font-size:10px;" onclick="document.getElementById('targetWeekManual').value=52;const s=document.getElementById('targetWeekSelect');if(s)s.value=52;">W52</button>
   </div>`;
   box.innerHTML = html;
   applyBtn.style.display='inline-block';
@@ -2144,7 +3948,10 @@ function showPreview(days){
 
 function applyPaste(){
   if(!pendingImport || pendingImport.length===0) return;
-  const target = parseInt(document.getElementById('targetWeekSelect').value,10);
+  const manualVal = parseInt(document.getElementById('targetWeekManual')?.value, 10);
+  const selectVal = parseInt(document.getElementById('targetWeekSelect')?.value, 10);
+  const target = (!isNaN(manualVal) && manualVal >= 1) ? manualVal : (selectVal || state.currentWeek || 1);
+  ensureWeek(target);
   const days = pendingImport.map(d=>({date:d.date, blocks:d.blocks}));
   state.weeks[target].days = days;
   state.weeks[target].originalDays = JSON.parse(JSON.stringify(days));
@@ -2276,10 +4083,10 @@ function exportWeek(){
     ['Visual performance view · risk highlighting · block-level ranking — '+plantLabel,'','','','','',''],
     [],
     ['Scheduled (MWh)','','Actual Injection (MWh)','','Net Deviation (MWh)','','Net DSM Charge (₹)'],
-    [Number(g.s.toFixed(3)),'',Number(g.a.toFixed(3)),'',Number(g.dev.toFixed(3)),'',g.charge],
+    [{ t: 'n', f: "'Summary'!B9", v: Number(g.s.toFixed(3)) },'',{ t: 'n', f: "'Summary'!B10", v: Number(g.a.toFixed(3)) },'',{ t: 'n', f: "'Summary'!B11", v: Number(g.dev.toFixed(3)) },'',{ t: 'n', f: "'Summary'!B16", v: g.charge }],
     [],
     ['Avg Rate (₹/kWh)','','Max Deviation (%)','','Over-Injection Blocks','','Under-Injection Blocks'],
-    [Number(g.avgRate.toFixed(3)),'',Number(maxAbsDevPct.toFixed(2)),'',g.over,'',g.under],
+    [{ t: 'n', f: "'Summary'!B15", v: Number(g.avgRate.toFixed(3)) },'',Number(maxAbsDevPct.toFixed(2)),'',g.over,'',g.under],
     [],
     ['Overall Risk Status', riskLabel(overallRisk),'','','','',''],
     [],
@@ -2324,6 +4131,7 @@ function exportWeek(){
   });
 
   /* ================= Sheet 2: Summary ================= */
+  const dailyTotalRow = (week.days?.length || 7) + 2;
   const summaryAoa = [
     [projectName.toUpperCase()+' — WEEKLY EXPORT', ''],
     [plantLabel+' · CERC DSM Regulations 2024', ''],
@@ -2333,14 +4141,14 @@ function exportWeek(){
     ['Blocks Valid', q.valid+' / '+q.expectedTotal],
     [],
     ['METRIC', 'WEEK TOTAL'],
-    ['Scheduled Energy (MWh)', Number(g.s.toFixed(3))],
-    ['Actual Injection (MWh)', Number(g.a.toFixed(3))],
-    ['Total Deviation (MWh)', Number(g.dev.toFixed(3))],
-    ['Average Deviation (MWh/block)', Number(g.avgDev.toFixed(4))],
+    ['Scheduled Energy (MWh)', { t: 'n', f: `'Daily Summary'!C${dailyTotalRow}`, v: Number(g.s.toFixed(3)) }],
+    ['Actual Injection (MWh)', { t: 'n', f: `'Daily Summary'!D${dailyTotalRow}`, v: Number(g.a.toFixed(3)) }],
+    ['Total Deviation (MWh)', { t: 'n', f: `'Daily Summary'!E${dailyTotalRow}`, v: Number(g.dev.toFixed(3)) }],
+    ['Average Deviation (MWh/block)', { t: 'n', f: `B11/'Daily Summary'!B${dailyTotalRow}`, v: Number(g.avgDev.toFixed(4)) }],
     ['Max Positive Deviation (MWh)', Number(g.maxPos.toFixed(4))],
     ['Max Negative Deviation (MWh)', Number(g.maxNeg.toFixed(4))],
-    ['Reference Rate, avg (₹/kWh)', Number(g.avgRate.toFixed(3))],
-    ['DSM Charge (₹)', g.charge],
+    ['Reference Rate, avg (₹/kWh)', { t: 'n', f: `'Daily Summary'!F${dailyTotalRow}`, v: Number(g.avgRate.toFixed(3)) }],
+    ['DSM Charge (₹)', { t: 'n', f: `'Daily Summary'!G${dailyTotalRow}`, v: g.charge }],
     ['Over-Injection Blocks', g.over],
     ['Under-Injection Blocks', g.under],
     ['No-Deviation Blocks', g.none],
@@ -2382,34 +4190,159 @@ function exportWeek(){
 
   /* ================= Sheet 4: Daily Summary ================= */
   const dailyRows = [['DATE','BLOCKS','SCHEDULE (MWh)','ACTUAL (MWh)','DEVIATION (MWh)','RATE (₹/kWh avg)','DSM CHARGE (₹)','IMPACT']];
-  week.days.forEach(d=>{
+  let curBlockExcelRow = 2;
+  week.days.forEach((d, dIdx)=>{
     const dg = dayAgg(d);
-    dailyRows.push([formatDateDDMMYYYY(d.date), dg.blocks, Number(dg.s.toFixed(3)), Number(dg.a.toFixed(3)), Number(dg.dev.toFixed(3)), Number(dg.avgRate.toFixed(3)), dg.charge, dg.charge<0?'Receivable / Credit':(dg.charge>0?'Payable / Debit':'—')]);
+    const dBlocksCount = d.blocks?.length || 0;
+    const startBRow = curBlockExcelRow;
+    const endBRow = Math.max(startBRow, curBlockExcelRow + dBlocksCount - 1);
+    curBlockExcelRow += dBlocksCount;
+    const dayExcelRow = dIdx + 2;
+
+    dailyRows.push([
+      formatDateDDMMYYYY(d.date),
+      dBlocksCount,
+      { t: 'n', f: `SUM('Block Data'!D${startBRow}:D${endBRow})`, v: Number(dg.s.toFixed(3)) },
+      { t: 'n', f: `SUM('Block Data'!E${startBRow}:E${endBRow})`, v: Number(dg.a.toFixed(3)) },
+      { t: 'n', f: `SUM('Block Data'!H${startBRow}:H${endBRow})`, v: Number(dg.dev.toFixed(3)) },
+      { t: 'n', f: `AVERAGE('Block Data'!G${startBRow}:G${endBRow})`, v: Number(dg.avgRate.toFixed(3)) },
+      { t: 'n', f: `SUM('Block Data'!I${startBRow}:I${endBRow})`, v: dg.charge },
+      { t: 's', f: `IF(G${dayExcelRow}<0,"Receivable / Credit",IF(G${dayExcelRow}>0,"Payable / Debit","—"))`, v: dg.charge<0?'Receivable / Credit':(dg.charge>0?'Payable / Debit':'—') }
+    ]);
   });
+
+  // Week Total Row for Daily Summary
+  const numDays = week.days.length;
+  const dailyTotalRowIdx = numDays + 2;
+  dailyRows.push([
+    'WEEK TOTAL',
+    { t: 'n', f: `SUM(B2:B${numDays + 1})`, v: g.totalBlocks },
+    { t: 'n', f: `SUM(C2:C${numDays + 1})`, v: Number(g.s.toFixed(3)) },
+    { t: 'n', f: `SUM(D2:D${numDays + 1})`, v: Number(g.a.toFixed(3)) },
+    { t: 'n', f: `SUM(E2:E${numDays + 1})`, v: Number(g.dev.toFixed(3)) },
+    { t: 'n', f: `AVERAGE(F2:F${numDays + 1})`, v: Number(g.avgRate.toFixed(3)) },
+    { t: 'n', f: `SUM(G2:G${numDays + 1})`, v: g.charge },
+    { t: 's', f: `IF(G${dailyTotalRowIdx}<0,"Receivable / Credit",IF(G${dailyTotalRowIdx}>0,"Payable / Debit","—"))`, v: g.charge<0?'Receivable / Credit':(g.charge>0?'Payable / Debit':'—') }
+  ]);
+
   const dailySheet = XLSX.utils.aoa_to_sheet(dailyRows);
-  dailySheet['!cols'] = [{wch:12},{wch:9},{wch:16},{wch:14},{wch:16},{wch:16},{wch:15},{wch:20}];
+  dailySheet['!cols'] = [{wch:14},{wch:9},{wch:16},{wch:14},{wch:16},{wch:16},{wch:16},{wch:20}];
   styleHeaderRow(dailySheet, 0, 8);
   applyColFormat(dailySheet, 2, 1, dailyRows.length-1, FMT_MWH);
   applyColFormat(dailySheet, 3, 1, dailyRows.length-1, FMT_MWH);
   applyColFormat(dailySheet, 4, 1, dailyRows.length-1, FMT_MWH_DEV);
   applyColFormat(dailySheet, 5, 1, dailyRows.length-1, FMT_RATE);
   applyColFormat(dailySheet, 6, 1, dailyRows.length-1, FMT_RUPEE);
-  for(let i=1;i<dailyRows.length;i++){
+  for(let i=1;i<numDays+1;i++){
     const dg = dayAgg(week.days[i-1]);
     const impactRef = XLSX.utils.encode_cell({r:i,c:7});
     if(dailySheet[impactRef]) dailySheet[impactRef].s = dg.charge<0 ? RISK_STYLE.GREEN : (dg.charge>0 ? RISK_STYLE.RED : {});
   }
+  const TOTAL_ROW_STYLE = { fill:{fgColor:{rgb:'D9E1F2'}}, font:{color:{rgb:'17365D'}, bold:true, sz:11} };
+  styleRow(dailySheet, dailyRows.length - 1, 8, TOTAL_ROW_STYLE);
+
+  /* Helper functions to generate formula strings for CERC DSM Multipliers */
+  function getExcelMultWithinFormula(R) {
+    const f = `'Block Data'!F${R}`;
+    const s = `'Block Data'!D${R}`;
+    const h = `'Block Data'!H${R}`;
+    const dt = `D${R}`;
+    const overF = `IF(AND(${f}>=${FP.deadbandLow},${f}<=${FP.deadbandHigh}),1,IF(AND(${f}>${FP.deadbandHigh},${f}<=${FP.bandHigh}),MAX(${FP.overRampHighFloor},1-((${f}-${FP.deadbandHigh})/0.01)*${Number(FP.overRampHighSlope.toFixed(4))}),IF(AND(${f}>=${FP.bandLow},${f}<${FP.deadbandLow}),MIN(${FP.overRampLowCap},1+((${FP.deadbandLow}-${f})/0.01)*${Number(FP.overRampLowSlope.toFixed(4))}),IF(AND(${f}>${FP.bandHigh},${f}<${FP.extremeHigh}),${FP.overDiscountMult},IF(${f}>=${FP.extremeHigh},${FP.overExtremeMult},${FP.overBelowBandMult})))))`;
+    const underF = `IF(AND(${f}>=${FP.deadbandLow},${f}<=${FP.deadbandHigh}),1,IF(AND(${f}>${FP.deadbandHigh},${f}<=${FP.bandHigh}),MAX(${FP.underRampHighFloor},1-((${f}-${FP.deadbandHigh})/0.01)*${Number(FP.underRampHighSlope.toFixed(4))}),IF(AND(${f}>=${FP.bandLow},${f}<${FP.deadbandLow}),MIN(${FP.underRampLowCap},1+((${FP.deadbandLow}-${f})/0.01)*${Number(FP.underRampLowSlope.toFixed(4))}),IF(${f}>${FP.bandHigh},${FP.underAboveBandMult},${FP.underBelowBandMult}))))`;
+    return `IF(${s}=0,IF(${h}>0,0,1),IF(${dt}="Over-Injection",${overF},${underF}))`;
+  }
+
+  function getExcelMultBeyondFormula(R) {
+    const f = `'Block Data'!F${R}`;
+    const s = `'Block Data'!D${R}`;
+    const dt = `D${R}`;
+    const beyondMain = `IF(${dt}="Over-Injection",IF(${f}<${FP.extremeHigh},${FP.overDiscountMult},${FP.overExtremeMult}),IF(${f}>=50,${FP.beyondUnderHighMult},IF(${f}>=${FP.bandLow},${FP.beyondUnderMidMult},${FP.beyondUnderLowMult})))`;
+    return `IF(${s}=0,IF(AND(${dt}="Under-Injection",${f}>=${FP.bandLow}),1,IF(${f}>=${FP.bandLow},0,IF(${dt}="Under-Injection",1,IF(${dt}="Over-Injection",0,${beyondMain})))),${beyondMain})`;
+  }
 
   /* ================= Sheet 5: Block Data ================= */
   const blockRows = [['DATE','BLOCK','TIME','SCH (MWh)','ACT (MWh)','FREQ (Hz)','RATE (₹/kWh)','DEVIATION (MWh)','DSM CHARGE (₹)','TYPE']];
+  /* ================= Sheet 6: Calculations ================= */
+  const calcRows = [['DATE','BLOCK','DEVIATION %','DEVIATION TYPE','VOLUME LIMIT (MWh)','DEV WITHIN LIMIT (MWh)','DEV BEYOND LIMIT (MWh)','MULT WITHIN','MULT BEYOND','CHARGE (₹)']];
+
+  let blockRowIdx = 2;
+  let totalDevWithinSum = 0;
+  let totalDevBeyondSum = 0;
+  let totalFreqSum = 0;
+  let totalBlocksCount = 0;
+
   week.days.forEach(d=>{
     d.blocks.forEach(b=>{
       const r = revisionAwareBlock(d,b);
-      blockRows.push([formatDateDDMMYYYY(d.date), b.idx, b.t, Number(r.s.toFixed(4)), Number(b.a.toFixed(4)), Number(b.f.toFixed(2)), Number(b.r.toFixed(3)), Number(r.dev.toFixed(4)), r.charge, r.devType]);
+      const R = blockRowIdx;
+      totalBlocksCount++;
+      totalDevWithinSum += (r.devWithin || 0);
+      totalDevBeyondSum += (r.devBeyond || 0);
+      totalFreqSum += (b.f || 50);
+
+      // Block Data row with integrated Excel formulas for Deviation, DSM Charge, and Type
+      blockRows.push([
+        formatDateDDMMYYYY(d.date),
+        b.idx,
+        b.t,
+        Number(r.s.toFixed(4)),
+        Number(b.a.toFixed(4)),
+        Number(b.f.toFixed(2)),
+        Number(b.r.toFixed(3)),
+        { t: 'n', f: `E${R}-D${R}`, v: Number(r.dev.toFixed(4)) },
+        { t: 'n', f: `Calculations!J${R}`, v: r.charge },
+        { t: 's', f: `Calculations!D${R}`, v: r.devType }
+      ]);
+
+      // Calculations sheet row with integrated Excel formulas for all CERC DSM steps
+      calcRows.push([
+        formatDateDDMMYYYY(d.date),
+        b.idx,
+        { t: 'n', f: `IF('Block Data'!D${R}=0,0,'Block Data'!H${R}/ABS('Block Data'!D${R}))`, v: (r.s===0?0:r.dev/Math.abs(r.s)) },
+        { t: 's', f: `IF('Block Data'!H${R}>0,"Over-Injection",IF('Block Data'!H${R}<0,"Under-Injection","No Deviation"))`, v: r.devType },
+        { t: 'n', f: `MIN('Block Data'!D${R}*${Number((FP.volLimitPct/100).toFixed(4))},${FP.volLimitCap})`, v: Number(r.volLimit.toFixed(4)) },
+        { t: 'n', f: `IF(ABS('Block Data'!H${R})>E${R},SIGN('Block Data'!H${R})*E${R},'Block Data'!H${R})`, v: Number(r.devWithin.toFixed(4)) },
+        { t: 'n', f: `'Block Data'!H${R}-F${R}`, v: Number(r.devBeyond.toFixed(4)) },
+        { t: 'n', f: getExcelMultWithinFormula(R), v: Number(r.multWithin.toFixed(3)) },
+        { t: 'n', f: getExcelMultBeyondFormula(R), v: Number(r.multBeyond.toFixed(3)) },
+        { t: 'n', f: `ROUND(IF('Block Data'!H${R}=0,0,IF('Block Data'!H${R}>0,-1,1)*(ABS(F${R})*H${R}+ABS(G${R})*I${R})*'Block Data'!G${R}*1000),0)`, v: r.charge }
+      ]);
+
+      blockRowIdx++;
     });
   });
+
+  const lastBlockRow = blockRowIdx - 1;
+
+  // Add Total Summary rows at the bottom of Block Data and Calculations
+  blockRows.push([
+    'TOTAL WEEK',
+    '',
+    '',
+    { t: 'n', f: `SUM(D2:D${lastBlockRow})`, v: Number(g.s.toFixed(3)) },
+    { t: 'n', f: `SUM(E2:E${lastBlockRow})`, v: Number(g.a.toFixed(3)) },
+    { t: 'n', f: `AVERAGE(F2:F${lastBlockRow})`, v: Number((totalFreqSum / Math.max(1, totalBlocksCount)).toFixed(2)) },
+    { t: 'n', f: `AVERAGE(G2:G${lastBlockRow})`, v: Number(g.avgRate.toFixed(3)) },
+    { t: 'n', f: `SUM(H2:H${lastBlockRow})`, v: Number(g.dev.toFixed(3)) },
+    { t: 'n', f: `SUM(I2:I${lastBlockRow})`, v: g.charge },
+    ''
+  ]);
+
+  calcRows.push([
+    'TOTAL WEEK',
+    '',
+    '',
+    '',
+    '',
+    { t: 'n', f: `SUM(F2:F${lastBlockRow})`, v: Number(totalDevWithinSum.toFixed(4)) },
+    { t: 'n', f: `SUM(G2:G${lastBlockRow})`, v: Number(totalDevBeyondSum.toFixed(4)) },
+    '',
+    '',
+    { t: 'n', f: `SUM(J2:J${lastBlockRow})`, v: g.charge }
+  ]);
+
   const blockSheet = XLSX.utils.aoa_to_sheet(blockRows);
-  blockSheet['!cols'] = [{wch:12},{wch:7},{wch:13},{wch:11},{wch:11},{wch:10},{wch:12},{wch:14},{wch:13},{wch:16}];
+  blockSheet['!cols'] = [{wch:12},{wch:7},{wch:13},{wch:11},{wch:11},{wch:10},{wch:12},{wch:14},{wch:14},{wch:16}];
   styleHeaderRow(blockSheet, 0, 10);
   applyColFormat(blockSheet, 3, 1, blockRows.length-1, FMT_MWH);
   applyColFormat(blockSheet, 4, 1, blockRows.length-1, FMT_MWH);
@@ -2417,24 +4350,19 @@ function exportWeek(){
   applyColFormat(blockSheet, 6, 1, blockRows.length-1, FMT_RATE);
   applyColFormat(blockSheet, 7, 1, blockRows.length-1, FMT_MWH_DEV);
   applyColFormat(blockSheet, 8, 1, blockRows.length-1, FMT_RUPEE);
-  blockSheet['!autofilter'] = { ref: XLSX.utils.encode_range({s:{r:0,c:0},e:{r:blockRows.length-1,c:9}}) };
+  blockSheet['!autofilter'] = { ref: XLSX.utils.encode_range({s:{r:0,c:0},e:{r:lastBlockRow-1,c:9}}) };
+  styleRow(blockSheet, blockRows.length - 1, 10, TOTAL_ROW_STYLE);
 
-  /* ================= Sheet 6: Calculations ================= */
-  const calcRows = [['DATE','BLOCK','DEVIATION %','DEVIATION TYPE','VOLUME LIMIT (MWh)','DEV WITHIN LIMIT (MWh)','DEV BEYOND LIMIT (MWh)','MULT WITHIN','MULT BEYOND','CHARGE (₹)']];
-  week.days.forEach(d=>{
-    d.blocks.forEach(b=>{
-      const r = revisionAwareBlock(d,b);
-      calcRows.push([formatDateDDMMYYYY(d.date), b.idx, Number(r.devPct.toFixed(2)), r.devType, Number(r.volLimit.toFixed(4)), Number(r.devWithin.toFixed(4)), Number(r.devBeyond.toFixed(4)), Number(r.multWithin.toFixed(3)), Number(r.multBeyond.toFixed(3)), r.charge]);
-    });
-  });
   const calcSheet = XLSX.utils.aoa_to_sheet(calcRows);
-  calcSheet['!cols'] = [{wch:12},{wch:7},{wch:12},{wch:16},{wch:16},{wch:18},{wch:18},{wch:12},{wch:12},{wch:13}];
+  calcSheet['!cols'] = [{wch:12},{wch:7},{wch:14},{wch:16},{wch:18},{wch:22},{wch:22},{wch:14},{wch:14},{wch:15}];
   styleHeaderRow(calcSheet, 0, 10);
   applyColFormat(calcSheet, 2, 1, calcRows.length-1, FMT_PCT);
   applyColFormat(calcSheet, 4, 1, calcRows.length-1, FMT_MWH);
   applyColFormat(calcSheet, 5, 1, calcRows.length-1, FMT_MWH_DEV);
   applyColFormat(calcSheet, 6, 1, calcRows.length-1, FMT_MWH_DEV);
   applyColFormat(calcSheet, 9, 1, calcRows.length-1, FMT_RUPEE);
+  calcSheet['!autofilter'] = { ref: XLSX.utils.encode_range({s:{r:0,c:0},e:{r:lastBlockRow-1,c:9}}) };
+  styleRow(calcSheet, calcRows.length - 1, 10, TOTAL_ROW_STYLE);
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, dashSheet, 'Dashboard');
@@ -2443,7 +4371,8 @@ function exportWeek(){
   XLSX.utils.book_append_sheet(wb, dailySheet, 'Daily Summary');
   XLSX.utils.book_append_sheet(wb, blockSheet, 'Block Data');
   XLSX.utils.book_append_sheet(wb, calcSheet, 'Calculations');
-  XLSX.writeFile(wb, 'Khurja_DSM_W'+state.currentWeek+'.xlsx');
+  const plantSlug = String(window.currentPlantContext||'Khurja').replace(/[^A-Za-z0-9]+/g,'_');
+  XLSX.writeFile(wb, `${plantSlug}_DSM_W${state.currentWeek}.xlsx`);
 }
 
 
@@ -2827,6 +4756,9 @@ function renderAll(){
 /* ================= INIT ================= */
 async function init(){
   await loadAuth();
+  if(typeof initFirebaseAndDriveClient === 'function'){
+    initFirebaseAndDriveClient().catch(e => console.warn('Drive client init notice:', e));
+  }
   await loadProjectMeta();
   await loadFormulaParamsFromStorage();
   await loadAllWeeks();
@@ -2846,15 +4778,75 @@ async function init(){
 </script>
 
 <div id="revisionModal" class="rev-modal">
-  <div class="rev-box">
+  <div class="rev-box" style="width:min(960px,96vw);max-height:92vh;">
     <div class="rev-head">
-      <div><div class="rev-title">Grid / Settlement Schedule Revision Management</div>
-      <div class="rev-sub">R0 / R1 / R2 / R3 / R4 / R5 … — latest applicable grid/settlement-authority-issued schedule is used for DSM.</div></div>
+      <div>
+        <div class="rev-title" style="display:flex;align-items:center;gap:8px;">
+          <span>Grid & Deviation Settlement Schedule Revisions (R0–R99)</span>
+          <span class="bulk-badge" style="background:#EFF6FF;color:#1D4ED8;font-size:11px;">Revised DSA Supported</span>
+        </div>
+        <div class="rev-sub">Add revisions, assign Revised DSA Release Dates (including April releases for W51/W52), and apply modified schedules.</div>
+      </div>
       <button class="rev-btn" onclick="closeRevisionManager()">✕ Close</button>
     </div>
-    <div class="rev-note"><b>Source / Authority:</b> Selected Grid / Settlement Authority issues and implements schedule revisions through its scheduling systems. The app stores the revision as an auditable record and applies it block-wise only from its effective time. UPSLDC publicly describes web-based scheduling/revision and implemented schedules as part of its scheduling functions. citeturn0search0turn0search2</div>
-    <div class="rev-actions">
-      <button class="rev-btn primary" onclick="addRevisionRow()">＋ Add Revision</button>
+
+    <!-- Quick Add / Edit Revision Card -->
+    <div id="revFormCard" style="background:#F8FAFC;border:1px solid #CBD5E1;border-radius:10px;padding:12px;margin:12px 0;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <span style="font-weight:800;font-size:11px;color:#0F172A;" id="revFormTitle">＋ Add / Update Schedule Revision & Revised DSA Release Date</span>
+        <button class="btn btn-sm" onclick="resetRevisionForm()" style="font-size:10px;">Clear Form</button>
+      </div>
+      <input type="hidden" id="revFormIndex" value="-1">
+      <div class="rev-grid" style="grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));gap:8px;">
+        <div>
+          <label>Revision ID</label>
+          <input type="text" id="revFormId" placeholder="e.g. R1, R2" value="R1" style="font-weight:800;">
+        </div>
+        <div>
+          <label>Target Week</label>
+          <input type="number" id="revFormWeek" min="1" max="99" placeholder="e.g. 51, 52" style="font-weight:800;">
+        </div>
+        <div>
+          <label style="color:#0F766E;">Revised DSA Release Date</label>
+          <input type="date" id="revFormDsaDate" title="Revised DSA Release Date (supports April release for W51/W52)" style="border-color:#0F766E;background:#F0FDFA;font-weight:700;">
+        </div>
+        <div>
+          <label>Effective Date</label>
+          <input type="date" id="revFormDate">
+        </div>
+        <div>
+          <label>Effective Time</label>
+          <input type="time" id="revFormTime" value="00:00">
+        </div>
+        <div>
+          <label>Issued By / Authority</label>
+          <select id="revFormAuthority">
+            <option value="UPSLDC">UPSLDC</option>
+            <option value="NRPC">NRPC</option>
+            <option value="NRLDC">NRLDC</option>
+            <option value="Grid Controller">Grid Controller</option>
+          </select>
+        </div>
+        <div>
+          <label>Reference / Letter No.</label>
+          <input type="text" id="revFormRef" placeholder="e.g. UPSLDC/DSA/REV-1">
+        </div>
+        <div>
+          <label>Status</label>
+          <select id="revFormStatus">
+            <option value="Active">Active</option>
+            <option value="Superseded">Superseded</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px;justify-content:flex-end;align-items:center;flex-wrap:wrap;">
+        <span style="font-size:10px;color:#64748B;margin-right:auto;">Note: W51 & W52 Revised DSA statements issued in April can be recorded with exact release dates.</span>
+        <button class="rev-btn primary" onclick="submitRevisionForm()" style="background:#0F766E;border-color:#0F766E;font-size:11px;padding:6px 14px;">💾 Save Revision & DSA Date</button>
+      </div>
+    </div>
+
+    <div class="rev-actions" style="margin-bottom:10px;">
+      <button class="rev-btn primary" onclick="quickAddRevision()">＋ New Revision</button>
       <button class="rev-btn" onclick="importRevisionExcel()">⇪ Import UPSLDC Revision Excel</button>
       <button class="rev-btn" onclick="exportRevisionRegister()">⇩ Export Revision Register</button>
       <button class="rev-btn" onclick="clearRevisions()">Reset Revisions</button>
@@ -2867,185 +4859,381 @@ async function init(){
 
 <script id="thdc-plantwise-storage">
 (function(){
- function pid(){return String(window.currentPlantContext||'Khurja Floating Solar').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')}
- function k(base,extra){return 'thdc-dsm-v2:'+pid()+':'+base+(extra!==undefined?':'+extra:'')}
- window.THDC_STORAGE={key:k};
- function get(x){try{return localStorage.getItem(x)}catch(e){return null}}
- function set(x,v){try{localStorage.setItem(x,v);return true}catch(e){console.warn(e);return false}}
+  // Multi-Financial Year & Multi-Plant Storage Architecture
+  const defaultFys = ['FY 2026-27', 'FY 2025-26', 'FY 2024-25', 'FY 2023-24', 'FY 2022-23'];
+  let savedFys = [];
+  try { savedFys = JSON.parse(localStorage.getItem('thdc-fy-list') || '[]'); } catch(e){}
+  window.THDC_FINANCIAL_YEARS = Array.from(new Set([...(Array.isArray(savedFys) && savedFys.length ? savedFys : []), ...defaultFys]));
+  window.currentFinancialYear = localStorage.getItem('thdc-financial-year') || 'FY 2024-25';
 
- function formatLastSaved(s){
-   if(!s) return 'Not saved yet';
-   try{
-     const d = new Date(s);
-     if(isNaN(d.getTime())) return 'Not saved yet';
-     const dateStr = d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
-     const timeStr = d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
-     return `Last saved: ${dateStr}, ${timeStr}`;
-   }catch(e){
-     return 'Last saved: ' + s;
-   }
- }
- window.formatLastSaved = formatLastSaved;
+  function pid(p){
+    return String(p || window.currentPlantContext || 'Khurja Floating Solar').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+  }
+  function fyId(f){
+    return String(f || window.currentFinancialYear || 'FY 2024-25').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+  }
 
- window.getCurrentSaveStatusText = function(){
-   const s = get(k('last-saved'));
-   return formatLastSaved(s);
- };
+  function k(base, extra){
+    return 'thdc-dsm-v2:' + pid() + ':' + fyId() + ':' + base + (extra !== undefined ? ':' + extra : '');
+  }
+  function legacyK(base, extra){
+    return 'thdc-dsm-v2:' + pid() + ':' + base + (extra !== undefined ? ':' + extra : '');
+  }
+  window.THDC_STORAGE = { key: k, legacyKey: legacyK, pid: pid, fyId: fyId };
 
- window.updateSaveStatus = function(t){
-   document.querySelectorAll('[data-save-status]').forEach(e => {
-     const span = e.querySelector('[data-save-text]');
-     if(span) span.textContent = t;
-     else e.textContent = t;
-   });
- };
+  function get(x){ try{ return localStorage.getItem(x); }catch(e){ return null; } }
+  function set(x,v){ try{ localStorage.setItem(x,v); return true; }catch(e){ console.warn(e); return false; } }
 
- function updateSaveStatusFromStorage(){
-   const s = get(k('last-saved'));
-   window.updateSaveStatus(formatLastSaved(s));
- }
- window.updateSaveStatusFromStorage = updateSaveStatusFromStorage;
+  // Automatic Migration: copy legacy unpartitioned workspace to default FY 2024-25 if not already copied
+  try {
+    const curP = pid();
+    const defaultFyWorkspaceKey = 'thdc-dsm-v2:' + curP + ':fy-2024-25:workspace';
+    const legacyWorkspaceKey = 'thdc-dsm-v2:' + curP + ':workspace';
+    if (!localStorage.getItem(defaultFyWorkspaceKey) && localStorage.getItem(legacyWorkspaceKey)) {
+      localStorage.setItem(defaultFyWorkspaceKey, localStorage.getItem(legacyWorkspaceKey));
+      const legacySaved = localStorage.getItem('thdc-dsm-v2:' + curP + ':last-saved');
+      if(legacySaved) localStorage.setItem('thdc-dsm-v2:' + curP + ':fy-2024-25:last-saved', legacySaved);
+      console.log('[THDC Storage] Migrated legacy data for ' + curP + ' to FY 2024-25.');
+    }
+  } catch(e){}
 
- window.THDC_AUTO_SAVE = async function(isAutomatic = true){
-   const stamp = new Date().toISOString();
-   const plant = window.currentPlantContext || 'Khurja Floating Solar';
-   const payload = {
-     version: 2,
-     plant: plant,
-     projectMeta: state.projectMeta,
-     weeks: state.weeks,
-     currentWeek: state.currentWeek,
-     revisions: state.revisions || [],
-     formulas: FP,
-     savedAt: stamp,
-     backupType: isAutomatic ? 'auto-5min' : 'manual'
-   };
-   try {
-     // Save active workspace
-     set(k('workspace'), JSON.stringify(payload));
-     set(k('last-saved'), stamp);
-     set(k('revisions'), JSON.stringify(state.revisions || []));
-     set(k('formulas'), JSON.stringify(FP));
-     set(k('project-meta'), JSON.stringify(state.projectMeta || {}));
-     for(let n = 1; n <= WEEK_COUNT; n++){
-       if(state.weeks[n]?.days?.length) set(k('week', n), JSON.stringify(state.weeks[n]));
-     }
+  function formatLastSaved(s){
+    if(!s) return 'Not saved yet';
+    try{
+      const d = new Date(s);
+      if(isNaN(d.getTime())) return 'Not saved yet';
+      const dateStr = d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+      const timeStr = d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+      return `Last saved: ${dateStr}, ${timeStr}`;
+    }catch(e){
+      return 'Last saved: ' + s;
+    }
+  }
+  window.formatLastSaved = formatLastSaved;
 
-     // Store 5-min auto-backup snapshot in localStorage
-     set(k('auto-backup'), JSON.stringify(payload));
-     set(k('auto-backup-timestamp'), stamp);
+  window.getCurrentSaveStatusText = function(){
+    const s = get(k('last-saved'));
+    return formatLastSaved(s);
+  };
 
-     updateSaveStatusFromStorage();
+  window.updateSaveStatus = function(t){
+    document.querySelectorAll('[data-save-status]').forEach(e => {
+      const span = e.querySelector('[data-save-text]');
+      if(span) span.textContent = t;
+      else e.textContent = t;
+    });
+  };
 
-     // Visual pulse feedback on header status pill
-     document.querySelectorAll('.thdc-save-status').forEach(el => {
-       el.classList.remove('thdc-save-pulse');
-       void el.offsetWidth;
-       el.classList.add('thdc-save-pulse');
-       setTimeout(() => el.classList.remove('thdc-save-pulse'), 1500);
-     });
+  function updateSaveStatusFromStorage(){
+    const s = get(k('last-saved'));
+    window.updateSaveStatus(formatLastSaved(s));
+  }
+  window.updateSaveStatusFromStorage = updateSaveStatusFromStorage;
 
-     return true;
-   } catch(e) {
-     console.error('[THDC Storage] Auto-save error:', e);
-     return false;
-   }
- };
+  // Detect Financial Year from date (Indian electricity settlement calendar: 01-Apr to 31-Mar)
+  window.detectFYFromDate = function(dateStr){
+    if(!dateStr) return null;
+    try {
+      const d = new Date(dateStr);
+      if(isNaN(d.getTime())) return null;
+      const m = d.getMonth() + 1; // 1-12
+      const y = d.getFullYear();
+      if(m >= 4){
+        const nextY = String(y + 1).slice(-2);
+        return `FY ${y}-${nextY}`;
+      } else {
+        const curY = String(y).slice(-2);
+        return `FY ${y - 1}-${curY}`;
+      }
+    } catch(e){
+      return null;
+    }
+  };
 
- window.THDC_MANUAL_SAVE = async function(){
-   const ok = await window.THDC_AUTO_SAVE(false);
-   return ok;
- };
+  // Helper to generate options for FY dropdowns
+  window.getFYOptionsHTML = function(selectedFY){
+    const fys = window.THDC_FINANCIAL_YEARS || defaultFys;
+    const cur = selectedFY || window.currentFinancialYear || 'FY 2024-25';
+    let html = fys.map(f => `<option value="${f}" ${f === cur ? 'selected' : ''}>${f}</option>`).join('');
+    html += `<option value="__add_new__">+ Add New FY...</option>`;
+    return html;
+  };
 
- window.THDC_RESTORE_AUTO_BACKUP = async function(){
-   const raw = get(k('auto-backup'));
-   if(!raw) {
-     alert('No automatic 5-minute backup snapshot found in localStorage for ' + (window.currentPlantContext || 'this plant') + '.');
-     return;
-   }
-   try {
-     const p = JSON.parse(raw);
-     const timeStr = p.savedAt ? new Date(p.savedAt).toLocaleString('en-IN') : 'unknown time';
-     if(confirm(`Restore automatic 5-minute backup from ${timeStr}?\n\nThis will load the workspace state saved to browser localStorage.`)){
-       set(k('workspace'), raw);
-       await window.THDC_LOAD_PLANT(window.currentPlantContext);
-       if(state.view === 'home') renderHomeShell();
-       else { renderShell(); renderAll(); }
-       alert('Workspace restored from automatic backup successfully!');
-     }
-   } catch(e) {
-     alert('Failed to restore auto-backup: ' + e.message);
-   }
- };
+  // Helper to synchronize all FY dropdowns across the application views
+  window.syncAllFYDropdowns = function(){
+    const cur = window.currentFinancialYear || 'FY 2024-25';
+    const html = window.getFYOptionsHTML(cur);
+    ['headerFySelect', 'homeFySelect', 'weekFySelect', 'heroFySelect'].forEach(id => {
+      const el = document.getElementById(id);
+      if(el){ el.innerHTML = html; el.value = cur; }
+    });
+    const wctxFY = document.getElementById('wctxFY');
+    if(wctxFY) wctxFY.textContent = cur + ' ▾';
+  };
 
- window.THDC_LOAD_PLANT = async function(plant){
-   window.currentPlantContext = plant; localStorage.setItem('thdc-plant-context', plant);
-   for(let n = 1; n <= WEEK_COUNT; n++) state.weeks[n] = {days:[], originalDays:[], dsaDate:''};
-   state.currentWeek = 1; state.currentDate = null; state.revisions = [];
-   try{
-     const packed = get(k('workspace'));
-     if(packed){
-       const p = JSON.parse(packed);
-       if(p.weeks) { state.weeks = p.weeks; for(let n = 1; n <= WEEK_COUNT; n++){ if(state.weeks[n]) state.weeks[n].dsaDate = state.weeks[n].dsaDate || state.weeks[n].dsaDated || ''; } }
-       if(p.projectMeta) state.projectMeta = p.projectMeta;
-       if(p.currentWeek) state.currentWeek = p.currentWeek;
-       state.revisions = p.revisions || [];
-       FP = {...DEFAULT_FORMULA_PARAMS, ...(p.formulas || {})};
-     } else {
-       const meta = get(k('project-meta')); if(meta) state.projectMeta = JSON.parse(meta);
-       const rev = get(k('revisions')); if(rev) state.revisions = JSON.parse(rev) || [];
-       const f = get(k('formulas')); if(f) FP = {...DEFAULT_FORMULA_PARAMS, ...JSON.parse(f)};
-       for(let n = 1; n <= WEEK_COUNT; n++){const x = get(k('week', n)); if(x){state.weeks[n] = JSON.parse(x); state.weeks[n].dsaDate = state.weeks[n].dsaDate || state.weeks[n].dsaDated || ''}}
-     }
-   }catch(e){console.warn('Plant workspace load failed', e)}
-   const p = window.THDC_PLANTS?.[plant]; if(p){state.projectMeta.name = p.name; state.projectMeta.plant = p.name + ' — ' + p.capacity + ' MW'}
-   updateSaveStatusFromStorage();
- };
+  // Switch Financial Year context cleanly
+  window.setFinancialYearContext = async function(fy){
+    if(!fy) return;
+    if(fy === '__add_new__'){
+      const newFy = prompt('Enter new Financial Year (e.g. FY 2027-28):', 'FY 2027-28');
+      if(!newFy) { window.syncAllFYDropdowns(); return; }
+      const cleanFy = newFy.trim().toUpperCase();
+      if(!window.THDC_FINANCIAL_YEARS.includes(cleanFy)){
+        window.THDC_FINANCIAL_YEARS.unshift(cleanFy);
+        localStorage.setItem('thdc-fy-list', JSON.stringify(window.THDC_FINANCIAL_YEARS));
+      }
+      fy = cleanFy;
+    }
+    if(window.THDC_MANUAL_SAVE) await window.THDC_MANUAL_SAVE();
+    window.currentFinancialYear = fy;
+    localStorage.setItem('thdc-financial-year', fy);
+    await window.THDC_LOAD_PLANT(window.currentPlantContext, fy);
+    window.syncAllFYDropdowns();
+    if(typeof state !== 'undefined'){
+      if(state.view === 'week'){ renderShell(); renderAll(); }
+      else if(state.view === 'home'){ renderHomeShell(); }
+      else if(state.view === 'login'){ renderLogin(); }
+    }
+    if(typeof updateTopWorkspaceContext === 'function') updateTopWorkspaceContext();
+    if(typeof showToast === 'function') showToast(`Switched workspace to ${fy} (${window.currentPlantContext})`);
+  };
 
- window.THDC_EXPORT_BACKUP = async function(){
-   await window.THDC_AUTO_SAVE(false); const payload = get(k('workspace')); if(!payload) return;
-   const blob = new Blob([payload], {type: 'application/json'}), a = document.createElement('a');
-   a.href = URL.createObjectURL(blob); a.download = 'THDC_DSM_' + pid() + '_BACKUP.json'; a.click();
-   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
- };
+  window.promptSwitchFY = function(){
+    const cur = window.currentFinancialYear || 'FY 2024-25';
+    const fys = window.THDC_FINANCIAL_YEARS || defaultFys;
+    const msg = `Switch Financial Year (FY)\n\nCurrent Active: ${cur}\n\nAvailable Financial Years:\n` +
+      fys.map((f, i) => `${i+1}. ${f}`).join('\n') +
+      `\n\nEnter number (1-${fys.length}) or type a Financial Year (e.g. FY 2027-28):`;
+    const choice = prompt(msg, cur);
+    if(!choice) return;
+    const num = parseInt(choice.trim(), 10);
+    if(!isNaN(num) && num >= 1 && num <= fys.length){
+      window.setFinancialYearContext(fys[num - 1]);
+    } else {
+      window.setFinancialYearContext(choice.trim().toUpperCase());
+    }
+  };
 
- window.THDC_IMPORT_BACKUP = function(){
-   const i = document.createElement('input'); i.type = 'file'; i.accept = '.json,application/json';
-   i.onchange = async () => {
-     const f = i.files?.[0]; if(!f) return;
-     try{
-       const p = JSON.parse(await f.text());
-       if(p.plant && p.plant !== window.currentPlantContext){alert('Backup belongs to ' + p.plant + '. Select that plant first.'); return}
-       set(k('workspace'), JSON.stringify(p)); await window.THDC_LOAD_PLANT(window.currentPlantContext);
-       renderHomeShell(); if(state.view === 'week'){renderShell(); renderAll()} alert('Plant workspace restored successfully.');
-     }catch(e){alert('Invalid THDC DSM backup file.')}
-   };
-   i.click();
- };
+  window.THDC_AUTO_SAVE = async function(isAutomatic = true){
+    const stamp = new Date().toISOString();
+    const plant = window.currentPlantContext || 'Khurja Floating Solar';
+    const fy = window.currentFinancialYear || 'FY 2024-25';
+    const payload = {
+      version: 2,
+      plant: plant,
+      financialYear: fy,
+      projectMeta: state.projectMeta,
+      weeks: state.weeks,
+      currentWeek: state.currentWeek,
+      revisions: state.revisions || [],
+      formulas: FP,
+      savedAt: stamp,
+      backupType: isAutomatic ? 'auto-5min' : 'manual'
+    };
+    try {
+      // Save active FY & plant workspace
+      set(k('workspace'), JSON.stringify(payload));
+      set(k('last-saved'), stamp);
+      set(k('revisions'), JSON.stringify(state.revisions || []));
+      set(k('formulas'), JSON.stringify(FP));
+      set(k('project-meta'), JSON.stringify(state.projectMeta || {}));
+      for(let n = 1; n <= WEEK_COUNT; n++){
+        if(state.weeks[n]?.days?.length) set(k('week', n), JSON.stringify(state.weeks[n]));
+      }
 
- // 5-minute Auto-Save Interval (5 * 60 * 1000 ms)
- const AUTO_SAVE_INTERVAL_MS = 5 * 60 * 1000;
- if(window._thdcAutoSaveTimer) clearInterval(window._thdcAutoSaveTimer);
- window._thdcAutoSaveTimer = setInterval(async () => {
-   try {
-     if(window.THDC_AUTO_SAVE) {
-       await window.THDC_AUTO_SAVE(true);
-     }
-   } catch(e) {
-     console.warn('5-minute auto-save tick error:', e);
-   }
- }, AUTO_SAVE_INTERVAL_MS);
+      // Store 5-min auto-backup snapshot in localStorage partitioned by plant and FY
+      set(k('auto-backup'), JSON.stringify(payload));
+      set(k('auto-backup-timestamp'), stamp);
 
- window.addEventListener('storage', (e) => {
-   if(e.key && e.key.includes(':last-saved')) {
-     updateSaveStatusFromStorage();
-   }
- });
+      updateSaveStatusFromStorage();
 
- state.storageAvailable = true;
+      // Visual pulse feedback on header status pill
+      document.querySelectorAll('.thdc-save-status').forEach(el => {
+        el.classList.remove('thdc-save-pulse');
+        void el.offsetWidth;
+        el.classList.add('thdc-save-pulse');
+        setTimeout(() => el.classList.remove('thdc-save-pulse'), 1500);
+      });
+
+      // Automatically sync active plant workspace to Google Drive if connected
+      if(state.drive && state.drive.connected && state.drive.autoSync){
+        if(typeof THDC_DEBOUNCED_GDRIVE_SYNC === 'function') THDC_DEBOUNCED_GDRIVE_SYNC();
+      }
+
+      return true;
+    } catch(e) {
+      console.error('[THDC Storage] Auto-save error:', e);
+      return false;
+    }
+  };
+
+  window.THDC_MANUAL_SAVE = async function(){
+    const ok = await window.THDC_AUTO_SAVE(false);
+    if(state.drive && state.drive.connected){
+      if(typeof THDC_SAVE_TO_GDRIVE === 'function') THDC_SAVE_TO_GDRIVE(false);
+    }
+    return ok;
+  };
+
+  window.THDC_RESTORE_AUTO_BACKUP = async function(){
+    const raw = get(k('auto-backup'));
+    if(!raw) {
+      alert('No automatic 5-minute backup snapshot found in localStorage for ' + (window.currentPlantContext || 'this plant') + ' (' + (window.currentFinancialYear || 'FY') + ').');
+      return;
+    }
+    try {
+      const p = JSON.parse(raw);
+      const timeStr = p.savedAt ? new Date(p.savedAt).toLocaleString('en-IN') : 'unknown time';
+      if(confirm(`Restore automatic 5-minute backup for ${p.plant || window.currentPlantContext} [${p.financialYear || window.currentFinancialYear}] from ${timeStr}?\n\nThis will load the workspace state saved to browser localStorage.`)){
+        set(k('workspace'), raw);
+        await window.THDC_LOAD_PLANT(window.currentPlantContext, window.currentFinancialYear);
+        if(state.view === 'home') renderHomeShell();
+        else { renderShell(); renderAll(); }
+        alert('Workspace restored from automatic backup successfully!');
+      }
+    } catch(e) {
+      alert('Failed to restore auto-backup: ' + e.message);
+    }
+  };
+
+  window.THDC_LOAD_PLANT = async function(plant, fy){
+    if(plant){ window.currentPlantContext = plant; localStorage.setItem('thdc-plant-context', plant); }
+    if(fy){ window.currentFinancialYear = fy; localStorage.setItem('thdc-financial-year', fy); }
+    for(let n = 1; n <= WEEK_COUNT; n++) state.weeks[n] = {days:[], originalDays:[], dsaDate:''};
+    state.currentWeek = 1; state.currentDate = null; state.revisions = [];
+    try{
+      const packed = get(k('workspace'));
+      if(packed){
+        const p = JSON.parse(packed);
+        if(p.weeks) {
+          state.weeks = p.weeks;
+          for(let n = 1; n <= WEEK_COUNT; n++){
+            if(state.weeks[n]) state.weeks[n].dsaDate = state.weeks[n].dsaDate || state.weeks[n].dsaDated || '';
+          }
+        }
+        if(p.projectMeta) state.projectMeta = p.projectMeta;
+        if(p.currentWeek) state.currentWeek = p.currentWeek;
+        state.revisions = p.revisions || [];
+        FP = {...DEFAULT_FORMULA_PARAMS, ...(p.formulas || {})};
+      } else {
+        // Check if individual week keys exist in this FY
+        let foundAny = false;
+        for(let n = 1; n <= WEEK_COUNT; n++){
+          const x = get(k('week', n));
+          if(x){
+            state.weeks[n] = JSON.parse(x);
+            state.weeks[n].dsaDate = state.weeks[n].dsaDate || state.weeks[n].dsaDated || '';
+            foundAny = true;
+          }
+        }
+        // Fallback for default FY 2024-25 to read legacy unpartitioned keys
+        if(!foundAny && fyId() === 'fy-2024-25'){
+          const legacyPacked = get(legacyK('workspace'));
+          if(legacyPacked){
+            const lp = JSON.parse(legacyPacked);
+            if(lp.weeks){
+              state.weeks = lp.weeks;
+              for(let n = 1; n <= WEEK_COUNT; n++){
+                if(state.weeks[n]) state.weeks[n].dsaDate = state.weeks[n].dsaDate || state.weeks[n].dsaDated || '';
+              }
+            }
+            if(lp.projectMeta) state.projectMeta = lp.projectMeta;
+            if(lp.currentWeek) state.currentWeek = lp.currentWeek;
+            state.revisions = lp.revisions || [];
+            FP = {...DEFAULT_FORMULA_PARAMS, ...(lp.formulas || {})};
+            foundAny = true;
+          } else {
+            for(let n = 1; n <= WEEK_COUNT; n++){
+              const x = get(legacyK('week', n));
+              if(x){
+                state.weeks[n] = JSON.parse(x);
+                state.weeks[n].dsaDate = state.weeks[n].dsaDate || state.weeks[n].dsaDated || '';
+                foundAny = true;
+              }
+            }
+          }
+        }
+
+        const meta = get(k('project-meta')) || (fyId() === 'fy-2024-25' ? get(legacyK('project-meta')) : null);
+        if(meta) state.projectMeta = JSON.parse(meta);
+        const rev = get(k('revisions')) || (fyId() === 'fy-2024-25' ? get(legacyK('revisions')) : null);
+        if(rev) state.revisions = JSON.parse(rev) || [];
+        const f = get(k('formulas')) || (fyId() === 'fy-2024-25' ? get(legacyK('formulas')) : null);
+        if(f) FP = {...DEFAULT_FORMULA_PARAMS, ...JSON.parse(f)};
+      }
+    }catch(e){ console.warn('Plant workspace load failed', e); }
+    const p = window.THDC_PLANTS?.[window.currentPlantContext];
+    if(p){
+      state.projectMeta.name = p.name;
+      state.projectMeta.plant = p.name + ' — ' + p.capacity + ' MW (' + (window.currentFinancialYear || 'FY 2024-25') + ')';
+    }
+    updateSaveStatusFromStorage();
+    window.syncAllFYDropdowns();
+  };
+
+  window.THDC_EXPORT_BACKUP = async function(){
+    await window.THDC_AUTO_SAVE(false);
+    const payload = get(k('workspace'));
+    if(!payload) return;
+    const blob = new Blob([payload], {type: 'application/json'}), a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'THDC_DSM_' + pid() + '_' + fyId().toUpperCase() + '_BACKUP.json';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  };
+
+  window.THDC_IMPORT_BACKUP = function(){
+    const i = document.createElement('input'); i.type = 'file'; i.accept = '.json,application/json';
+    i.onchange = async () => {
+      const f = i.files?.[0]; if(!f) return;
+      try{
+        const p = JSON.parse(await f.text());
+        if(p.plant && p.plant !== window.currentPlantContext){
+          if(!confirm(`Backup belongs to ${p.plant}. Switch plant context to ${p.plant} and import?`)){
+            return;
+          }
+          window.currentPlantContext = p.plant;
+          localStorage.setItem('thdc-plant-context', p.plant);
+        }
+        if(p.financialYear && p.financialYear !== window.currentFinancialYear){
+          if(confirm(`Backup belongs to ${p.financialYear}. Switch financial year context to ${p.financialYear} and import?`)){
+            window.currentFinancialYear = p.financialYear;
+            localStorage.setItem('thdc-financial-year', p.financialYear);
+          }
+        }
+        set(k('workspace'), JSON.stringify(p));
+        await window.THDC_LOAD_PLANT(window.currentPlantContext, window.currentFinancialYear);
+        renderHomeShell();
+        if(state.view === 'week'){ renderShell(); renderAll(); }
+        alert(`Plant workspace restored successfully for ${window.currentPlantContext} [${window.currentFinancialYear}].`);
+      }catch(e){ alert('Invalid THDC DSM backup file: ' + e.message); }
+    };
+    i.click();
+  };
+
+  // 5-minute Auto-Save Interval (5 * 60 * 1000 ms)
+  const AUTO_SAVE_INTERVAL_MS = 5 * 60 * 1000;
+  if(window._thdcAutoSaveTimer) clearInterval(window._thdcAutoSaveTimer);
+  window._thdcAutoSaveTimer = setInterval(async () => {
+    try {
+      if(window.THDC_AUTO_SAVE) {
+        await window.THDC_AUTO_SAVE(true);
+      }
+    } catch(e) {
+      console.warn('5-minute auto-save tick error:', e);
+    }
+  }, AUTO_SAVE_INTERVAL_MS);
+
+  window.addEventListener('storage', (e) => {
+    if(e.key && e.key.includes(':last-saved')) {
+      updateSaveStatusFromStorage();
+    }
+  });
+
+  state.storageAvailable = true;
 })();
 
-  // Start the application only after plant-wise storage functions are available.
+  // Start the application only after plant-wise and FY storage functions are available.
   init();
 </script>
 
@@ -3056,13 +5244,48 @@ async function init(){
    The latest revision applicable to each block is selected automatically.
 */
 state.revisions = state.revisions || [];
-function loadRevisions(){
-  try{ const x=localStorage.getItem('thdc-upslDC-revisions'); if(x) state.revisions=JSON.parse(x)||[]; }catch(e){state.revisions=[]}
+
+function getRevisionStorageKey(){
+  if(window.THDC_STORAGE && typeof window.THDC_STORAGE.key === 'function'){
+    return window.THDC_STORAGE.key('revisions');
+  }
+  const p = String(window.currentPlantContext||'Khurja Floating Solar').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+  return 'thdc-dsm-v2:' + p + ':revisions';
 }
-function saveRevisions(){localStorage.setItem('thdc-dsm-v2:'+String(window.currentPlantContext||'Khurja Floating Solar').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')+':revisions',JSON.stringify(state.revisions||[])); if(window.THDC_MANUAL_SAVE) THDC_MANUAL_SAVE();}
+
+function loadRevisions(){
+  try{
+    const k = getRevisionStorageKey();
+    let x = localStorage.getItem(k);
+    if(!x){
+      const p = String(window.currentPlantContext||'Khurja Floating Solar').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+      x = localStorage.getItem('thdc-dsm-v2:' + p + ':revisions');
+    }
+    if(!x){
+      x = localStorage.getItem('thdc-upslDC-revisions');
+    }
+    state.revisions = x ? JSON.parse(x) : [];
+  }catch(e){
+    state.revisions = [];
+  }
+}
+
+function saveRevisions(){
+  try{
+    const k = getRevisionStorageKey();
+    localStorage.setItem(k, JSON.stringify(state.revisions || []));
+    const p = String(window.currentPlantContext||'Khurja Floating Solar').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+    localStorage.setItem('thdc-dsm-v2:' + p + ':revisions', JSON.stringify(state.revisions || []));
+  }catch(e){
+    console.warn('saveRevisions failed:', e);
+  }
+  if(window.THDC_MANUAL_SAVE) THDC_MANUAL_SAVE();
+}
+
 function revisionRank(id){
   const m=String(id||'R0').match(/^R(\d+)$/i); return m?Number(m[1]):0;
 }
+
 function revisionApplicable(date, blockIdx){
   const revs=(state.revisions||[]).filter(r=>r.active!==false && r.date<=date && r.blocks && r.blocks[String(blockIdx)]!=null);
   if(!revs.length) return null;
@@ -3074,10 +5297,12 @@ function revisionApplicable(date, blockIdx){
   });
   return revs[0];
 }
+
 function applicableSchedule(day, b){
   const rev=revisionApplicable(day.date,b.idx);
   return rev ? Number(rev.blocks[String(b.idx)]) : Number(b.s);
 }
+
 function revisionAwareBlock(day,b){
   if(window.THDC_REVISION_AWARE) return window.THDC_REVISION_AWARE(day,b);
   const s=applicableSchedule(day,b);
@@ -3085,41 +5310,210 @@ function revisionAwareBlock(day,b){
   return {...x,s,revision:revisionApplicable(day.date,b.idx)?.id||'R0'};
 }
 window.revisionAwareBlock=revisionAwareBlock;
-function openRevisionManager(){renderRevisionTable();document.getElementById('revisionModal').classList.add('show')}
-function closeRevisionManager(){document.getElementById('revisionModal').classList.remove('show')}
-function addRevisionRow(){
-  const n=(state.revisions||[]).reduce((m,r)=>Math.max(m,revisionRank(r.id)),0)+1;
-  const d=state.weeks[state.currentWeek]?.days?.[0]?.date||new Date().toISOString().slice(0,10);
-  const blocks={}; for(let i=1;i<=96;i++) blocks[String(i)]=null;
-  state.revisions.push({id:'R'+n,date:d,time:'00:00',issuedBy:'UPSLDC',reference:'',status:'Active',active:true,blocks});
-  saveRevisions(); renderRevisionTable();
+
+function openRevisionManager(){
+  renderRevisionTable();
+  document.getElementById('revisionModal').classList.add('show');
 }
+
+function closeRevisionManager(){
+  document.getElementById('revisionModal').classList.remove('show');
+}
+
+function quickAddRevision(targetWeek){
+  const w = targetWeek || state.currentWeek || 1;
+  openRevisionManager();
+  resetRevisionForm();
+  const n = (state.revisions||[]).reduce((m,r)=>Math.max(m,revisionRank(r.id)),0)+1;
+  const idInp = document.getElementById('revFormId');
+  if(idInp) idInp.value = 'R' + n;
+  const wkInp = document.getElementById('revFormWeek');
+  if(wkInp) wkInp.value = w;
+  const curWk = state.weeks[w];
+  const dsaInp = document.getElementById('revFormDsaDate');
+  if(dsaInp) dsaInp.value = curWk?.revisedDsaDate || '';
+  const dtInp = document.getElementById('revFormDate');
+  if(dtInp) dtInp.value = curWk?.days?.[0]?.date || new Date().toISOString().slice(0,10);
+  const authSelect = document.getElementById('revFormAuthority');
+  if(authSelect && window.currentPlantContext && window.THDC_PLANTS[window.currentPlantContext]){
+    const src = window.THDC_PLANTS[window.currentPlantContext].source;
+    if(src) authSelect.value = src === 'NRPC' ? 'NRPC' : 'UPSLDC';
+  }
+  const formTitle = document.getElementById('revFormTitle');
+  if(formTitle) formTitle.textContent = `＋ Add Schedule Revision & Revised DSA Release Date (Week ${w})`;
+}
+
+function resetRevisionForm(){
+  const idx = document.getElementById('revFormIndex'); if(idx) idx.value = '-1';
+  const idInp = document.getElementById('revFormId'); if(idInp) idInp.value = 'R1';
+  const wkInp = document.getElementById('revFormWeek'); if(wkInp) wkInp.value = state.currentWeek;
+  const dsaInp = document.getElementById('revFormDsaDate'); if(dsaInp) dsaInp.value = '';
+  const dtInp = document.getElementById('revFormDate'); if(dtInp) dtInp.value = '';
+  const tmInp = document.getElementById('revFormTime'); if(tmInp) tmInp.value = '00:00';
+  const refInp = document.getElementById('revFormRef'); if(refInp) refInp.value = '';
+  const stInp = document.getElementById('revFormStatus'); if(stInp) stInp.value = 'Active';
+  const title = document.getElementById('revFormTitle'); if(title) title.textContent = '＋ Add / Update Schedule Revision & Revised DSA Release Date';
+}
+
+function submitRevisionForm(){
+  const idx = parseInt(document.getElementById('revFormIndex')?.value || '-1', 10);
+  const idVal = (document.getElementById('revFormId')?.value || 'R1').trim().toUpperCase();
+  const weekVal = parseInt(document.getElementById('revFormWeek')?.value || String(state.currentWeek), 10);
+  const dsaDate = (document.getElementById('revFormDsaDate')?.value || '').trim();
+  const effDate = (document.getElementById('revFormDate')?.value || '').trim();
+  const effTime = (document.getElementById('revFormTime')?.value || '00:00').trim();
+  const auth = (document.getElementById('revFormAuthority')?.value || 'UPSLDC').trim();
+  const ref = (document.getElementById('revFormRef')?.value || '').trim();
+  const status = document.getElementById('revFormStatus')?.value || 'Active';
+
+  if(!idVal){
+    alert('Please enter a valid Revision ID (e.g. R1, R2).');
+    return;
+  }
+
+  let r;
+  if(idx >= 0 && state.revisions[idx]){
+    r = state.revisions[idx];
+    r.id = idVal;
+    r.week = weekVal;
+    r.revisedDsaDate = dsaDate;
+    r.date = effDate || r.date;
+    r.time = effTime;
+    r.issuedBy = auth;
+    r.reference = ref;
+    r.status = status;
+    r.active = status === 'Active';
+  } else {
+    const blocks={}; for(let i=1;i<=96;i++) blocks[String(i)]=null;
+    r = {
+      id: idVal,
+      week: weekVal,
+      revisedDsaDate: dsaDate,
+      date: effDate || state.weeks[weekVal]?.days?.[0]?.date || new Date().toISOString().slice(0,10),
+      time: effTime,
+      issuedBy: auth,
+      reference: ref,
+      status: status,
+      active: status === 'Active',
+      blocks
+    };
+    state.revisions.push(r);
+  }
+
+  // Update target week if provided
+  if(!isNaN(weekVal) && weekVal >= 1){
+    ensureWeek(weekVal);
+    if(dsaDate) state.weeks[weekVal].revisedDsaDate = dsaDate;
+    state.weeks[weekVal].activeRevision = idVal;
+    saveWeek(weekVal);
+  }
+
+  saveRevisions();
+  renderRevisionTable();
+  populateWeekContextControls();
+  renderWeekwiseSummary();
+  renderAll();
+  resetRevisionForm();
+  alert(`Revision ${idVal} and Revised DSA Date saved successfully.`);
+}
+
+function editRevision(index){
+  const r = state.revisions[index];
+  if(!r) return;
+  const idx = document.getElementById('revFormIndex'); if(idx) idx.value = index;
+  const idInp = document.getElementById('revFormId'); if(idInp) idInp.value = r.id;
+  const wkInp = document.getElementById('revFormWeek'); if(wkInp) wkInp.value = r.week || state.currentWeek;
+  const dsaInp = document.getElementById('revFormDsaDate'); if(dsaInp) dsaInp.value = r.revisedDsaDate || '';
+  const dtInp = document.getElementById('revFormDate'); if(dtInp) dtInp.value = r.date || '';
+  const tmInp = document.getElementById('revFormTime'); if(tmInp) tmInp.value = r.time || '00:00';
+  const authSelect = document.getElementById('revFormAuthority'); if(authSelect) authSelect.value = r.issuedBy || 'UPSLDC';
+  const refInp = document.getElementById('revFormRef'); if(refInp) refInp.value = r.reference || '';
+  const stInp = document.getElementById('revFormStatus'); if(stInp) stInp.value = r.status || 'Active';
+  const title = document.getElementById('revFormTitle'); if(title) title.textContent = `✏ Edit Schedule Revision ${r.id}`;
+  const card = document.getElementById('revFormCard'); if(card) card.scrollIntoView({behavior:'smooth'});
+}
+
+function applyRevisionToWeek(index){
+  const r = state.revisions[index];
+  if(!r) return;
+  ensureWeek(state.currentWeek);
+  state.weeks[state.currentWeek].activeRevision = r.id;
+  if(r.revisedDsaDate){
+    state.weeks[state.currentWeek].revisedDsaDate = r.revisedDsaDate;
+  }
+  saveWeek(state.currentWeek);
+  saveRevisions();
+  populateWeekContextControls();
+  renderWeekwiseSummary();
+  renderAll();
+  alert(`Applied revision ${r.id} (DSA Date: ${isoToDisplay(r.revisedDsaDate)}) to Week W${String(state.currentWeek).padStart(2,'0')}.`);
+}
+
 function renderRevisionTable(){
   const el=document.getElementById('revisionTableWrap'); if(!el)return;
-  const rows=(state.revisions||[]).sort((a,b)=>revisionRank(a.id)-revisionRank(b.id)).map((r,i)=>`
+  const rows=(state.revisions||[]).sort((a,b)=>revisionRank(a.id)-revisionRank(b.id)).map((r,i)=>{
+    const configuredBlocks = Object.values(r.blocks||{}).filter(v=>v!=null&&v!=='').length;
+    return `
     <tr>
       <td><b>${r.id}</b></td>
+      <td>${r.week ? 'W' + String(r.week).padStart(2,'0') : '—'}</td>
+      <td style="color:#0F766E;font-weight:700;">${isoToDisplay(r.revisedDsaDate)}</td>
       <td>${formatDateDDMMYYYY(r.date)}</td>
       <td>${r.time||'00:00'}</td>
       <td>${r.issuedBy||'UPSLDC'}</td>
       <td>${r.reference||'—'}</td>
       <td><span class="rev-chip ${r.status==='Active'?'ok':'warn'}">${r.status||'Active'}</span></td>
-      <td>${Object.values(r.blocks||{}).filter(v=>v!=null&&v!=='').length} / 96</td>
-      <td><button class="rev-btn" onclick="editRevision(${i})">Edit</button> <button class="rev-btn" onclick="deleteRevision(${i})">Delete</button></td>
-    </tr>`).join('');
-  el.innerHTML=`<table class="rev-table"><thead><tr><th>Revision</th><th>Effective Date (DD-MM-YYYY)</th><th>Time</th><th>Issued By</th><th>UPSLDC Ref.</th><th>Status</th><th>Blocks</th><th>Action</th></tr></thead><tbody>${rows||'<tr><td colspan="8">No revisions loaded. Add R1 or import the UPSLDC revision file.</td></tr>'}</tbody></table>
-  <div class="rev-note">For each 15-minute block, the app uses the <b>latest active revision applicable at that date/time</b>. R0 remains the base schedule where no revision exists.</div>`;
+      <td>${configuredBlocks} / 96</td>
+      <td style="white-space:nowrap;">
+        <button class="rev-btn primary" style="padding:3px 7px;font-size:9px;" onclick="applyRevisionToWeek(${i})" title="Apply to current Week W${state.currentWeek}">Apply to W${state.currentWeek}</button>
+        <button class="rev-btn" style="padding:3px 7px;font-size:9px;" onclick="editRevision(${i})">Edit</button>
+        <button class="rev-btn" style="padding:3px 7px;font-size:9px;color:#DC2626;" onclick="deleteRevision(${i})">Delete</button>
+      </td>
+    </tr>`;
+  }).join('');
+  el.innerHTML=`<div style="overflow-x:auto;"><table class="rev-table">
+    <thead>
+      <tr>
+        <th>Revision</th>
+        <th>Week</th>
+        <th>Revised DSA Date</th>
+        <th>Effective Date</th>
+        <th>Time</th>
+        <th>Issued By</th>
+        <th>Reference / Order No.</th>
+        <th>Status</th>
+        <th>Blocks</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>${rows||'<tr><td colspan="10" style="text-align:center;padding:14px;color:#64748B;">No revisions recorded yet. Use the form above to add R1, R2… with Revised DSA release dates.</td></tr>'}</tbody>
+  </table></div>
+  <div class="rev-note" style="margin-top:10px;">
+    <b>Settlement Revision Rule:</b> Deviation settlement accounts use R0 as base schedule. When revised accounts (R1, R2, etc.) are issued by grid authorities with revised DSA release dates (including statements issued in April for year-end weeks like W51/W52), they are audited, recorded, and applied block-wise to calculate net deviations.
+  </div>`;
 }
-function editRevision(index){
-  const r=state.revisions[index];
-  const ref=prompt('Grid Authority Reference / revision number:',r.reference||'');
-  if(ref!==null) r.reference=ref;
-  const date=prompt('Effective date (DD-MM-YYYY):',formatDateDDMMYYYY(r.date)); if(date){const p=date.split('-'); if(p.length===3) r.date=`${p[2]}-${p[1]}-${p[0]}`;}
-  const time=prompt('Effective time (HH:MM):',r.time||'00:00'); if(time)r.time=time;
-  saveRevisions(); renderRevisionTable(); renderAll();
+
+function deleteRevision(index){
+  if(confirm('Delete '+state.revisions[index].id+'?')){
+    state.revisions.splice(index,1);
+    saveRevisions();
+    renderRevisionTable();
+    populateWeekContextControls();
+    renderWeekwiseSummary();
+    renderAll();
+  }
 }
-function deleteRevision(index){if(confirm('Delete '+state.revisions[index].id+'?')){state.revisions.splice(index,1);saveRevisions();renderRevisionTable();renderAll()}}
-function clearRevisions(){if(confirm('Remove all stored grid/settlement revisions?')){state.revisions=[];saveRevisions();renderRevisionTable();renderAll()}}
+
+function clearRevisions(){
+  if(confirm('Remove all stored grid/settlement revisions?')){
+    state.revisions=[];
+    saveRevisions();
+    renderRevisionTable();
+    populateWeekContextControls();
+    renderWeekwiseSummary();
+    renderAll();
+  }
+}
 function importRevisionExcel(){document.getElementById('revisionFileInput').click()}
 document.addEventListener('change',async e=>{
   if(e.target.id!=='revisionFileInput')return;
@@ -3655,13 +6049,15 @@ window.currentPlantContext=localStorage.getItem('thdc-plant-context')||'Khurja F
 function setPlantContext(v){
  window.currentPlantContext=THDC_PLANTS[v]?v:'Khurja Floating Solar';
  localStorage.setItem('thdc-plant-context',window.currentPlantContext);
+ if(window.THDC_LOAD_PLANT) window.THDC_LOAD_PLANT(window.currentPlantContext, window.currentFinancialYear);
  const p=THDC_PLANTS[window.currentPlantContext];
- document.title='THDC DSM - '+p.name;
+ document.title='THDC DSM - '+p.name + ' (' + (window.currentFinancialYear || 'FY 2024-25') + ')';
  const badge=document.getElementById('plantCapacityBadge');
  if(badge)badge.textContent=p.capacity+' MW · '+p.type;
  const pn=document.getElementById('selectedPlantName'),pc=document.getElementById('selectedPlantCapacity'),pt=document.getElementById('selectedPlantType');
  if(pn)pn.textContent=p.name; if(pc)pc.textContent=p.capacity+' MW'; if(pt)pt.textContent=p.type;
  const ws=document.getElementById('plantContextSelect'); if(ws) ws.value=window.currentPlantContext;
+ if(typeof syncAllFYDropdowns==='function') syncAllFYDropdowns();
  if(typeof renderAll==='function')renderAll();
  if(typeof renderTHDCUPSLDCReconciliation==='function')renderTHDCUPSLDCReconciliation();
  if(typeof renderCompleteInsights==='function')renderCompleteInsights();
