@@ -401,6 +401,92 @@ tbody tr.active-row{background:var(--blue-dim);}
 .week-target{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:12.5px;}
 .week-target select{font-family:var(--mono);padding:5px 8px;border:1px solid var(--border);border-radius:6px;}
 
+/* ---------- 96-block horizontal matrix modal & table ---------- */
+.matrix-tbl {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 11.5px;
+  font-family: var(--mono);
+}
+.matrix-tbl th, .matrix-tbl td {
+  padding: 5px 8px;
+  border-right: 1px solid #E2E8F0;
+  border-bottom: 1px solid #E2E8F0;
+  white-space: nowrap;
+  text-align: right;
+}
+.matrix-tbl th {
+  background: #17365D;
+  color: #FFFFFF;
+  font-weight: 700;
+  text-align: center;
+  position: sticky;
+  top: 0;
+  z-index: 15;
+}
+.matrix-tbl tr:nth-child(2) th {
+  top: 28px;
+  background: #1E3A8A;
+  font-size: 10.5px;
+  z-index: 15;
+}
+.matrix-tbl .col-sticky-0 {
+  position: sticky;
+  left: 0;
+  z-index: 10;
+  text-align: center;
+  font-weight: 700;
+  min-width: 90px;
+  border-right: 1.5px solid #94A3B8;
+}
+.matrix-tbl .col-sticky-1 {
+  position: sticky;
+  left: 90px;
+  z-index: 10;
+  text-align: center;
+  min-width: 85px;
+  border-right: 1.5px solid #94A3B8;
+}
+.matrix-tbl .col-sticky-2 {
+  position: sticky;
+  left: 175px;
+  z-index: 10;
+  text-align: left;
+  min-width: 220px;
+  font-weight: 600;
+  border-right: 1.5px solid #94A3B8;
+}
+.matrix-tbl .col-sticky-3 {
+  position: sticky;
+  left: 395px;
+  z-index: 10;
+  text-align: center;
+  min-width: 60px;
+  border-right: 2px solid #64748B;
+}
+.matrix-tbl th.col-sticky-0,
+.matrix-tbl th.col-sticky-1,
+.matrix-tbl th.col-sticky-2,
+.matrix-tbl th.col-sticky-3 {
+  z-index: 25;
+}
+.matrix-row-sch { background: #F0F9FF; color: #0369A1; }
+.matrix-row-act { background: #FFFFFF; color: #0F172A; }
+.matrix-row-dev { background: #FEFCE8; color: #854D0E; font-weight: 600; }
+.matrix-row-devpct { background: #F0FDF4; color: #166534; }
+.matrix-row-vollimit { background: #EFF6FF; color: #1D4ED8; }
+.matrix-row-devwithin { background: #F0FDF4; color: #15803D; }
+.matrix-row-devbeyond { background: #FEF2F2; color: #B91C1C; }
+.matrix-row-freq { background: #F8FAFC; color: #334155; }
+.matrix-row-mult { background: #F5F3FF; color: #6D28D9; }
+.matrix-row-rate { background: #FAF5FF; color: #6B21A8; }
+.matrix-row-chwithin { background: #F0FDF4; color: #166534; }
+.matrix-row-chbeyond { background: #FFF1F2; color: #9F1239; }
+.matrix-row-chnet { background: #FFF1F2; color: #9F1239; font-weight: 700; }
+.matrix-row-tot { background: #D9E1F2; color: #17365D; font-weight: 800; border-top: 2px solid #17365D; }
+
 /* ---------- bulk edit schedule ---------- */
 .bulk-edit-container {
   background: #f8fafc;
@@ -1084,6 +1170,67 @@ body:has(.login-wrap) #thdc-global-header{
   </div>
 </div>
 
+<!-- Horizontal Matrix & Calculations Viewer Modal -->
+<div class="modal-overlay" id="horizontalMatrixModal">
+  <div class="modal-box" style="max-width:96vw;width:1540px;max-height:92vh;padding:18px 22px;display:flex;flex-direction:column;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;border-bottom:1px solid var(--border);padding-bottom:12px;flex-wrap:wrap;gap:10px;">
+      <div>
+        <h3 style="display:flex;align-items:center;gap:8px;margin:0;font-size:18px;color:#0F172A;">
+          <span style="display:inline-grid;place-items:center;width:32px;height:32px;border-radius:8px;background:#0F766E;color:#FFFFFF;font-size:17px;">▦</span>
+          <span>96 Time-Blocks Horizontal Matrix &amp; Calculations</span>
+        </h3>
+        <div style="font-size:12.5px;color:var(--muted);margin-top:3px;">
+          Day &amp; Date-wise 96-block generation, deviation, volume limits, multipliers &amp; CERC regulatory DSM calculations
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <button class="thdc-action" style="background:linear-gradient(135deg,#4338CA,#3730A3)!important;color:#FFFFFF!important;font-weight:700;padding:6px 14px;border-radius:6px;border:none;" onclick="exportHorizontalCalculations()" title="Download Full 96-Block Calculation Matrix (.xlsx)">
+          <span style="font-size:15px">🧮</span> Download Calculations Excel
+        </button>
+        <button class="thdc-action" style="background:linear-gradient(135deg,#0D9488,#0F766E)!important;color:#FFFFFF!important;font-weight:700;padding:6px 14px;border-radius:6px;border:none;" onclick="exportHorizontal96Blocks()" title="Download Complete 96-Block Horizontal Workbook (.xlsx)">
+          <span style="font-size:15px">▦</span> Download Horizontal Excel
+        </button>
+        <button class="btn btn-sm" onclick="closeModal('horizontalMatrixModal')" style="font-size:16px;padding:6px 12px;">✕</button>
+      </div>
+    </div>
+
+    <!-- Filter & Options Controls -->
+    <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px;flex-wrap:wrap;background:#F8FAFC;padding:10px 14px;border-radius:8px;border:1px solid #E2E8F0;">
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span style="font-size:12px;font-weight:700;color:#475569;">Scope Date:</span>
+        <select id="matrixDaySelect" onchange="renderHorizontalMatrixContent()" style="padding:5px 10px;font-size:12.5px;border:1px solid #CBD5E1;border-radius:6px;background:#FFFFFF;font-weight:600;color:#0F172A;">
+          <!-- Populated dynamically -->
+        </select>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span style="font-size:12px;font-weight:700;color:#475569;">Parameter View:</span>
+        <select id="matrixParamFilter" onchange="renderHorizontalMatrixContent()" style="padding:5px 10px;font-size:12.5px;border:1px solid #CBD5E1;border-radius:6px;background:#FFFFFF;font-weight:600;color:#0F172A;">
+          <option value="all_calc">🧮 All 15 Regulatory Calculation Steps (Matrix)</option>
+          <option value="core">⚡ Core Operations (Schedule, Actual, Deviation, Net DSM ₹)</option>
+          <option value="limits">⚖ Regulatory Limits (Vol Limit, Dev Within, Dev Beyond)</option>
+          <option value="multipliers">📈 Grid &amp; Rates (Freq, Mult Within, Mult Beyond, Rate)</option>
+          <option value="charges">💰 Financial Settlement (Within, Beyond &amp; Net DSM ₹)</option>
+          <option value="schedule">📅 Schedule Only (96-Blk)</option>
+          <option value="actual">⚡ Actual Only (96-Blk)</option>
+          <option value="deviation">± Deviation Only (96-Blk)</option>
+          <option value="charge">₹ DSM Charges Only (96-Blk)</option>
+          <option value="frequency">⏱ Frequency Only (96-Blk)</option>
+        </select>
+      </div>
+
+      <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+        <span class="pill" id="matrixSummaryBadge" style="background:#E0F2FE;color:#0369A1;font-weight:700;font-size:11.5px;padding:4px 10px;">7 Days · 672 Blocks</span>
+      </div>
+    </div>
+
+    <!-- Scrollable Horizontal Matrix Table Wrap -->
+    <div id="matrixTableContainer" style="flex:1;overflow:auto;max-height:calc(88vh - 160px);border:1px solid #CBD5E1;border-radius:8px;background:#FFFFFF;box-shadow:inset 0 1px 3px rgba(0,0,0,0.05);">
+      <!-- Table populated dynamically -->
+    </div>
+  </div>
+</div>
+
 <!-- Confirm modal -->
 <div class="modal-overlay" id="confirmModal">
   <div class="modal-box" style="max-width:420px;">
@@ -1684,6 +1831,8 @@ function renderShell(){
       <button class="thdc-action thdc-rev" onclick="openRevisionManager()">↻ Revisions R0–R99</button>
       <button class="thdc-action thdc-export" onclick="exportWeek()" title="Export Complete Excel Workbook with 96-Block Horizontal Templates & Calculations">▤ Export Excel</button>
       <button class="thdc-action thdc-export" style="background:linear-gradient(135deg,#0D9488,#0F766E)!important;color:#FFFFFF!important;font-weight:700;" onclick="exportHorizontal96Blocks()" title="Export Day & Date wise 96 Time-Blocks Horizontal Template (Master + 96-Block Parameter Sheets)"><span style="font-size:16px">▦</span> 96-Blk Horizontal Excel</button>
+      <button class="thdc-action" style="background:linear-gradient(135deg,#4338CA,#3730A3)!important;color:#FFFFFF!important;font-weight:700;border-color:#3730A3;" onclick="exportHorizontalCalculations()" title="Export Detailed Step-by-Step 96 Time-Blocks Horizontal Calculations Workbook with Excel Formulas"><span style="font-size:16px">🧮</span> 96-Blk Calc Excel</button>
+      <button class="thdc-action" style="background:#FFFFFF;color:#0F766E;border:1.5px solid #0F766E;font-weight:700;" onclick="openHorizontalMatrixModal()" title="View 96-Block Horizontal Calculation Matrix On Screen"><span style="font-size:16px">👁</span> View 96-Blk Matrix</button>
       <button class="thdc-action thdc-pdf" onclick="exportPDF()">▣ Export Color PDF</button>
       <button class="thdc-action thdc-settings" onclick="openFormulaModal()">⚙ Formula Settings</button>
       <button class="thdc-action thdc-params" onclick="openUniversalConfig()">⚙ Plant Parameters</button>
@@ -3366,6 +3515,9 @@ function renderDayDetailPanel(){
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
           <span>${isBulkOpen ? 'Hide Bulk Edit' : '⚡ Bulk Edit Schedule'}</span>
         </button>
+        <button class="btn btn-sm" onclick="openHorizontalMatrixModal('${day.date}')" style="display:inline-flex;align-items:center;gap:6px;font-weight:700;color:#0F766E;border-color:#0F766E;" title="View complete 96-block horizontal calculation matrix for this day">
+          <span style="font-size:14px;">▦</span> <span>96-Blk Calc Matrix</span>
+        </button>
         <button class="btn btn-sm" onclick="closeDayDetail()">Close ✕</button>
       </div>
     </div>
@@ -4511,6 +4663,355 @@ function buildHorizontal96BlocksMasterSheet(week, meta){
   return ws;
 }
 
+function buildHorizontal96BlocksCalcSheet(week, meta) {
+  const aoa = [];
+  const projectName = (meta && meta.projectName) || (state.projectMeta && state.projectMeta.name) || 'KHURJA DSM CALCULATOR';
+  const plantLabel = (meta && meta.plantLabel) || (state.projectMeta && state.projectMeta.plant) || '11 MW Khurja Floating Solar Power Plant';
+  const period = (meta && meta.period) || (week.days && week.days.length ? (formatDateDDMMYYYY(week.days[0].date)+' to '+formatDateDDMMYYYY(week.days[week.days.length-1].date)) : '');
+  const activeRev = typeof getWeekActiveRevision === 'function' ? getWeekActiveRevision(state.currentWeek) : 'R0';
+
+  // Row 0: Title Banner
+  aoa.push([`${projectName.toUpperCase()} — CERC DSM CALCULATIONS (96 TIME-BLOCKS HORIZONTAL MATRIX)`, ...Array(103).fill('')]);
+  // Row 1: Subtitle
+  aoa.push([`${plantLabel} · Period: ${period} · Active Revision: ${activeRev} · CERC Deviation Settlement Mechanism Regulations 2024 Detailed Audit`, ...Array(103).fill('')]);
+  // Row 2: Blank
+  aoa.push([]);
+
+  // Row 3: Header Row 1 (Time intervals)
+  const timeLabels = [];
+  for (let i = 1; i <= 96; i++) {
+    timeLabels.push(getBlockTimeLabel(i));
+  }
+  aoa.push(['DATE', 'DAY', 'CALCULATION PARAMETER', 'UNIT', ...timeLabels, 'DAY TOTAL / AVG', 'MAX POSITIVE (+)', 'MAX NEGATIVE (-)', 'REGULATORY RULE / REMARKS']);
+
+  // Row 4: Header Row 2 (Block names)
+  const blockLabels = [];
+  for (let i = 1; i <= 96; i++) {
+    blockLabels.push(`TB ${String(i).padStart(2, '0')}`);
+  }
+  aoa.push(['', '', '', '', ...blockLabels, '', '', '', '']);
+
+  const rowStylesMap = {};
+  const rowFormatsMap = {};
+  let currentExcelRow = 6;
+  const sortedDays = (week.days || []).slice().sort((a, b) => String(a.date).localeCompare(String(b.date)));
+
+  sortedDays.forEach((d) => {
+    const dateStr = formatDateDDMMYYYY(d.date);
+    const dayName = getDayOfWeekName(d.date);
+    const dayRev = d.activeRevision || activeRev || 'R0';
+
+    const sVals = [], aVals = [], devVals = [], devPctVals = [];
+    const volLimitVals = [], devWithinVals = [], devBeyondVals = [];
+    const fVals = [], rVals = [], multWithinVals = [], multBeyondVals = [], chargeVals = [];
+
+    let sumS = 0, sumA = 0, sumDev = 0, sumVolLimit = 0, sumDevWithin = 0, sumDevBeyond = 0, sumCharge = 0;
+    let maxPosDev = 0, maxNegDev = 0;
+    let maxS = -Infinity, minS = Infinity;
+    let maxA = -Infinity, minA = Infinity;
+    let maxF = -Infinity, minF = Infinity;
+    let avgF = 0, avgR = 0, avgMultWithin = 0, avgMultBeyond = 0;
+
+    for (let i = 1; i <= 96; i++) {
+      const b = (d.blocks || []).find((x) => Number(x.idx) === i) || (d.blocks && d.blocks[i - 1]) || { idx: i, s: 0, a: 0, f: 50, r: 0 };
+      const r = revisionAwareBlock(d, b);
+
+      const bs = Number(r.s) || 0;
+      const ba = Number(b.a) || 0;
+      const bdev = Number(r.dev !== undefined && !isNaN(r.dev) ? r.dev : (ba - bs)) || 0;
+      const bdevPct = Number(r.devPct !== undefined && !isNaN(r.devPct) ? r.devPct : (bs === 0 ? 0 : (bdev / Math.abs(bs)) * 100)) || 0;
+      const bf = Number(b.f) || 50;
+      const br = Number(b.r) || 0;
+      const bvolLimit = Number(r.volLimit !== undefined ? r.volLimit : Math.min(bs * (FP.volLimitPct / 100), FP.volLimitCap)) || 0;
+      const bdevWithin = Number(r.devWithin !== undefined ? r.devWithin : (Math.abs(bdev) > bvolLimit ? Math.sign(bdev) * bvolLimit : bdev)) || 0;
+      const bdevBeyond = Number(r.devBeyond !== undefined ? r.devBeyond : (bdev - bdevWithin)) || 0;
+      const bmultWithin = Number(r.multWithin !== undefined ? r.multWithin : 1) || 0;
+      const bmultBeyond = Number(r.multBeyond !== undefined ? r.multBeyond : 1) || 0;
+      const bcharge = Number(r.charge) || 0;
+
+      sVals.push(Number(bs.toFixed(4)));
+      aVals.push(Number(ba.toFixed(4)));
+      devVals.push(Number(bdev.toFixed(4)));
+      devPctVals.push(Number(bdevPct.toFixed(2)));
+      volLimitVals.push(Number(bvolLimit.toFixed(4)));
+      devWithinVals.push(Number(bdevWithin.toFixed(4)));
+      devBeyondVals.push(Number(bdevBeyond.toFixed(4)));
+      fVals.push(Number(bf.toFixed(2)));
+      rVals.push(Number(br.toFixed(3)));
+      multWithinVals.push(Number(bmultWithin.toFixed(3)));
+      multBeyondVals.push(Number(bmultBeyond.toFixed(3)));
+      chargeVals.push(Math.round(bcharge));
+
+      sumS += bs;
+      sumA += ba;
+      sumDev += bdev;
+      sumVolLimit += bvolLimit;
+      sumDevWithin += bdevWithin;
+      sumDevBeyond += bdevBeyond;
+      avgF += bf;
+      avgR += br;
+      avgMultWithin += bmultWithin;
+      avgMultBeyond += bmultBeyond;
+      sumCharge += bcharge;
+
+      if (bs > maxS) maxS = bs;
+      if (bs < minS) minS = bs;
+      if (ba > maxA) maxA = ba;
+      if (ba < minA) minA = ba;
+      if (bdev > maxPosDev) maxPosDev = bdev;
+      if (bdev < maxNegDev) maxNegDev = bdev;
+      if (bf > maxF) maxF = bf;
+      if (bf < minF) minF = bf;
+    }
+
+    avgF = avgF / 96;
+    avgR = avgR / 96;
+    avgMultWithin = avgMultWithin / 96;
+    avgMultBeyond = avgMultBeyond / 96;
+    if (minS === Infinity) minS = 0;
+    if (maxS === -Infinity) maxS = 0;
+    if (minA === Infinity) minA = 0;
+    if (maxA === -Infinity) maxA = 0;
+    if (minF === Infinity) minF = 50;
+    if (maxF === -Infinity) maxF = 50;
+
+    function addCalcRow(paramName, unit, vals, totalCell, maxPosCell, maxNegCell, remark, style, fmt) {
+      const r = currentExcelRow;
+      aoa.push([
+        dateStr,
+        dayName,
+        paramName,
+        unit,
+        ...vals,
+        totalCell,
+        maxPosCell,
+        maxNegCell,
+        remark
+      ]);
+      rowStylesMap[r - 1] = style;
+      rowFormatsMap[r - 1] = { startCol: 4, endCol: 102, fmt };
+      currentExcelRow++;
+      return r;
+    }
+
+    // 1. Schedule
+    const rSch = currentExcelRow;
+    addCalcRow(
+      'Schedule Generation',
+      'MWh',
+      sVals,
+      { t: 'n', f: `SUM(E${rSch}:CV${rSch})`, v: Number(sumS.toFixed(3)) },
+      { t: 'n', f: `MAX(E${rSch}:CV${rSch})`, v: Number(maxS.toFixed(3)) },
+      { t: 'n', f: `MIN(E${rSch}:CV${rSch})`, v: Number(minS.toFixed(3)) },
+      `Active Revision: ${dayRev}`,
+      ROW_STYLE_SCH,
+      FMT_MWH
+    );
+
+    // 2. Actual Injection
+    const rAct = currentExcelRow;
+    addCalcRow(
+      'Actual Injection',
+      'MWh',
+      aVals,
+      { t: 'n', f: `SUM(E${rAct}:CV${rAct})`, v: Number(sumA.toFixed(3)) },
+      { t: 'n', f: `MAX(E${rAct}:CV${rAct})`, v: Number(maxA.toFixed(3)) },
+      { t: 'n', f: `MIN(E${rAct}:CV${rAct})`, v: Number(minA.toFixed(3)) },
+      'Main SEM Meter Data',
+      ROW_STYLE_ACT,
+      FMT_MWH
+    );
+
+    // 3. Net Deviation (Act - Sch)
+    const rDev = currentExcelRow;
+    const devFormulaRow = [];
+    for (let c = 0; c < 96; c++) {
+      const colLetter = XLSX.utils.encode_col(4 + c);
+      devFormulaRow.push({ t: 'n', f: `${colLetter}${rAct}-${colLetter}${rSch}`, v: devVals[c] });
+    }
+    addCalcRow(
+      'Net Deviation (Act - Sch)',
+      'MWh',
+      devFormulaRow,
+      { t: 'n', f: `SUM(E${rDev}:CV${rDev})`, v: Number(sumDev.toFixed(3)) },
+      { t: 'n', f: `MAX(E${rDev}:CV${rDev})`, v: Number(maxPosDev.toFixed(3)) },
+      { t: 'n', f: `MIN(E${rDev}:CV${rDev})`, v: Number(maxNegDev.toFixed(3)) },
+      sumDev >= 0 ? `Max Over: +${maxPosDev.toFixed(3)} | Max Under: ${maxNegDev.toFixed(3)}` : `Net Under-Inj: ${sumDev.toFixed(3)} MWh`,
+      ROW_STYLE_DEV,
+      FMT_MWH_DEV
+    );
+
+    // 4. Permissible Volume Limit
+    const rVol = currentExcelRow;
+    addCalcRow(
+      'Permissible Volume Limit',
+      'MWh',
+      volLimitVals,
+      { t: 'n', f: `SUM(E${rVol}:CV${rVol})`, v: Number(sumVolLimit.toFixed(3)) },
+      { t: 'n', f: `MAX(E${rVol}:CV${rVol})`, v: Number(Math.max(...volLimitVals).toFixed(3)) },
+      { t: 'n', f: `MIN(E${rVol}:CV${rVol})`, v: Number(Math.min(...volLimitVals).toFixed(3)) },
+      `Cap: ${FP.volLimitPct}% of Schedule (Max ${FP.volLimitCap} MWh)`,
+      { fill: { fgColor: { rgb: 'FEF3C7' } }, font: { bold: false, color: { rgb: '92400E' } } },
+      FMT_MWH
+    );
+
+    // 5. Deviation Within Limit
+    const rWithin = currentExcelRow;
+    addCalcRow(
+      'Deviation Within Limit',
+      'MWh',
+      devWithinVals,
+      { t: 'n', f: `SUM(E${rWithin}:CV${rWithin})`, v: Number(sumDevWithin.toFixed(3)) },
+      { t: 'n', f: `MAX(E${rWithin}:CV${rWithin})`, v: Number(Math.max(...devWithinVals).toFixed(3)) },
+      { t: 'n', f: `MIN(E${rWithin}:CV${rWithin})`, v: Number(Math.min(...devWithinVals).toFixed(3)) },
+      'Standard CERC deadband / slope rate',
+      { fill: { fgColor: { rgb: 'ECFDF5' } }, font: { bold: false, color: { rgb: '065F46' } } },
+      FMT_MWH_DEV
+    );
+
+    // 6. Deviation Beyond Limit
+    const rBeyond = currentExcelRow;
+    addCalcRow(
+      'Deviation Beyond Limit',
+      'MWh',
+      devBeyondVals,
+      { t: 'n', f: `SUM(E${rBeyond}:CV${rBeyond})`, v: Number(sumDevBeyond.toFixed(3)) },
+      { t: 'n', f: `MAX(E${rBeyond}:CV${rBeyond})`, v: Number(Math.max(...devBeyondVals).toFixed(3)) },
+      { t: 'n', f: `MIN(E${rBeyond}:CV${rBeyond})`, v: Number(Math.min(...devBeyondVals).toFixed(3)) },
+      Math.abs(sumDevBeyond) > 0.001 ? 'Excursions beyond band cap' : 'Nil beyond limit',
+      { fill: { fgColor: { rgb: 'FEE2E2' } }, font: { bold: false, color: { rgb: '991B1B' } } },
+      FMT_MWH_DEV
+    );
+
+    // 7. Grid Frequency
+    const rFreq = currentExcelRow;
+    addCalcRow(
+      'Grid Frequency',
+      'Hz',
+      fVals,
+      { t: 'n', f: `AVERAGE(E${rFreq}:CV${rFreq})`, v: Number(avgF.toFixed(2)) },
+      { t: 'n', f: `MAX(E${rFreq}:CV${rFreq})`, v: Number(maxF.toFixed(2)) },
+      { t: 'n', f: `MIN(E${rFreq}:CV${rFreq})`, v: Number(minF.toFixed(2)) },
+      'IEGC Normal Band: 49.90 - 50.05 Hz',
+      ROW_STYLE_FREQ,
+      FMT_HZ
+    );
+
+    // 8. Multiplier Within Limit
+    const rMultW = currentExcelRow;
+    addCalcRow(
+      'Multiplier Within Limit',
+      'Factor',
+      multWithinVals,
+      { t: 'n', f: `AVERAGE(E${rMultW}:CV${rMultW})`, v: Number(avgMultWithin.toFixed(3)) },
+      { t: 'n', f: `MAX(E${rMultW}:CV${rMultW})`, v: Number(Math.max(...multWithinVals).toFixed(3)) },
+      { t: 'n', f: `MIN(E${rMultW}:CV${rMultW})`, v: Number(Math.min(...multWithinVals).toFixed(3)) },
+      'Frequency ramp slope based',
+      { fill: { fgColor: { rgb: 'F1F5F9' } }, font: { bold: false, color: { rgb: '334155' } } },
+      '0.000'
+    );
+
+    // 9. Multiplier Beyond Limit
+    const rMultB = currentExcelRow;
+    addCalcRow(
+      'Multiplier Beyond Limit',
+      'Factor',
+      multBeyondVals,
+      { t: 'n', f: `AVERAGE(E${rMultB}:CV${rMultB})`, v: Number(avgMultBeyond.toFixed(3)) },
+      { t: 'n', f: `MAX(E${rMultB}:CV${rMultB})`, v: Number(Math.max(...multBeyondVals).toFixed(3)) },
+      { t: 'n', f: `MIN(E${rMultB}:CV${rMultB})`, v: Number(Math.min(...multBeyondVals).toFixed(3)) },
+      'Penalty multiplier for excursion',
+      { fill: { fgColor: { rgb: 'F1F5F9' } }, font: { bold: false, color: { rgb: '334155' } } },
+      '0.000'
+    );
+
+    // 10. Reference Rate
+    const rRate = currentExcelRow;
+    addCalcRow(
+      'Reference Rate',
+      '₹/kWh',
+      rVals,
+      { t: 'n', f: `AVERAGE(E${rRate}:CV${rRate})`, v: Number(avgR.toFixed(3)) },
+      { t: 'n', f: `MAX(E${rRate}:CV${rRate})`, v: Number(Math.max(...rVals).toFixed(3)) },
+      { t: 'n', f: `MIN(E${rRate}:CV${rRate})`, v: Number(Math.min(...rVals).toFixed(3)) },
+      'Contract / PPA / Ancillary Rate',
+      ROW_STYLE_RATE,
+      FMT_RATE
+    );
+
+    // 11. DSM Settlement Charge
+    const rCharge = currentExcelRow;
+    addCalcRow(
+      'DSM Settlement Charges',
+      '₹',
+      chargeVals,
+      { t: 'n', f: `SUM(E${rCharge}:CV${rCharge})`, v: Math.round(sumCharge) },
+      { t: 'n', f: `MAX(E${rCharge}:CV${rCharge})`, v: Math.round(Math.max(...chargeVals)) },
+      { t: 'n', f: `MIN(E${rCharge}:CV${rCharge})`, v: Math.round(Math.min(...chargeVals)) },
+      sumCharge < 0 ? `Receivable: ₹${Math.abs(Math.round(sumCharge)).toLocaleString('en-IN')}` : (sumCharge > 0 ? `Payable: ₹${Math.round(sumCharge).toLocaleString('en-IN')}` : 'Balanced'),
+      ROW_STYLE_CHARGE,
+      FMT_RUPEE
+    );
+
+    // Blank separator
+    aoa.push([]);
+    currentExcelRow++;
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+
+  // Column widths
+  const cols = [
+    { wch: 13 }, // DATE
+    { wch: 12 }, // DAY
+    { wch: 28 }, // CALCULATION PARAMETER
+    { wch: 10 }, // UNIT
+  ];
+  for (let i = 0; i < 96; i++) cols.push({ wch: 10 }); // 96 blocks
+  cols.push({ wch: 18 }); // DAY TOTAL / AVG
+  cols.push({ wch: 17 }); // MAX POSITIVE (+)
+  cols.push({ wch: 17 }); // MAX NEGATIVE (-)
+  cols.push({ wch: 32 }); // REMARKS / REGULATION
+  ws['!cols'] = cols;
+
+  // Header merges
+  ws['!merges'] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 103 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 103 } },
+    { s: { r: 3, c: 0 }, e: { r: 4, c: 0 } },
+    { s: { r: 3, c: 1 }, e: { r: 4, c: 1 } },
+    { s: { r: 3, c: 2 }, e: { r: 4, c: 2 } },
+    { s: { r: 3, c: 3 }, e: { r: 4, c: 3 } },
+    { s: { r: 3, c: 100 }, e: { r: 4, c: 100 } },
+    { s: { r: 3, c: 101 }, e: { r: 4, c: 101 } },
+    { s: { r: 3, c: 102 }, e: { r: 4, c: 102 } },
+    { s: { r: 3, c: 103 }, e: { r: 4, c: 103 } },
+  ];
+
+  // Freeze panes at Column E (Col 4) and Row 5
+  ws['!freeze'] = { xSplit: 4, ySplit: 5, topLeftCell: 'E6', activePane: 'bottomRight', state: 'frozen' };
+
+  styleRow(ws, 0, 104, TITLE_FILL_STYLE);
+  styleRow(ws, 1, 104, SUB_STYLE);
+  styleRow(ws, 3, 104, TH_STYLE_NAVY);
+  styleRow(ws, 4, 104, TH_STYLE_DARK_BLUE);
+
+  Object.keys(rowStylesMap).forEach((r) => {
+    const rIdx = Number(r);
+    styleRow(ws, rIdx, 104, rowStylesMap[rIdx]);
+  });
+  Object.keys(rowFormatsMap).forEach((r) => {
+    const rIdx = Number(r);
+    const { startCol, endCol, fmt } = rowFormatsMap[rIdx];
+    for (let c = startCol; c <= endCol; c++) {
+      const ref = XLSX.utils.encode_cell({ r: rIdx, c });
+      if (ws[ref]) ws[ref].z = fmt;
+    }
+  });
+
+  return ws;
+}
+
 function buildHorizontal96BlocksParamSheet(week, meta, paramType) {
   const aoa = [];
   const projectName = (meta && meta.projectName) || (state.projectMeta && state.projectMeta.name) || 'KHURJA DSM CALCULATOR';
@@ -4558,6 +5059,46 @@ function buildHorizontal96BlocksParamSheet(week, meta, paramType) {
     peakHeader = 'MAX FREQ (Hz)';
     valleyHeader = 'MIN FREQ (Hz)';
     fmt = FMT_HZ;
+  } else if (paramType === 'vol_limit') {
+    paramTitle = 'PERMISSIBLE VOLUME LIMIT (96 TIME-BLOCKS HORIZONTAL MATRIX)';
+    paramUnit = 'MWh';
+    colCName = 'BAND CAP';
+    totalHeader = 'TOTAL VOL LIMIT (MWh)';
+    peakHeader = 'MAX VOL LIMIT (MWh)';
+    valleyHeader = 'MIN VOL LIMIT (MWh)';
+    fmt = FMT_MWH;
+  } else if (paramType === 'dev_within') {
+    paramTitle = 'DEVIATION WITHIN LIMIT (96 TIME-BLOCKS HORIZONTAL MATRIX)';
+    paramUnit = 'MWh';
+    colCName = 'BAND STATUS';
+    totalHeader = 'TOTAL DEV WITHIN (MWh)';
+    peakHeader = 'MAX OVER WITHIN (MWh)';
+    valleyHeader = 'MAX UNDER WITHIN (MWh)';
+    fmt = FMT_MWH_DEV;
+  } else if (paramType === 'dev_beyond') {
+    paramTitle = 'DEVIATION BEYOND LIMIT (96 TIME-BLOCKS HORIZONTAL MATRIX)';
+    paramUnit = 'MWh';
+    colCName = 'EXCURSION';
+    totalHeader = 'TOTAL DEV BEYOND (MWh)';
+    peakHeader = 'MAX OVER BEYOND (MWh)';
+    valleyHeader = 'MAX UNDER BEYOND (MWh)';
+    fmt = FMT_MWH_DEV;
+  } else if (paramType === 'mult_within') {
+    paramTitle = 'APPLICABLE MULTIPLIER WITHIN LIMIT (96 TIME-BLOCKS HORIZONTAL MATRIX)';
+    paramUnit = 'Factor';
+    colCName = 'FACTOR TYPE';
+    totalHeader = 'AVG MULT WITHIN';
+    peakHeader = 'MAX MULT WITHIN';
+    valleyHeader = 'MIN MULT WITHIN';
+    fmt = '0.000';
+  } else if (paramType === 'mult_beyond') {
+    paramTitle = 'APPLICABLE MULTIPLIER BEYOND LIMIT (96 TIME-BLOCKS HORIZONTAL MATRIX)';
+    paramUnit = 'Factor';
+    colCName = 'FACTOR TYPE';
+    totalHeader = 'AVG MULT BEYOND';
+    peakHeader = 'MAX MULT BEYOND';
+    valleyHeader = 'MIN MULT BEYOND';
+    fmt = '0.000';
   }
 
   // Row 0: Title Banner
@@ -4601,21 +5142,34 @@ function buildHorizontal96BlocksParamSheet(week, meta, paramType) {
       const b = (d.blocks || []).find((x) => Number(x.idx) === i) || (d.blocks && d.blocks[i - 1]) || { idx: i, s: 0, a: 0, f: 50, r: 0 };
       const r = revisionAwareBlock(d, b);
 
+      const bs = Number(r.s) || 0;
+      const ba = Number(b.a) || 0;
+      const bdev = Number(r.dev !== undefined && !isNaN(r.dev) ? r.dev : (ba - bs)) || 0;
+      const bf = Number(b.f) || 50;
+      const br = Number(b.r) || 0;
+      const bvolLimit = Number(r.volLimit !== undefined ? r.volLimit : Math.min(bs * (FP.volLimitPct/100), FP.volLimitCap)) || 0;
+      const bdevWithin = Number(r.devWithin !== undefined ? r.devWithin : (Math.abs(bdev) > bvolLimit ? Math.sign(bdev) * bvolLimit : bdev)) || 0;
+      const bdevBeyond = Number(r.devBeyond !== undefined ? r.devBeyond : (bdev - bdevWithin)) || 0;
+      const bmultWithin = Number(r.multWithin !== undefined ? r.multWithin : 1) || 0;
+      const bmultBeyond = Number(r.multBeyond !== undefined ? r.multBeyond : 1) || 0;
+
       let val = 0;
-      if (paramType === 'schedule') val = Number((Number(r.s) || 0).toFixed(4));
-      else if (paramType === 'actual') val = Number((Number(b.a) || 0).toFixed(4));
-      else if (paramType === 'deviation') {
-        const bs = Number(r.s) || 0;
-        const ba = Number(b.a) || 0;
-        val = Number((Number(r.dev !== undefined && !isNaN(r.dev) ? r.dev : (ba - bs)) || 0).toFixed(4));
-      } else if (paramType === 'charge') val = Math.round(Number(r.charge) || 0);
-      else if (paramType === 'frequency') val = Number((Number(b.f) || 50).toFixed(2));
+      if (paramType === 'schedule') val = Number(bs.toFixed(4));
+      else if (paramType === 'actual') val = Number(ba.toFixed(4));
+      else if (paramType === 'deviation') val = Number(bdev.toFixed(4));
+      else if (paramType === 'charge') val = Math.round(Number(r.charge) || 0);
+      else if (paramType === 'frequency') val = Number(bf.toFixed(2));
+      else if (paramType === 'vol_limit') val = Number(bvolLimit.toFixed(4));
+      else if (paramType === 'dev_within') val = Number(bdevWithin.toFixed(4));
+      else if (paramType === 'dev_beyond') val = Number(bdevBeyond.toFixed(4));
+      else if (paramType === 'mult_within') val = Number(bmultWithin.toFixed(3));
+      else if (paramType === 'mult_beyond') val = Number(bmultBeyond.toFixed(3));
 
       vals.push(val);
       daySum += val;
       if (val > dayMax) dayMax = val;
       if (val < dayMin) dayMin = val;
-      if (paramType === 'deviation') {
+      if (paramType === 'deviation' || paramType === 'dev_within' || paramType === 'dev_beyond') {
         if (val > maxPos) maxPos = val;
         if (val < maxNeg) maxNeg = val;
       }
@@ -4638,12 +5192,36 @@ function buildHorizontal96BlocksParamSheet(week, meta, paramType) {
       totalCell = { t: 'n', f: `AVERAGE(D${R}:CU${R})`, v: Number((daySum / 96).toFixed(2)) };
       peakCell = { t: 'n', f: `MAX(D${R}:CU${R})`, v: Number(dayMax.toFixed(2)) };
       valleyCell = { t: 'n', f: `MIN(D${R}:CU${R})`, v: Number(dayMin.toFixed(2)) };
+    } else if (paramType === 'mult_within' || paramType === 'mult_beyond') {
+      colCVal = paramType === 'mult_within' ? 'Within Band' : 'Beyond Band';
+      remarksVal = `Avg Mult: ${(daySum / 96).toFixed(3)}`;
+      totalCell = { t: 'n', f: `AVERAGE(D${R}:CU${R})`, v: Number((daySum / 96).toFixed(3)) };
+      peakCell = { t: 'n', f: `MAX(D${R}:CU${R})`, v: Number(dayMax.toFixed(3)) };
+      valleyCell = { t: 'n', f: `MIN(D${R}:CU${R})`, v: Number(dayMin.toFixed(3)) };
     } else if (paramType === 'deviation') {
       colCVal = daySum >= 0 ? 'Over-Injection' : 'Under-Injection';
       remarksVal = daySum >= 0 ? `Net Over-Inj (+${daySum.toFixed(2)} MWh)` : `Net Under-Inj (${daySum.toFixed(2)} MWh)`;
       totalCell = { t: 'n', f: `SUM(D${R}:CU${R})`, v: Number(daySum.toFixed(3)) };
       peakCell = { t: 'n', f: `MAX(D${R}:CU${R})`, v: Number(maxPos.toFixed(3)) };
       valleyCell = { t: 'n', f: `MIN(D${R}:CU${R})`, v: Number(maxNeg.toFixed(3)) };
+    } else if (paramType === 'vol_limit') {
+      colCVal = `Cap: ${FP.volLimitPct}%`;
+      remarksVal = `Day Total Vol Limit: ${daySum.toFixed(2)} MWh`;
+      totalCell = { t: 'n', f: `SUM(D${R}:CU${R})`, v: Number(daySum.toFixed(3)) };
+      peakCell = { t: 'n', f: `MAX(D${R}:CU${R})`, v: Number(dayMax.toFixed(3)) };
+      valleyCell = { t: 'n', f: `MIN(D${R}:CU${R})`, v: Number(dayMin.toFixed(3)) };
+    } else if (paramType === 'dev_within') {
+      colCVal = daySum >= 0 ? 'Normal Over-Inj' : 'Normal Under-Inj';
+      remarksVal = `Normal Band Dev: ${daySum.toFixed(2)} MWh`;
+      totalCell = { t: 'n', f: `SUM(D${R}:CU${R})`, v: Number(daySum.toFixed(3)) };
+      peakCell = { t: 'n', f: `MAX(D${R}:CU${R})`, v: Number(dayMax.toFixed(3)) };
+      valleyCell = { t: 'n', f: `MIN(D${R}:CU${R})`, v: Number(dayMin.toFixed(3)) };
+    } else if (paramType === 'dev_beyond') {
+      colCVal = Math.abs(daySum) > 0.001 ? 'Excursion Occurred' : 'Zero Excursion';
+      remarksVal = `Excursion Dev: ${daySum.toFixed(2)} MWh`;
+      totalCell = { t: 'n', f: `SUM(D${R}:CU${R})`, v: Number(daySum.toFixed(3)) };
+      peakCell = { t: 'n', f: `MAX(D${R}:CU${R})`, v: Number(dayMax.toFixed(3)) };
+      valleyCell = { t: 'n', f: `MIN(D${R}:CU${R})`, v: Number(dayMin.toFixed(3)) };
     } else if (paramType === 'charge') {
       colCVal = daySum < 0 ? 'Receivable (Credit)' : (daySum > 0 ? 'Payable (Debit)' : 'Zero');
       remarksVal = daySum < 0 ? `Credit ₹${Math.abs(Math.round(daySum)).toLocaleString('en-IN')}` : (daySum > 0 ? `Debit ₹${Math.round(daySum).toLocaleString('en-IN')}` : 'Balanced');
@@ -4681,9 +5259,10 @@ function buildHorizontal96BlocksParamSheet(week, meta, paramType) {
   // Weekly Total / Average Row
   const rTot = currentExcelRow;
   const colTotals = [];
+  const isAvgParam = (paramType === 'frequency' || paramType === 'mult_within' || paramType === 'mult_beyond');
   for (let c = 0; c < 96; c++) {
     const colLetter = XLSX.utils.encode_col(3 + c);
-    if (paramType === 'frequency') {
+    if (isAvgParam) {
       colTotals.push({ t: 'n', f: `AVERAGE(${colLetter}${startDataRow}:${colLetter}${endDataRow})` });
     } else {
       colTotals.push({ t: 'n', f: `SUM(${colLetter}${startDataRow}:${colLetter}${endDataRow})` });
@@ -4698,7 +5277,7 @@ function buildHorizontal96BlocksParamSheet(week, meta, paramType) {
   let grandPeakCell = {};
   let grandValleyCell = {};
 
-  if (paramType === 'frequency') {
+  if (isAvgParam) {
     grandTotalCell = { t: 'n', f: `AVERAGE(${totColLetter}${startDataRow}:${totColLetter}${endDataRow})` };
     grandPeakCell = { t: 'n', f: `MAX(${peakColLetter}${startDataRow}:${peakColLetter}${endDataRow})` };
     grandValleyCell = { t: 'n', f: `MIN(${valColLetter}${startDataRow}:${valColLetter}${endDataRow})` };
@@ -4709,7 +5288,7 @@ function buildHorizontal96BlocksParamSheet(week, meta, paramType) {
   }
 
   aoa.push([
-    paramType === 'frequency' ? 'WEEK AVERAGE' : 'WEEK TOTAL',
+    isAvgParam ? 'WEEK AVERAGE' : 'WEEK TOTAL',
     'ALL 7 DAYS',
     'CONSOLIDATED',
     ...colTotals,
@@ -4790,33 +5369,317 @@ function exportHorizontal96Blocks(){
   const masterSheet = buildHorizontal96BlocksMasterSheet(week, meta);
   XLSX.utils.book_append_sheet(wb, masterSheet, '96-Block Master (Horizontal)');
 
-  // 2. Schedule (96 Blocks Horizontal)
+  // 2. Calculations (96 Blocks Horizontal Template with Max Pos & Max Neg)
+  const calcSheet = buildHorizontal96BlocksCalcSheet(week, meta);
+  XLSX.utils.book_append_sheet(wb, calcSheet, 'Calculations (96-Blk)');
+
+  // 3. Schedule (96 Blocks Horizontal)
   const schSheet = buildHorizontal96BlocksParamSheet(week, meta, 'schedule');
   XLSX.utils.book_append_sheet(wb, schSheet, 'Schedule (96-Blk)');
 
-  // 3. Actual (96 Blocks Horizontal)
+  // 4. Actual (96 Blocks Horizontal)
   const actSheet = buildHorizontal96BlocksParamSheet(week, meta, 'actual');
   XLSX.utils.book_append_sheet(wb, actSheet, 'Actual (96-Blk)');
 
-  // 4. Deviation (96 Blocks Horizontal)
+  // 5. Deviation (96 Blocks Horizontal with Max Positive & Max Negative)
   const devSheet = buildHorizontal96BlocksParamSheet(week, meta, 'deviation');
   XLSX.utils.book_append_sheet(wb, devSheet, 'Deviation (96-Blk)');
 
-  // 5. DSM Charges (96 Blocks Horizontal)
+  // 6. Volume Limit (96 Blocks Horizontal)
+  const volSheet = buildHorizontal96BlocksParamSheet(week, meta, 'vol_limit');
+  XLSX.utils.book_append_sheet(wb, volSheet, 'Volume Limit (96-Blk)');
+
+  // 7. Deviation Within Limit (96 Blocks Horizontal)
+  const withinSheet = buildHorizontal96BlocksParamSheet(week, meta, 'dev_within');
+  XLSX.utils.book_append_sheet(wb, withinSheet, 'Dev Within Limit (96-Blk)');
+
+  // 8. Deviation Beyond Limit (96 Blocks Horizontal)
+  const beyondSheet = buildHorizontal96BlocksParamSheet(week, meta, 'dev_beyond');
+  XLSX.utils.book_append_sheet(wb, beyondSheet, 'Dev Beyond Limit (96-Blk)');
+
+  // 9. DSM Charges (96 Blocks Horizontal)
   const chargeSheet = buildHorizontal96BlocksParamSheet(week, meta, 'charge');
   XLSX.utils.book_append_sheet(wb, chargeSheet, 'DSM Charges (96-Blk)');
 
-  // 6. Frequency (96 Blocks Horizontal)
+  // 10. Frequency (96 Blocks Horizontal)
   const freqSheet = buildHorizontal96BlocksParamSheet(week, meta, 'frequency');
   XLSX.utils.book_append_sheet(wb, freqSheet, 'Frequency (96-Blk)');
 
-  // 7. Daily Summary
+  // 11. Daily Summary
   const dailySheet = buildDailySummarySheet(week);
   XLSX.utils.book_append_sheet(wb, dailySheet, 'Daily Summary');
 
   const plantSlug = String(window.currentPlantContext||'Plant').replace(/[^A-Za-z0-9]+/g,'_');
   XLSX.writeFile(wb, `${plantSlug}_DayDate_96Blocks_Horizontal_W${state.currentWeek}.xlsx`);
 }
+
+function exportHorizontalCalculations(){
+  const week = weekObj();
+  if(!week || !week.days || week.days.length===0){
+    alert('No data to export for this week.');
+    return;
+  }
+  const projectName = (state.projectMeta && state.projectMeta.name) || 'KHURJA DSM CALCULATOR';
+  const plantLabel = (state.projectMeta && state.projectMeta.plant) || '11 MW Khurja Floating Solar Power Plant';
+  const period = formatDateDDMMYYYY(week.days[0].date)+' to '+formatDateDDMMYYYY(week.days[week.days.length-1].date);
+  const meta = { projectName, plantLabel, period };
+
+  const wb = XLSX.utils.book_new();
+
+  // 1. Calculations 96-Blocks Horizontal (all parameters + Max Pos + Max Neg)
+  const calcSheet = buildHorizontal96BlocksCalcSheet(week, meta);
+  XLSX.utils.book_append_sheet(wb, calcSheet, 'Calculations (96-Blk)');
+
+  // 2. Net Deviation (96-Blk Horizontal with Max Positive and Max Negative)
+  const devSheet = buildHorizontal96BlocksParamSheet(week, meta, 'deviation');
+  XLSX.utils.book_append_sheet(wb, devSheet, 'Net Deviation (96-Blk)');
+
+  // 3. Permissible Volume Limit (96-Blk Horizontal)
+  const volSheet = buildHorizontal96BlocksParamSheet(week, meta, 'vol_limit');
+  XLSX.utils.book_append_sheet(wb, volSheet, 'Volume Limit (96-Blk)');
+
+  // 4. Deviation Within Limit (96-Blk Horizontal)
+  const withinSheet = buildHorizontal96BlocksParamSheet(week, meta, 'dev_within');
+  XLSX.utils.book_append_sheet(wb, withinSheet, 'Dev Within Limit (96-Blk)');
+
+  // 5. Deviation Beyond Limit (96-Blk Horizontal)
+  const beyondSheet = buildHorizontal96BlocksParamSheet(week, meta, 'dev_beyond');
+  XLSX.utils.book_append_sheet(wb, beyondSheet, 'Dev Beyond Limit (96-Blk)');
+
+  // 6. Multiplier Within Limit (96-Blk Horizontal)
+  const multWSheet = buildHorizontal96BlocksParamSheet(week, meta, 'mult_within');
+  XLSX.utils.book_append_sheet(wb, multWSheet, 'Mult Within (96-Blk)');
+
+  // 7. Multiplier Beyond Limit (96-Blk Horizontal)
+  const multBSheet = buildHorizontal96BlocksParamSheet(week, meta, 'mult_beyond');
+  XLSX.utils.book_append_sheet(wb, multBSheet, 'Mult Beyond (96-Blk)');
+
+  // 8. DSM Charges (96-Blk Horizontal)
+  const chargeSheet = buildHorizontal96BlocksParamSheet(week, meta, 'charge');
+  XLSX.utils.book_append_sheet(wb, chargeSheet, 'DSM Charges (96-Blk)');
+
+  // 9. Schedule Generation (96-Blk Horizontal)
+  const schSheet = buildHorizontal96BlocksParamSheet(week, meta, 'schedule');
+  XLSX.utils.book_append_sheet(wb, schSheet, 'Schedule (96-Blk)');
+
+  // 10. Actual Injection (96-Blk Horizontal)
+  const actSheet = buildHorizontal96BlocksParamSheet(week, meta, 'actual');
+  XLSX.utils.book_append_sheet(wb, actSheet, 'Actual (96-Blk)');
+
+  // 11. Frequency (96-Blk Horizontal)
+  const freqSheet = buildHorizontal96BlocksParamSheet(week, meta, 'frequency');
+  XLSX.utils.book_append_sheet(wb, freqSheet, 'Frequency (96-Blk)');
+
+  // 12. Master (96-Blk Horizontal)
+  const masterSheet = buildHorizontal96BlocksMasterSheet(week, meta);
+  XLSX.utils.book_append_sheet(wb, masterSheet, '96-Blk Master');
+
+  // 13. Daily Summary
+  const dailySheet = buildDailySummarySheet(week);
+  XLSX.utils.book_append_sheet(wb, dailySheet, 'Daily Summary');
+
+  const plantSlug = String(window.currentPlantContext||'Plant').replace(/[^A-Za-z0-9]+/g,'_');
+  XLSX.writeFile(wb, `${plantSlug}_96Blocks_Calculations_W${state.currentWeek}.xlsx`);
+}
+
+window.openHorizontalMatrixModal = function(initialTab = 'calculations'){
+  let m = document.getElementById('horizontalMatrixModal');
+  if(!m){
+    m = document.createElement('div');
+    m.id = 'horizontalMatrixModal';
+    m.className = 'modal-overlay';
+    document.body.appendChild(m);
+  }
+  m.innerHTML = `
+    <div class="modal-box" style="max-width:96vw; width:96vw; height:90vh; display:flex; flex-direction:column; padding:20px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #E2E8F0; padding-bottom:14px;">
+        <div>
+          <h3 style="margin:0; font-size:18px; font-weight:800; color:#0A2E7A; display:flex; align-items:center; gap:8px;">
+            <span>▦</span> 96 Time-Blocks Day & Date Wise Calculations Matrix
+            <span class="bulk-badge" style="font-size:11px; background:#EFF6FF; color:#1D4ED8; border:1px solid #BFDBFE;">W${state.currentWeek}</span>
+          </h3>
+          <div style="font-size:12px; color:#64748B; margin-top:3px;">
+            Horizontal template with 96 blocks (00:00 to 24:00), Daily Totals, <b>Max Positive (+)</b>, <b>Max Negative (-)</b>, and CERC Multiplier Rules.
+          </div>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <button class="btn btn-sm" style="background:#0F766E; color:#fff; font-weight:700;" onclick="exportHorizontalCalculations()">🧮 Download 96-Blk Calc Excel</button>
+          <button class="btn btn-sm" style="background:#0073CF; color:#fff; font-weight:700;" onclick="exportHorizontal96Blocks()">▦ Download 96-Blk Master Excel</button>
+          <button class="btn btn-sm" onclick="closeModal('horizontalMatrixModal')">✕ Close</button>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:6px; padding:10px 0; border-bottom:1px solid #F1F5F9; overflow-x:auto; flex-shrink:0;">
+        ${[
+          { id: 'calculations', label: '🧮 All Calculations' },
+          { id: 'deviation', label: '📊 Deviation (Max Pos/Neg)' },
+          { id: 'schedule', label: '📋 Schedule' },
+          { id: 'actual', label: '⚡ Actual' },
+          { id: 'vol_limit', label: '📏 Volume Limit' },
+          { id: 'dev_within', label: '🎯 Dev Within Limit' },
+          { id: 'dev_beyond', label: '⚠️ Dev Beyond Limit' },
+          { id: 'charge', label: '💰 DSM Charges' },
+          { id: 'frequency', label: '〰️ Frequency' }
+        ].map(t => `<button class="matrix-tab-btn ${initialTab===t.id?'active':''}" onclick="renderHorizontalMatrixContent('${t.id}')" style="padding:6px 12px; font-size:12px; font-weight:700; border-radius:6px; border:1px solid ${initialTab===t.id?'#0073CF':'#CBD5E1'}; background:${initialTab===t.id?'#0073CF':'#FFFFFF'}; color:${initialTab===t.id?'#FFFFFF':'#334155'}; cursor:pointer; white-space:nowrap;">${t.label}</button>`).join('')}
+      </div>
+
+      <div id="horizontalMatrixTableWrap" style="flex:1; overflow:auto; margin-top:10px; border:1px solid #E2E8F0; border-radius:8px; background:#fff;">
+      </div>
+    </div>
+  `;
+  openModal('horizontalMatrixModal');
+  renderHorizontalMatrixContent(initialTab);
+};
+
+window.renderHorizontalMatrixContent = function(tabId){
+  const wrap = document.getElementById('horizontalMatrixTableWrap');
+  if(!wrap) return;
+  const week = weekObj();
+  if(!week || !week.days || !week.days.length){
+    wrap.innerHTML = '<div style="padding:30px; text-align:center; color:#64748B;">No data loaded for this week.</div>';
+    return;
+  }
+
+  // Update active tab buttons
+  document.querySelectorAll('#horizontalMatrixModal .matrix-tab-btn').forEach(btn => {
+    const isAct = btn.getAttribute('onclick')?.includes(`'${tabId}'`);
+    btn.style.background = isAct ? '#0073CF' : '#FFFFFF';
+    btn.style.color = isAct ? '#FFFFFF' : '#334155';
+    btn.style.borderColor = isAct ? '#0073CF' : '#CBD5E1';
+  });
+
+  const sortedDays = (week.days || []).slice().sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+  const activeRev = typeof getWeekActiveRevision === 'function' ? getWeekActiveRevision(state.currentWeek) : 'R0';
+
+  let tableHtml = `<table class="matrix-tbl" style="width:max-content; min-width:100%; border-collapse:collapse; font-size:11.5px; font-family:var(--mono);">`;
+  
+  // Header Row 1: Time Intervals
+  tableHtml += `<thead><tr style="background:#0A2E7A; color:#FFFFFF; position:sticky; top:0; z-index:10;">
+    <th style="position:sticky; left:0; z-index:12; background:#0A2E7A; padding:8px 10px; border:1px solid #1E3A8A; min-width:95px; text-align:left;">DATE</th>
+    <th style="position:sticky; left:95px; z-index:12; background:#0A2E7A; padding:8px 10px; border:1px solid #1E3A8A; min-width:85px; text-align:left;">DAY</th>
+    <th style="position:sticky; left:180px; z-index:12; background:#0A2E7A; padding:8px 10px; border:1px solid #1E3A8A; min-width:170px; text-align:left;">PARAMETER</th>
+    <th style="position:sticky; left:350px; z-index:12; background:#0A2E7A; padding:8px 10px; border:1px solid #1E3A8A; min-width:65px; text-align:center;">UNIT</th>`;
+  
+  for(let i=1; i<=96; i++){
+    tableHtml += `<th style="padding:6px 4px; border:1px solid #1E3A8A; min-width:62px; text-align:center; font-size:10px; font-weight:600;">${getBlockTimeLabel(i)}</th>`;
+  }
+  
+  tableHtml += `
+    <th style="position:sticky; right:280px; z-index:12; background:#0A2E7A; padding:8px 10px; border:1px solid #1E3A8A; min-width:100px; text-align:right;">DAY TOTAL/AVG</th>
+    <th style="position:sticky; right:190px; z-index:12; background:#065F46; color:#ECFDF5; padding:8px 10px; border:1px solid #047857; min-width:90px; text-align:right;">MAX POS (+)</th>
+    <th style="position:sticky; right:100px; z-index:12; background:#991B1B; color:#FEF2F2; padding:8px 10px; border:1px solid #B91C1C; min-width:90px; text-align:right;">MAX NEG (-)</th>
+    <th style="position:sticky; right:0; z-index:12; background:#0A2E7A; padding:8px 10px; border:1px solid #1E3A8A; min-width:100px; text-align:left;">REMARKS</th>
+  </tr>`;
+
+  // Header Row 2: Block Numbers
+  tableHtml += `<tr style="background:#1E3A8A; color:#E0E7FF; position:sticky; top:33px; z-index:9;">
+    <th style="position:sticky; left:0; z-index:11; background:#1E3A8A; border:1px solid #2563EB;"></th>
+    <th style="position:sticky; left:95px; z-index:11; background:#1E3A8A; border:1px solid #2563EB;"></th>
+    <th style="position:sticky; left:180px; z-index:11; background:#1E3A8A; border:1px solid #2563EB;"></th>
+    <th style="position:sticky; left:350px; z-index:11; background:#1E3A8A; border:1px solid #2563EB;"></th>`;
+  for(let i=1; i<=96; i++){
+    tableHtml += `<th style="padding:4px 2px; border:1px solid #2563EB; font-size:9.5px; text-align:center;">TB ${String(i).padStart(2,'0')}</th>`;
+  }
+  tableHtml += `
+    <th style="position:sticky; right:280px; z-index:11; background:#1E3A8A; border:1px solid #2563EB;"></th>
+    <th style="position:sticky; right:190px; z-index:11; background:#047857; border:1px solid #059669; font-size:9.5px; text-align:center;">Peak Over</th>
+    <th style="position:sticky; right:100px; z-index:11; background:#B91C1C; border:1px solid #DC2626; font-size:9.5px; text-align:center;">Peak Under</th>
+    <th style="position:sticky; right:0; z-index:11; background:#1E3A8A; border:1px solid #2563EB;"></th>
+  </tr></thead><tbody>`;
+
+  sortedDays.forEach((d, dIdx) => {
+    const dateStr = formatDateDDMMYYYY(d.date);
+    const dayName = getDayOfWeekName(d.date);
+    const dayRev = d.activeRevision || activeRev || 'R0';
+
+    const renderRowData = (paramLabel, unit, vals, totalDisplay, maxPosDisplay, maxNegDisplay, remark, rowBg = '#FFFFFF') => {
+      let rHtml = `<tr style="background:${rowBg}; border-bottom:1px solid #E2E8F0;">
+        <td style="position:sticky; left:0; z-index:5; background:${rowBg}; padding:6px 10px; border:1px solid #E2E8F0; font-weight:700; color:#0F172A;">${dateStr}</td>
+        <td style="position:sticky; left:95px; z-index:5; background:${rowBg}; padding:6px 10px; border:1px solid #E2E8F0; font-weight:600; color:#475569;">${dayName}</td>
+        <td style="position:sticky; left:180px; z-index:5; background:${rowBg}; padding:6px 10px; border:1px solid #E2E8F0; font-weight:700; color:#0A2E7A;">${paramLabel}</td>
+        <td style="position:sticky; left:350px; z-index:5; background:${rowBg}; padding:6px 10px; border:1px solid #E2E8F0; text-align:center; color:#64748B;">${unit}</td>`;
+      
+      vals.forEach(v => {
+        let valColor = '#0F172A';
+        let valBg = 'transparent';
+        if(typeof v === 'number'){
+          if(v > 0 && unit.includes('MWh') && paramLabel.includes('Deviation')) { valColor = '#065F46'; valBg = '#ECFDF5'; }
+          else if(v < 0 && unit.includes('MWh') && paramLabel.includes('Deviation')) { valColor = '#991B1B'; valBg = '#FEF2F2'; }
+          else if(unit === '₹' && v > 0) { valColor = '#991B1B'; valBg = '#FEF2F2'; }
+          else if(unit === '₹' && v < 0) { valColor = '#065F46'; valBg = '#ECFDF5'; }
+        }
+        rHtml += `<td style="padding:4px 3px; border:1px solid #E2E8F0; text-align:right; font-size:11px; color:${valColor}; background:${valBg};">${typeof v === 'number' ? (unit==='₹'?Math.round(v).toLocaleString('en-IN'):v.toFixed(3)):v}</td>`;
+      });
+
+      rHtml += `
+        <td style="position:sticky; right:280px; z-index:5; background:${rowBg}; padding:6px 10px; border:1px solid #E2E8F0; text-align:right; font-weight:800; color:#0A2E7A;">${totalDisplay}</td>
+        <td style="position:sticky; right:190px; z-index:5; background:#ECFDF5; padding:6px 10px; border:1px solid #A7F3D0; text-align:right; font-weight:800; color:#065F46;">${maxPosDisplay}</td>
+        <td style="position:sticky; right:100px; z-index:5; background:#FEF2F2; padding:6px 10px; border:1px solid #FECACA; text-align:right; font-weight:800; color:#991B1B;">${maxNegDisplay}</td>
+        <td style="position:sticky; right:0; z-index:5; background:${rowBg}; padding:6px 8px; border:1px solid #E2E8F0; font-size:10px; color:#475569; white-space:nowrap;">${remark}</td>
+      </tr>`;
+      return rHtml;
+    };
+
+    const sVals = [], aVals = [], devVals = [], volVals = [], withinVals = [], beyondVals = [], chargeVals = [], freqVals = [];
+    let sumS = 0, sumA = 0, sumDev = 0, sumVol = 0, sumWithin = 0, sumBeyond = 0, sumCharge = 0, avgF = 0;
+    let maxPosDev = 0, maxNegDev = 0;
+    let maxS = 0, minS = Infinity, maxA = 0, minA = Infinity;
+
+    for(let i=1; i<=96; i++){
+      const b = (d.blocks || []).find(x => Number(x.idx)===i) || (d.blocks && d.blocks[i-1]) || { idx:i, s:0, a:0, f:50, r:0 };
+      const r = revisionAwareBlock(d, b);
+      const bs = Number(r.s) || 0;
+      const ba = Number(b.a) || 0;
+      const bdev = Number(r.dev !== undefined && !isNaN(r.dev) ? r.dev : (ba - bs)) || 0;
+      const bf = Number(b.f) || 50;
+      const bvol = Number(r.volLimit !== undefined ? r.volLimit : Math.min(bs*(FP.volLimitPct/100), FP.volLimitCap)) || 0;
+      const bwithin = Number(r.devWithin !== undefined ? r.devWithin : (Math.abs(bdev)>bvol ? Math.sign(bdev)*bvol : bdev)) || 0;
+      const bbeyond = Number(r.devBeyond !== undefined ? r.devBeyond : (bdev - bwithin)) || 0;
+      const bcharge = Number(r.charge) || 0;
+
+      sVals.push(bs); aVals.push(ba); devVals.push(bdev); volVals.push(bvol); withinVals.push(bwithin); beyondVals.push(bbeyond);
+      chargeVals.push(bcharge); freqVals.push(bf);
+
+      sumS += bs; sumA += ba; sumDev += bdev; sumVol += bvol; sumWithin += bwithin; sumBeyond += bbeyond;
+      sumCharge += bcharge; avgF += bf;
+
+      if(bs > maxS) maxS = bs; if(bs < minS) minS = bs;
+      if(ba > maxA) maxA = ba; if(ba < minA) minA = ba;
+      if(bdev > maxPosDev) maxPosDev = bdev;
+      if(bdev < maxNegDev) maxNegDev = bdev;
+    }
+    avgF = avgF / 96;
+
+    if(tabId === 'calculations'){
+      tableHtml += renderRowData('1. Schedule', 'MWh', sVals, sumS.toFixed(3), maxS.toFixed(3), minS.toFixed(3), `Rev: ${dayRev}`, '#F8FAFC');
+      tableHtml += renderRowData('2. Actual Injection', 'MWh', aVals, sumA.toFixed(3), maxA.toFixed(3), minA.toFixed(3), 'Main SEM', '#FFFFFF');
+      tableHtml += renderRowData('3. Net Deviation', 'MWh', devVals, (sumDev>=0?'+':'')+sumDev.toFixed(3), `+${maxPosDev.toFixed(3)}`, maxNegDev.toFixed(3), sumDev>=0?'Over-Inj':'Under-Inj', '#F0FDF4');
+      tableHtml += renderRowData('4. Volume Limit', 'MWh', volVals, sumVol.toFixed(3), Math.max(...volVals).toFixed(3), Math.min(...volVals).toFixed(3), `Cap: ${FP.volLimitPct}%`, '#FEF3C7');
+      tableHtml += renderRowData('5. Dev Within Limit', 'MWh', withinVals, sumWithin.toFixed(3), Math.max(...withinVals).toFixed(3), Math.min(...withinVals).toFixed(3), 'Normal Band', '#ECFDF5');
+      tableHtml += renderRowData('6. Dev Beyond Limit', 'MWh', beyondVals, sumBeyond.toFixed(3), Math.max(...beyondVals).toFixed(3), Math.min(...beyondVals).toFixed(3), Math.abs(sumBeyond)>0.001?'Excursions':'Zero', '#FEF2F2');
+      tableHtml += renderRowData('7. DSM Charges', '₹', chargeVals, `₹ ${Math.round(sumCharge).toLocaleString('en-IN')}`, `₹ ${Math.round(Math.max(...chargeVals)).toLocaleString('en-IN')}`, `₹ ${Math.round(Math.min(...chargeVals)).toLocaleString('en-IN')}`, sumCharge<0?'Credit (Receivable)':'Debit (Payable)', '#F1F5F9');
+    } else if(tabId === 'deviation'){
+      tableHtml += renderRowData('Net Deviation', 'MWh', devVals, (sumDev>=0?'+':'')+sumDev.toFixed(3), `+${maxPosDev.toFixed(3)}`, maxNegDev.toFixed(3), sumDev>=0?'Net Over-Inj':'Net Under-Inj', dIdx%2===0?'#F0FDF4':'#FFFFFF');
+    } else if(tabId === 'schedule'){
+      tableHtml += renderRowData('Schedule', 'MWh', sVals, sumS.toFixed(3), maxS.toFixed(3), minS.toFixed(3), `Rev: ${dayRev}`, dIdx%2===0?'#F8FAFC':'#FFFFFF');
+    } else if(tabId === 'actual'){
+      tableHtml += renderRowData('Actual Injection', 'MWh', aVals, sumA.toFixed(3), maxA.toFixed(3), minA.toFixed(3), 'Main SEM', dIdx%2===0?'#F8FAFC':'#FFFFFF');
+    } else if(tabId === 'vol_limit'){
+      tableHtml += renderRowData('Volume Limit', 'MWh', volVals, sumVol.toFixed(3), Math.max(...volVals).toFixed(3), Math.min(...volVals).toFixed(3), `Cap: ${FP.volLimitPct}%`, dIdx%2===0?'#FEF3C7':'#FFFFFF');
+    } else if(tabId === 'dev_within'){
+      tableHtml += renderRowData('Dev Within Limit', 'MWh', withinVals, sumWithin.toFixed(3), Math.max(...withinVals).toFixed(3), Math.min(...withinVals).toFixed(3), 'Normal Band', dIdx%2===0?'#ECFDF5':'#FFFFFF');
+    } else if(tabId === 'dev_beyond'){
+      tableHtml += renderRowData('Dev Beyond Limit', 'MWh', beyondVals, sumBeyond.toFixed(3), Math.max(...beyondVals).toFixed(3), Math.min(...beyondVals).toFixed(3), 'Excursion Band', dIdx%2===0?'#FEF2F2':'#FFFFFF');
+    } else if(tabId === 'charge'){
+      tableHtml += renderRowData('DSM Charges', '₹', chargeVals, `₹ ${Math.round(sumCharge).toLocaleString('en-IN')}`, `₹ ${Math.round(Math.max(...chargeVals)).toLocaleString('en-IN')}`, `₹ ${Math.round(Math.min(...chargeVals)).toLocaleString('en-IN')}`, sumCharge<0?'Credit':'Debit', dIdx%2===0?'#F1F5F9':'#FFFFFF');
+    } else if(tabId === 'frequency'){
+      tableHtml += renderRowData('Frequency', 'Hz', freqVals, avgF.toFixed(2), Math.max(...freqVals).toFixed(2), Math.min(...freqVals).toFixed(2), 'IEGC Band', dIdx%2===0?'#EFF6FF':'#FFFFFF');
+    }
+  });
+
+  tableHtml += `</tbody></table>`;
+  wrap.innerHTML = tableHtml;
+};
 
 function exportWeek(){
   const week = weekObj();
@@ -5129,33 +5992,49 @@ function exportWeek(){
   const masterSheet = buildHorizontal96BlocksMasterSheet(week, metaObj);
   XLSX.utils.book_append_sheet(wb, masterSheet, '96-Block Master (Horizontal)');
 
-  // 2. Schedule 96-Blocks Horizontal
+  // 2. Calculations (96 Blocks Horizontal Template with Max Pos & Max Neg)
+  const calc96Sheet = buildHorizontal96BlocksCalcSheet(week, metaObj);
+  XLSX.utils.book_append_sheet(wb, calc96Sheet, 'Calculations (96-Blk)');
+
+  // 3. Schedule 96-Blocks Horizontal
   const schSheet = buildHorizontal96BlocksParamSheet(week, metaObj, 'schedule');
   XLSX.utils.book_append_sheet(wb, schSheet, 'Schedule (96-Blk)');
 
-  // 3. Actual 96-Blocks Horizontal
+  // 4. Actual 96-Blocks Horizontal
   const actSheet = buildHorizontal96BlocksParamSheet(week, metaObj, 'actual');
   XLSX.utils.book_append_sheet(wb, actSheet, 'Actual (96-Blk)');
 
-  // 4. Deviation 96-Blocks Horizontal
+  // 5. Deviation 96-Blocks Horizontal (with Max Positive & Max Negative)
   const devSheet = buildHorizontal96BlocksParamSheet(week, metaObj, 'deviation');
   XLSX.utils.book_append_sheet(wb, devSheet, 'Deviation (96-Blk)');
 
-  // 5. DSM Charges 96-Blocks Horizontal
+  // 6. Volume Limit 96-Blocks Horizontal
+  const volSheet = buildHorizontal96BlocksParamSheet(week, metaObj, 'vol_limit');
+  XLSX.utils.book_append_sheet(wb, volSheet, 'Volume Limit (96-Blk)');
+
+  // 7. Deviation Within Limit 96-Blocks Horizontal
+  const withinSheet = buildHorizontal96BlocksParamSheet(week, metaObj, 'dev_within');
+  XLSX.utils.book_append_sheet(wb, withinSheet, 'Dev Within Limit (96-Blk)');
+
+  // 8. Deviation Beyond Limit 96-Blocks Horizontal
+  const beyondSheet = buildHorizontal96BlocksParamSheet(week, metaObj, 'dev_beyond');
+  XLSX.utils.book_append_sheet(wb, beyondSheet, 'Dev Beyond Limit (96-Blk)');
+
+  // 9. DSM Charges 96-Blocks Horizontal
   const chargeSheet = buildHorizontal96BlocksParamSheet(week, metaObj, 'charge');
   XLSX.utils.book_append_sheet(wb, chargeSheet, 'DSM Charges (96-Blk)');
 
-  // 6. Frequency 96-Blocks Horizontal
+  // 10. Frequency 96-Blocks Horizontal
   const freqSheet = buildHorizontal96BlocksParamSheet(week, metaObj, 'frequency');
   XLSX.utils.book_append_sheet(wb, freqSheet, 'Frequency (96-Blk)');
 
-  // 7. Executive Dashboard & Summaries
+  // 11. Executive Dashboard & Summaries
   XLSX.utils.book_append_sheet(wb, dashSheet, 'Dashboard');
   XLSX.utils.book_append_sheet(wb, summarySheet, 'Summary');
   XLSX.utils.book_append_sheet(wb, sortedSheet, 'Sorted Analysis');
   XLSX.utils.book_append_sheet(wb, dailySheet, 'Daily Summary');
   XLSX.utils.book_append_sheet(wb, blockSheet, 'Block Data');
-  XLSX.utils.book_append_sheet(wb, calcSheet, 'Calculations');
+  XLSX.utils.book_append_sheet(wb, calcSheet, 'Calculations (Vertical)');
   const plantSlug = String(window.currentPlantContext||'Khurja').replace(/[^A-Za-z0-9]+/g,'_');
   XLSX.writeFile(wb, `${plantSlug}_DSM_W${state.currentWeek}.xlsx`);
 }
