@@ -1026,7 +1026,7 @@ body:has(.login-wrap) #thdc-global-header{
 /* Colorful action buttons */
 .thdc-action{display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:7px!important;height:40px!important;padding:0 15px!important;border:0!important;border-radius:10px!important;color:#fff!important;font:800 12px Inter,sans-serif!important;box-shadow:0 5px 12px rgba(15,23,42,.10)!important;transition:.18s ease!important;white-space:nowrap!important}
 .thdc-action:hover{transform:translateY(-2px)!important;filter:saturate(1.08)!important;box-shadow:0 8px 18px rgba(15,23,42,.16)!important}
-.thdc-excel{background:linear-gradient(135deg,#16A34A,#07883F)!important}.thdc-week{background:linear-gradient(135deg,#2563EB,#0B63CE)!important}.thdc-rev{background:linear-gradient(135deg,#7C3AED,#5B21B6)!important}.thdc-save{background:linear-gradient(135deg,#F97316,#EA580C)!important}.thdc-export{background:linear-gradient(135deg,#0891B2,#0E7490)!important}.thdc-pdf{background:linear-gradient(135deg,#EF4444,#DC2626)!important}.thdc-settings{background:linear-gradient(135deg,#2563EB,#1D4ED8)!important}.thdc-params{background:linear-gradient(135deg,#64748B,#475569)!important}.thdc-backup{background:linear-gradient(135deg,#FBBF24,#EAB308)!important;color:#172554!important}.thdc-clear{background:linear-gradient(135deg,#EF4444,#B91C1C)!important}
+.thdc-excel{background:linear-gradient(135deg,#16A34A,#07883F)!important}.thdc-week{background:linear-gradient(135deg,#2563EB,#0B63CE)!important}.thdc-rev{background:linear-gradient(135deg,#7C3AED,#5B21B6)!important}.thdc-save{background:linear-gradient(135deg,#F97316,#EA580C)!important}.thdc-export{background:linear-gradient(135deg,#0891B2,#0E7490)!important}.thdc-matrix{background:linear-gradient(135deg,#0284C7,#0369A1)!important;color:#FFFFFF!important;box-shadow:0 4px 12px rgba(2,132,199,.25)!important}.thdc-pdf{background:linear-gradient(135deg,#EF4444,#DC2626)!important}.thdc-settings{background:linear-gradient(135deg,#2563EB,#1D4ED8)!important}.thdc-params{background:linear-gradient(135deg,#64748B,#475569)!important}.thdc-backup{background:linear-gradient(135deg,#FBBF24,#EAB308)!important;color:#172554!important}.thdc-restore{background:linear-gradient(135deg,#D97706,#B45309)!important;color:#FFFFFF!important}.thdc-clear{background:linear-gradient(135deg,#EF4444,#B91C1C)!important}
 .thdc-top-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:12px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:14px;margin-bottom:14px}
 .thdc-context-grid{display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:10px;margin-bottom:12px}
 .thdc-context-card{background:linear-gradient(180deg,#fff,#F8FBFF);border:1px solid #DCE6F0;border-radius:12px;padding:11px 13px;display:flex;align-items:center;gap:11px;min-width:0;box-shadow:0 4px 12px rgba(15,23,42,.035)}
@@ -1544,13 +1544,23 @@ function revisionAwareBlock(day, b){
   if(typeof window !== 'undefined' && window.THDC_REVISION_AWARE) {
     return window.THDC_REVISION_AWARE(day, b);
   }
-  const s = (typeof applicableSchedule === 'function') ? applicableSchedule(day, b) : (Number(b?.s) || 0);
+  const baseS = (typeof applicableSchedule === 'function') ? applicableSchedule(day, b) : (Number(b?.s) || 0);
+  const sras = Number(b?.sras) || 0;
+  const effS = baseS + sras; // NRPC CERC DSM calculation uses Schedule + SRAS
   const a = Number(b?.a) || 0;
   const f = Number(b?.f) || 50;
   const r = Number(b?.r) || 0;
-  const x = computeBlock(s, a, f, r);
+  const x = computeBlock(effS, a, f, r);
   const rev = (typeof revisionApplicable === 'function') ? (revisionApplicable(day?.date, b?.idx)?.id || 'R0') : 'R0';
-  return { ...x, s, revision: rev };
+  return {
+    ...x,
+    baseS,
+    sras,
+    effS,
+    s: baseS, // Dashboard display schedule (without SRAS)
+    devWithoutSras: a - baseS,
+    revision: rev
+  };
 }
 if(typeof window !== 'undefined') {
   window.revisionAwareBlock = revisionAwareBlock;
@@ -1579,41 +1589,51 @@ function fmtPct(x){ return (Math.round(x*10)/10).toFixed(1)+'%'; }
 function weekObj(){ return state.weeks[state.currentWeek]; }
 
 function dayAgg(day){
-  let s=0,a=0,charge=0,over=0,under=0,none=0,maxPos=0,maxNeg=0;
+  let s=0,sras=0,effS=0,a=0,charge=0,over=0,under=0,none=0,maxPos=0,maxNeg=0;
   for(const b of (day?.blocks||[])){
     const r=revisionAwareBlock(day,b);
-    const bs=Number(r.s)||0;
+    const bs=Number(r.baseS !== undefined ? r.baseS : r.s)||0;
+    const bsras=Number(r.sras !== undefined ? r.sras : (b.sras||0))||0;
+    const beff=Number(r.effS !== undefined ? r.effS : (bs + bsras))||0;
     const ba=Number(b.a)||0;
     const bc=Number(r.charge)||0;
-    s+=bs; a+=ba; charge+=bc;
-    const dev = Number(r.dev !== undefined && !isNaN(r.dev) ? r.dev : (ba - bs)) || 0;
-    if(dev>0){
+    const bdev=Number(r.dev !== undefined && !isNaN(r.dev) ? r.dev : (ba - beff))||0;
+
+    s+=bs; sras+=bsras; effS+=beff; a+=ba; charge+=bc;
+    if(bdev>0){
       over++;
-      if(dev>maxPos) maxPos=dev;
-    } else if(dev<0){
+      if(bdev>maxPos) maxPos=bdev;
+    } else if(bdev<0){
       under++;
-      if(dev<maxNeg) maxNeg=dev;
+      if(bdev<maxNeg) maxNeg=bdev;
     } else {
       none++;
     }
   }
+  const netDev = a - effS; // CERC DSM Deviation: Actual - (Schedule + SRAS)
   return {
     blocks:(day?.blocks||[]).length,
-    s,a,dev:a-s,charge,over,under,none,
+    s,       // Base Schedule (without SRAS) for display
+    sras,    // SRAS adjustment
+    effS,    // Effective Schedule (Sch + SRAS)
+    a,       // Actual Injection
+    dev: netDev, // CERC DSM Deviation (Actual - [Sch+SRAS])
+    charge,
+    over,under,none,
     maxPos,maxNeg,
     avgRate:(day?.blocks||[]).reduce((x,b)=>x+(Number(b.r)||0),0)/((day?.blocks||[]).length||1)
   };
 }
 function weekAgg(week){
-  let s=0,a=0,dev=0,charge=0,over=0,under=0,none=0,maxPos=0,maxNeg=0,rateSum=0,rateN=0;
+  let s=0,sras=0,effS=0,a=0,dev=0,charge=0,over=0,under=0,none=0,maxPos=0,maxNeg=0,rateSum=0,rateN=0;
   (week?.days||[]).forEach(d=>{
     const g = dayAgg(d);
-    s+=g.s; a+=g.a; dev+=g.dev; charge+=g.charge; over+=g.over; under+=g.under; none+=g.none;
+    s+=g.s; sras+=g.sras; effS+=g.effS; a+=g.a; dev+=g.dev; charge+=g.charge; over+=g.over; under+=g.under; none+=g.none;
     if(typeof g.maxPos === 'number' && g.maxPos > maxPos) maxPos = g.maxPos;
     if(typeof g.maxNeg === 'number' && g.maxNeg < maxNeg) maxNeg = g.maxNeg;
     (d?.blocks||[]).forEach(b=>{
       const r = revisionAwareBlock(d, b);
-      const bDev = Number(r.dev !== undefined && !isNaN(r.dev) ? r.dev : (Number(b.a||0) - Number(r.s !== undefined ? r.s : (b.s||0)))) || 0;
+      const bDev = Number(r.dev !== undefined && !isNaN(r.dev) ? r.dev : (Number(b.a||0) - Number(r.effS !== undefined ? r.effS : (b.s||0)))) || 0;
       if(bDev > maxPos) maxPos = bDev;
       if(bDev < maxNeg) maxNeg = bDev;
       rateSum += Number(b.r||0);
@@ -1622,7 +1642,7 @@ function weekAgg(week){
   });
   const totalBlocks = over+under+none;
   return {
-    s,a,dev,charge,over,under,none,
+    s,sras,effS,a,dev,charge,over,under,none,
     maxPos,maxNeg,
     totalBlocks,
     avgRate: rateN? rateSum/rateN : 0,
@@ -1832,12 +1852,12 @@ function renderShell(){
       <button class="thdc-action thdc-export" onclick="exportWeek()" title="Export Complete Excel Workbook with 96-Block Horizontal Templates & Calculations">▤ Export Excel</button>
       <button class="thdc-action thdc-export" style="background:linear-gradient(135deg,#0D9488,#0F766E)!important;color:#FFFFFF!important;font-weight:700;" onclick="exportHorizontal96Blocks()" title="Export Day & Date wise 96 Time-Blocks Horizontal Template (Master + 96-Block Parameter Sheets)"><span style="font-size:16px">▦</span> 96-Blk Horizontal Excel</button>
       <button class="thdc-action" style="background:linear-gradient(135deg,#4338CA,#3730A3)!important;color:#FFFFFF!important;font-weight:700;border-color:#3730A3;" onclick="exportHorizontalCalculations()" title="Export Detailed Step-by-Step 96 Time-Blocks Horizontal Calculations Workbook with Excel Formulas"><span style="font-size:16px">🧮</span> 96-Blk Calc Excel</button>
-      <button class="thdc-action" style="background:#FFFFFF;color:#0F766E;border:1.5px solid #0F766E;font-weight:700;" onclick="openHorizontalMatrixModal()" title="View 96-Block Horizontal Calculation Matrix On Screen"><span style="font-size:16px">👁</span> View 96-Blk Matrix</button>
+      <button class="thdc-action thdc-matrix" onclick="openHorizontalMatrixModal()" title="View 96-Block Horizontal Calculation Matrix On Screen"><span style="font-size:16px">👁</span> View 96-Blk Matrix</button>
       <button class="thdc-action thdc-pdf" onclick="exportPDF()">▣ Export Color PDF</button>
       <button class="thdc-action thdc-settings" onclick="openFormulaModal()">⚙ Formula Settings</button>
       <button class="thdc-action thdc-params" onclick="openUniversalConfig()">⚙ Plant Parameters</button>
       <button class="thdc-action thdc-backup" onclick="THDC_EXPORT_BACKUP()">🗄 Backup</button>
-      <button class="btn btn-sm" onclick="THDC_IMPORT_BACKUP()">☁ Restore</button>
+      <button class="thdc-action thdc-restore" onclick="THDC_IMPORT_BACKUP()" title="Restore Plant Data from JSON Backup">☁ Restore</button>
       <button class="thdc-action thdc-clear" onclick="confirmResetWeek()">↺ Reset Week</button>
       <button class="thdc-action thdc-clear" onclick="confirmClearWeek()">▣ Clear Week</button>
       <button class="thdc-action thdc-clear" onclick="confirmClearAll()">▣ Clear All</button>
@@ -3181,6 +3201,7 @@ function renderKPIs(){
     <div class="kpi-card">
       <div class="kpi-label">Scheduled Energy</div>
       <div class="kpi-value">${fmtMWh0(g.s)}<span class="unit">MWh</span></div>
+      ${g.sras !== 0 ? `<div class="kpi-sub" style="font-size:11px;color:#0284C7;font-weight:600;">Base Sch (SRAS: ${g.sras>=0?'+':''}${fmtMWh0(g.sras)} MWh)</div>` : ''}
     </div>
     <div class="kpi-card">
       <div class="kpi-label">Actual Injection</div>
@@ -3189,6 +3210,7 @@ function renderKPIs(){
     <div class="kpi-card ${g.dev>=0?'':'c-red'}">
       <div class="kpi-label">Total Deviation</div>
       <div class="kpi-value ${g.dev>0?'':(g.dev<0?'red':'')}">${g.dev>=0?'+':''}${fmtMWh0(g.dev)}<span class="unit">MWh</span></div>
+      ${g.sras !== 0 ? `<div class="kpi-sub" style="font-size:11px;color:#64748B;">Actual − (Sch + SRAS)</div>` : ''}
     </div>
     <div class="kpi-card ${g.charge<0?'c-green':(g.charge>0?'c-red':'c-grey')}">
       <div class="kpi-label">DSM Charge</div>
@@ -3269,9 +3291,13 @@ function renderWeeklySummary(){
     <table>
       <thead><tr><th>Metric</th><th style="text-align:right;">Week Total</th></tr></thead>
       <tbody>
-        <tr><td>Scheduled</td><td>${fmtMWh0(g.s)} MWh</td></tr>
+        <tr><td>Scheduled (Base)</td><td>${fmtMWh0(g.s)} MWh</td></tr>
+        ${g.sras !== 0 ? `
+          <tr><td>SRAS (Reserves)</td><td style="color:#0284C7;">${g.sras>=0?'+':''}${fmtMWh0(g.sras)} MWh</td></tr>
+          <tr><td>Effective Sch (Sch+SRAS)</td><td><b>${fmtMWh0(g.effS)} MWh</b></td></tr>
+        ` : ''}
         <tr><td>Actual Injection</td><td>${fmtMWh0(g.a)} MWh</td></tr>
-        <tr><td>Deviation</td><td class="${g.dev>0?'cell-pos':(g.dev<0?'cell-neg':'')}">${g.dev>=0?'+':''}${fmtMWh0(g.dev)} MWh</td></tr>
+        <tr><td>Deviation (Act - [Sch+SRAS])</td><td class="${g.dev>0?'cell-pos':(g.dev<0?'cell-neg':'')}">${g.dev>=0?'+':''}${fmtMWh0(g.dev)} MWh</td></tr>
         <tr><td>Reference Rate</td><td>${fmtRate(g.avgRate)} ₹/kWh</td></tr>
         <tr><td>DSM Charge</td><td class="${g.charge<0?'cell-pos':(g.charge>0?'cell-neg':'')}">${fmtInr(g.charge)}</td></tr>
         <tr><td>Blocks</td><td>${g.totalBlocks} / 672</td></tr>
@@ -3291,10 +3317,12 @@ function renderDateTable(){
   let rows = week.days.map(d=>{
     const g = dayAgg(d);
     const active = d.date===state.currentDate ? 'active-row' : '';
+    const srasText = g.sras !== 0 ? `${g.sras>0?'+':''}${fmtMWh0(g.sras)}` : '0.00';
     return `<tr class="clickable ${active}" onclick="openDayDetail('${formatDateDDMMYYYY(d.date)}')">
       <td>${formatDateDDMMYYYY(d.date)}</td>
       <td>${g.blocks}</td>
-      <td>${fmtMWh0(g.s)}</td>
+      <td><b>${fmtMWh0(g.s)}</b></td>
+      <td style="color:#0284C7;font-weight:600;">${srasText}</td>
       <td>${fmtMWh0(g.a)}</td>
       <td class="${g.dev>0?'cell-pos':(g.dev<0?'cell-neg':'')}">${g.dev>=0?'+':''}${fmtMWh0(g.dev)}</td>
       <td>${fmtRate(g.avgRate)}</td>
@@ -3304,7 +3332,7 @@ function renderDateTable(){
   document.getElementById('dateTable').innerHTML = `
     <div class="table-scroll" style="max-height:340px;">
       <table>
-        <thead><tr><th>Date</th><th>Blocks</th><th>Schedule MWh</th><th>Actual MWh</th><th>Deviation MWh</th><th>Rate ₹/kWh</th><th>DSM ₹</th></tr></thead>
+        <thead><tr><th>Date</th><th>Blocks</th><th title="Base Schedule without SRAS">Schedule MWh</th><th title="Secondary Reserves Ancillary Services">SRAS MWh</th><th>Actual MWh</th><th title="DSM Deviation = Actual - (Schedule + SRAS)">Deviation MWh</th><th>Rate ₹/kWh</th><th>DSM ₹</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>
     </div>
@@ -3515,14 +3543,21 @@ function renderDayDetailPanel(){
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
           <span>${isBulkOpen ? 'Hide Bulk Edit' : '⚡ Bulk Edit Schedule'}</span>
         </button>
-        <button class="btn btn-sm" onclick="openHorizontalMatrixModal('${day.date}')" style="display:inline-flex;align-items:center;gap:6px;font-weight:700;color:#0F766E;border-color:#0F766E;" title="View complete 96-block horizontal calculation matrix for this day">
+        <button class="btn btn-sm" onclick="openSRASModal('${day.date}')" style="display:inline-flex;align-items:center;gap:6px;font-weight:700;background:linear-gradient(135deg,#0284C7,#0369A1);color:#FFFFFF;border:none;box-shadow:0 2px 6px rgba(2,132,199,0.25);" title="Manage & import NRPC 96-block SRAS for this day">
+          <span style="font-size:14px;">⚡</span> <span>SRAS Manager</span>
+        </button>
+        <button class="btn btn-sm" onclick="openHorizontalMatrixModal('${day.date}')" style="display:inline-flex;align-items:center;gap:6px;font-weight:700;background:linear-gradient(135deg,#0D9488,#0F766E);color:#FFFFFF;border:none;box-shadow:0 2px 6px rgba(13,148,136,0.25);" title="View complete 96-block horizontal calculation matrix for this day">
           <span style="font-size:14px;">▦</span> <span>96-Blk Calc Matrix</span>
         </button>
         <button class="btn btn-sm" onclick="closeDayDetail()">Close ✕</button>
       </div>
     </div>
-    <div class="kpi-grid-sec" style="margin-bottom:14px;">
-      <div class="kpi-card"><div class="kpi-label">Day Scheduled</div><div class="kpi-value" style="font-size:15px;">${fmtMWh0(g.s)}<span class="unit">MWh</span></div></div>
+    <div class="kpi-grid-sec" style="margin-bottom:14px;grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));">
+      <div class="kpi-card"><div class="kpi-label">Day Schedule (Base)</div><div class="kpi-value" style="font-size:15px;">${fmtMWh0(g.s)}<span class="unit">MWh</span></div></div>
+      ${g.sras !== 0 ? `
+        <div class="kpi-card"><div class="kpi-label">Day SRAS</div><div class="kpi-value" style="font-size:15px;color:#0284C7;">${g.sras>=0?'+':''}${fmtMWh0(g.sras)}<span class="unit">MWh</span></div></div>
+        <div class="kpi-card"><div class="kpi-label">Effective (Sch+SRAS)</div><div class="kpi-value" style="font-size:15px;font-weight:700;">${fmtMWh0(g.effS)}<span class="unit">MWh</span></div></div>
+      ` : ''}
       <div class="kpi-card"><div class="kpi-label">Day Actual</div><div class="kpi-value" style="font-size:15px;">${fmtMWh0(g.a)}<span class="unit">MWh</span></div></div>
       <div class="kpi-card ${g.dev<0?'c-red':''}"><div class="kpi-label">Day Deviation</div><div class="kpi-value ${g.dev<0?'red':''}" style="font-size:15px;">${g.dev>=0?'+':''}${fmtMWh0(g.dev)}<span class="unit">MWh</span></div></div>
       <div class="kpi-card ${g.charge<0?'c-green':(g.charge>0?'c-red':'')}"><div class="kpi-label">Day DSM Charge</div><div class="kpi-value ${g.charge<0?'green':(g.charge>0?'red':'')}" style="font-size:15px;">${fmtInr(g.charge)}</div></div>
@@ -3868,15 +3903,18 @@ function renderBlockTable(){
     const pillClass = r.dev>0?'over':(r.dev<0?'under':'none');
     const pillLabel = r.dev>0?'Over':(r.dev<0?'Under':'None');
     const isSelected = state.bulkEdit.selectedBlocks.has(b.idx);
+    const srasVal = Number(b.sras) || 0;
     return `<tr class="${isSelected ? 'row-selected' : ''}">
       <td style="text-align:center;width:38px;">
         <input type="checkbox" class="block-chk" data-block="${b.idx}" ${isSelected ? 'checked' : ''} onclick="handleBlockCheckboxClick(event, ${b.idx})" title="Click (or Shift-click for range)">
       </td>
       <td>#${b.idx}</td>
       <td>${b.t}</td>
-      <td><input class="editable-input" type="number" step="0.001" value="${r.s}" onchange="editBlock('${day.date}',${i},'s',this.value)"></td>
+      <td><input class="editable-input" type="number" step="0.001" value="${r.s}" onchange="editBlock('${day.date}',${i},'s',this.value)" title="Base Schedule (without SRAS)"></td>
+      <td><input class="editable-input" type="number" step="0.001" value="${srasVal}" onchange="editBlock('${day.date}',${i},'sras',this.value)" style="color:#0284C7;font-weight:600;" title="Secondary Reserves Ancillary Services (SRAS)"></td>
+      <td style="font-weight:600;color:var(--text);font-size:12px;" title="Effective Schedule = Schedule + SRAS">${fmtMWh(r.effS)}</td>
       <td><input class="editable-input" type="number" step="0.001" value="${b.a}" onchange="editBlock('${day.date}',${i},'a',this.value)"></td>
-      <td class="${r.dev>0?'cell-pos':(r.dev<0?'cell-neg':'')}">${r.dev>=0?'+':''}${fmtMWh(r.dev)}</td>
+      <td class="${r.dev>0?'cell-pos':(r.dev<0?'cell-neg':'')}" title="DSM Deviation = Actual - (Schedule + SRAS)">${r.dev>=0?'+':''}${fmtMWh(r.dev)}</td>
       <td><input class="editable-input" type="number" step="0.01" value="${b.f}" onchange="editBlock('${day.date}',${i},'f',this.value)" style="width:64px;"></td>
       <td><input class="editable-input" type="number" step="0.001" value="${b.r}" onchange="editBlock('${day.date}',${i},'r',this.value)" style="width:64px;"></td>
       <td class="${r.charge<0?'cell-pos':(r.charge>0?'cell-neg':'')}">${fmtInr(r.charge)}</td>
@@ -3890,7 +3928,7 @@ function renderBlockTable(){
           <th style="width:38px;text-align:center;">
             <input type="checkbox" id="selectAllBlocksChk" ${allSelected ? 'checked' : ''} onchange="toggleSelectAllBlocks(this.checked)" title="Select / Deselect All 96 Blocks">
           </th>
-          <th>Block</th><th>Time</th><th>Sch MWh</th><th>Act MWh</th><th>Deviation MWh</th><th>Freq Hz</th><th>Rate ₹/kWh</th><th>DSM ₹</th><th>Type</th>
+          <th>Block</th><th>Time</th><th title="Base Schedule without SRAS">Sch MWh</th><th title="Secondary Reserves Ancillary Services">SRAS MWh</th><th title="Effective Schedule (Schedule + SRAS)">Sch+SRAS</th><th>Act MWh</th><th title="DSM Deviation = Actual - (Schedule + SRAS)">Deviation MWh</th><th>Freq Hz</th><th>Rate ₹/kWh</th><th>DSM ₹</th><th>Type</th>
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>
@@ -3974,8 +4012,8 @@ function renderCharts(){
     const day = week.days.find(d=>d.date===state.currentDate);
     if(day){
       const blabels = day.blocks.map(b=>'#'+b.idx);
-      const bdevs = day.blocks.map(b=>computeBlock(b.s,b.a,b.f,b.r).dev);
-      const bcharges = day.blocks.map(b=>computeBlock(b.s,b.a,b.f,b.r).charge);
+      const bdevs = day.blocks.map(b=>revisionAwareBlock(day, b).dev);
+      const bcharges = day.blocks.map(b=>revisionAwareBlock(day, b).charge);
       const canvas = document.getElementById('chartBlockProfile');
       if(canvas){
         state.charts.blockProfile = new Chart(canvas, {
@@ -4055,11 +4093,12 @@ function scanForDays(aoa){
       // find date value in this row (first non-empty cell after col0)
       let dateVal = null;
       for(let c=1;c<row.length;c++){ if(row[c]!==null && row[c]!==undefined && row[c]!==''){ dateVal = row[c]; break; } }
-      // scan subsequent rows (up to 12) for time/sch/act/freq/rate rows
-      let timeRow=null, schRow=null, actRow=null, freqRow=null, rateRow=null;
-      for(let k=1;k<=11 && (r+k)<aoa.length;k++){
+      // scan subsequent rows (up to 12) for time/sch/sras/act/freq/rate rows
+      let timeRow=null, schRow=null, srasRow=null, actRow=null, freqRow=null, rateRow=null;
+      for(let k=1;k<=12 && (r+k)<aoa.length;k++){
         const lbl = (aoa[r+k]||[])[0];
         if(labelMatch(lbl,'block') || labelMatch(lbl,'time')) timeRow = aoa[r+k];
+        else if(labelMatch(lbl,'sras') || labelMatch(lbl,'secondary reserve') || labelMatch(lbl,'secondary') || labelMatch(lbl,'s.r.a.s')) srasRow = aoa[r+k];
         else if(labelMatch(lbl,'sch')) schRow = aoa[r+k];
         else if(labelMatch(lbl,'act')) actRow = aoa[r+k];
         else if(labelMatch(lbl,'freq')) freqRow = aoa[r+k];
@@ -4078,10 +4117,12 @@ function scanForDays(aoa){
           const s = schRow[c], a = actRow[c];
           if(s===null || s===undefined || s==='' ) continue;
           if(a===null || a===undefined || a==='') continue;
+          const sras = srasRow ? (Number(srasRow[c])||0) : 0;
           blocks.push({
             idx: blocks.length+1,
             t: timeRow ? (timeRow[c]||'') : '',
             s: Number(s)||0,
+            sras: sras,
             a: Number(a)||0,
             f: freqRow ? (Number(freqRow[c])||50) : 50,
             r: rateRow ? (Number(rateRow[c])||0) : 0
@@ -4307,7 +4348,7 @@ function getBlockTimeLabel(idx){
 }
 
 function buildDailySummarySheet(week){
-  const dailyRows = [['DATE','BLOCKS','SCHEDULE (MWh)','ACTUAL (MWh)','DEVIATION (MWh)','RATE (₹/kWh avg)','DSM CHARGE (₹)','IMPACT']];
+  const dailyRows = [['DATE','BLOCKS','SCHEDULE (MWh)','SRAS (MWh)','EFF SCH (MWh)','ACTUAL (MWh)','DEVIATION (MWh)','RATE (₹/kWh avg)','DSM CHARGE (₹)','IMPACT']];
   const sortedDays = (week.days || []).slice().sort((a,b)=>String(a.date).localeCompare(String(b.date)));
   sortedDays.forEach((d, dIdx)=>{
     const dg = dayAgg(d);
@@ -4316,7 +4357,9 @@ function buildDailySummarySheet(week){
     dailyRows.push([
       formatDateDDMMYYYY(d.date),
       dBlocksCount,
-      Number(dg.s.toFixed(3)),
+      Number((dg.baseS !== undefined ? dg.baseS : dg.s).toFixed(3)),
+      Number((dg.sras || 0).toFixed(3)),
+      Number((dg.effS !== undefined ? dg.effS : dg.s).toFixed(3)),
       Number(dg.a.toFixed(3)),
       Number(dg.dev.toFixed(3)),
       Number(dg.avgRate.toFixed(3)),
@@ -4330,27 +4373,31 @@ function buildDailySummarySheet(week){
   dailyRows.push([
     'WEEK TOTAL',
     { t: 'n', f: `SUM(B2:B${numDays + 1})`, v: g.totalBlocks },
-    { t: 'n', f: `SUM(C2:C${numDays + 1})`, v: Number(g.s.toFixed(3)) },
-    { t: 'n', f: `SUM(D2:D${numDays + 1})`, v: Number(g.a.toFixed(3)) },
-    { t: 'n', f: `SUM(E2:E${numDays + 1})`, v: Number(g.dev.toFixed(3)) },
-    { t: 'n', f: `AVERAGE(F2:F${numDays + 1})`, v: Number(g.avgRate.toFixed(3)) },
-    { t: 'n', f: `SUM(G2:G${numDays + 1})`, v: g.charge },
-    { t: 's', f: `IF(G${dailyTotalRowIdx}<0,"Receivable / Credit",IF(G${dailyTotalRowIdx}>0,"Payable / Debit","Balanced"))`, v: g.charge<0?'Receivable / Credit':(g.charge>0?'Payable / Debit':'Balanced') }
+    { t: 'n', f: `SUM(C2:C${numDays + 1})`, v: Number((g.baseS !== undefined ? g.baseS : g.s).toFixed(3)) },
+    { t: 'n', f: `SUM(D2:D${numDays + 1})`, v: Number((g.sras || 0).toFixed(3)) },
+    { t: 'n', f: `SUM(E2:E${numDays + 1})`, v: Number((g.effS !== undefined ? g.effS : g.s).toFixed(3)) },
+    { t: 'n', f: `SUM(F2:F${numDays + 1})`, v: Number(g.a.toFixed(3)) },
+    { t: 'n', f: `SUM(G2:G${numDays + 1})`, v: Number(g.dev.toFixed(3)) },
+    { t: 'n', f: `AVERAGE(H2:H${numDays + 1})`, v: Number(g.avgRate.toFixed(3)) },
+    { t: 'n', f: `SUM(I2:I${numDays + 1})`, v: g.charge },
+    { t: 's', f: `IF(I${dailyTotalRowIdx}<0,"Receivable / Credit",IF(I${dailyTotalRowIdx}>0,"Payable / Debit","Balanced"))`, v: g.charge<0?'Receivable / Credit':(g.charge>0?'Payable / Debit':'Balanced') }
   ]);
   const ws = XLSX.utils.aoa_to_sheet(dailyRows);
-  ws['!cols'] = [{wch:14},{wch:9},{wch:16},{wch:14},{wch:16},{wch:16},{wch:16},{wch:20}];
-  styleHeaderRow(ws, 0, 8);
+  ws['!cols'] = [{wch:14},{wch:9},{wch:16},{wch:14},{wch:16},{wch:14},{wch:16},{wch:16},{wch:16},{wch:20}];
+  styleHeaderRow(ws, 0, 10);
   applyColFormat(ws, 2, 1, dailyRows.length-1, FMT_MWH);
   applyColFormat(ws, 3, 1, dailyRows.length-1, FMT_MWH);
-  applyColFormat(ws, 4, 1, dailyRows.length-1, FMT_MWH_DEV);
-  applyColFormat(ws, 5, 1, dailyRows.length-1, FMT_RATE);
-  applyColFormat(ws, 6, 1, dailyRows.length-1, FMT_RUPEE);
+  applyColFormat(ws, 4, 1, dailyRows.length-1, FMT_MWH);
+  applyColFormat(ws, 5, 1, dailyRows.length-1, FMT_MWH);
+  applyColFormat(ws, 6, 1, dailyRows.length-1, FMT_MWH_DEV);
+  applyColFormat(ws, 7, 1, dailyRows.length-1, FMT_RATE);
+  applyColFormat(ws, 8, 1, dailyRows.length-1, FMT_RUPEE);
   for(let i=1;i<numDays+1;i++){
     const dg = dayAgg(sortedDays[i-1]);
-    const impactRef = XLSX.utils.encode_cell({r:i,c:7});
+    const impactRef = XLSX.utils.encode_cell({r:i,c:9});
     if(ws[impactRef]) ws[impactRef].s = dg.charge<0 ? RISK_STYLE.GREEN : (dg.charge>0 ? RISK_STYLE.RED : {});
   }
-  styleRow(ws, dailyRows.length - 1, 8, TOTAL_ROW_STYLE);
+  styleRow(ws, dailyRows.length - 1, 10, TOTAL_ROW_STYLE);
   return ws;
 }
 
@@ -4394,6 +4441,8 @@ function buildHorizontal96BlocksMasterSheet(week, meta){
     const dayRev = d.activeRevision || activeRev || 'R0';
 
     const sVals = [];
+    const srasVals = [];
+    const effSVals = [];
     const aVals = [];
     const devVals = [];
     const fVals = [];
@@ -4401,8 +4450,10 @@ function buildHorizontal96BlocksMasterSheet(week, meta){
     const chargeVals = [];
     const devPctVals = [];
 
-    let sumS = 0, sumA = 0, sumDev = 0, sumF = 0, sumR = 0, sumCharge = 0, maxDevPct = 0;
+    let sumS = 0, sumSras = 0, sumEffS = 0, sumA = 0, sumDev = 0, sumF = 0, sumR = 0, sumCharge = 0, maxDevPct = 0;
     let maxS = -Infinity, minS = Infinity;
+    let maxSras = -Infinity, minSras = Infinity;
+    let maxEffS = -Infinity, minEffS = Infinity;
     let maxA = -Infinity, minA = Infinity;
     let maxPosDev = 0, maxNegDev = 0;
     let maxF = -Infinity, minF = Infinity;
@@ -4412,15 +4463,19 @@ function buildHorizontal96BlocksMasterSheet(week, meta){
     for(let i=1; i<=96; i++){
       const b = (d.blocks || []).find(x => Number(x.idx) === i) || (d.blocks && d.blocks[i-1]) || { idx: i, s: 0, a: 0, f: 50, r: 0 };
       const r = revisionAwareBlock(d, b);
-      const bs = Number(r.s) || 0;
+      const bs = Number(r.baseS !== undefined ? r.baseS : r.s) || 0;
+      const bsras = Number(r.sras !== undefined ? r.sras : (b.sras || 0)) || 0;
+      const beffS = Number(r.effS !== undefined ? r.effS : (bs + bsras)) || 0;
       const ba = Number(b.a) || 0;
-      const bdev = Number(r.dev !== undefined && !isNaN(r.dev) ? r.dev : (ba - bs)) || 0;
+      const bdev = Number(r.dev !== undefined && !isNaN(r.dev) ? r.dev : (ba - beffS)) || 0;
       const bf = Number(b.f) || 50;
       const br = Number(b.r) || 0;
       const bcharge = Number(r.charge) || 0;
-      const bdevPct = Number(r.devPct !== undefined && !isNaN(r.devPct) ? r.devPct : (bs === 0 ? 0 : (bdev/Math.abs(bs))*100)) || 0;
+      const bdevPct = Number(r.devPct !== undefined && !isNaN(r.devPct) ? r.devPct : (beffS === 0 ? 0 : (bdev/Math.abs(beffS))*100)) || 0;
 
       sVals.push(Number(bs.toFixed(4)));
+      srasVals.push(Number(bsras.toFixed(4)));
+      effSVals.push(Number(beffS.toFixed(4)));
       aVals.push(Number(ba.toFixed(4)));
       devVals.push(Number(bdev.toFixed(4)));
       fVals.push(Number(bf.toFixed(2)));
@@ -4429,6 +4484,8 @@ function buildHorizontal96BlocksMasterSheet(week, meta){
       devPctVals.push(Number(bdevPct.toFixed(2)));
 
       sumS += bs;
+      sumSras += bsras;
+      sumEffS += beffS;
       sumA += ba;
       sumDev += bdev;
       sumF += bf;
@@ -4438,6 +4495,10 @@ function buildHorizontal96BlocksMasterSheet(week, meta){
 
       if(bs > maxS) maxS = bs;
       if(bs < minS) minS = bs;
+      if(bsras > maxSras) maxSras = bsras;
+      if(bsras < minSras) minSras = bsras;
+      if(beffS > maxEffS) maxEffS = beffS;
+      if(beffS < minEffS) minEffS = beffS;
       if(ba > maxA) maxA = ba;
       if(ba < minA) minA = ba;
       if(bdev > maxPosDev) maxPosDev = bdev;
@@ -4452,6 +4513,10 @@ function buildHorizontal96BlocksMasterSheet(week, meta){
 
     if(minS === Infinity) minS = 0;
     if(maxS === -Infinity) maxS = 0;
+    if(minSras === Infinity) minSras = 0;
+    if(maxSras === -Infinity) maxSras = 0;
+    if(minEffS === Infinity) minEffS = 0;
+    if(maxEffS === -Infinity) maxEffS = 0;
     if(minA === Infinity) minA = 0;
     if(maxA === -Infinity) maxA = 0;
     if(minF === Infinity) minF = 50;
@@ -4462,21 +4527,54 @@ function buildHorizontal96BlocksMasterSheet(week, meta){
     const avgF = sumF / 96;
     const avgR = sumR / 96;
 
-    // Row 1: Schedule (MWh)
+    // Row 1: Schedule (Base Schedule without SRAS)
     const rSch = currentExcelRow;
     aoa.push([
-      dateStr, dayName, 'Scheduled Generation (Sch)', 'MWh',
+      dateStr, dayName, 'Scheduled Generation (Base Sch)', 'MWh',
       ...sVals,
       { t: 'n', f: `SUM(E${rSch}:CV${rSch})`, v: Number(sumS.toFixed(3)) },
       { t: 'n', f: `MAX(E${rSch}:CV${rSch})`, v: Number(maxS.toFixed(3)) },
       { t: 'n', f: `MIN(E${rSch}:CV${rSch})`, v: Number(minS.toFixed(3)) },
-      `Revision: ${dayRev}`
+      `Revision: ${dayRev} (Excl. SRAS)`
     ]);
     rowStylesMap[rSch - 1] = ROW_STYLE_SCH;
     rowFormatsMap[rSch - 1] = { startCol: 4, endCol: 102, fmt: FMT_MWH };
     currentExcelRow++;
 
-    // Row 2: Actual Injection (Act)
+    // Row 2: Secondary Reserves Ancillary Services (SRAS)
+    const rSras = currentExcelRow;
+    aoa.push([
+      dateStr, dayName, 'Secondary Reserves (SRAS)', 'MWh',
+      ...srasVals,
+      { t: 'n', f: `SUM(E${rSras}:CV${rSras})`, v: Number(sumSras.toFixed(3)) },
+      { t: 'n', f: `MAX(E${rSras}:CV${rSras})`, v: Number(maxSras.toFixed(3)) },
+      { t: 'n', f: `MIN(E${rSras}:CV${rSras})`, v: Number(minSras.toFixed(3)) },
+      'NRPC 96-Block Blockwise SRAS'
+    ]);
+    rowStylesMap[rSras - 1] = { fill: { fgColor: { rgb: 'E0F2FE' } }, font: { bold: false, color: { rgb: '0369A1' } } };
+    rowFormatsMap[rSras - 1] = { startCol: 4, endCol: 102, fmt: FMT_MWH_DEV };
+    currentExcelRow++;
+
+    // Row 3: Effective Schedule (Base Sch + SRAS)
+    const rEff = currentExcelRow;
+    const effFormulaRow = [];
+    for(let c=0; c<96; c++){
+      const colLetter = XLSX.utils.encode_col(4 + c);
+      effFormulaRow.push({ t: 'n', f: `${colLetter}${rSch}+${colLetter}${rSras}`, v: effSVals[c] });
+    }
+    aoa.push([
+      dateStr, dayName, 'Effective Schedule (Sch + SRAS)', 'MWh',
+      ...effFormulaRow,
+      { t: 'n', f: `SUM(E${rEff}:CV${rEff})`, v: Number(sumEffS.toFixed(3)) },
+      { t: 'n', f: `MAX(E${rEff}:CV${rEff})`, v: Number(maxEffS.toFixed(3)) },
+      { t: 'n', f: `MIN(E${rEff}:CV${rEff})`, v: Number(minEffS.toFixed(3)) },
+      'Effective Schedule for DSM Calculations'
+    ]);
+    rowStylesMap[rEff - 1] = { fill: { fgColor: { rgb: 'F0FDF4' } }, font: { bold: true, color: { rgb: '166534' } } };
+    rowFormatsMap[rEff - 1] = { startCol: 4, endCol: 102, fmt: FMT_MWH };
+    currentExcelRow++;
+
+    // Row 4: Actual Injection (Act)
     const rAct = currentExcelRow;
     aoa.push([
       dateStr, dayName, 'Actual Injection (Act)', 'MWh',
@@ -4490,15 +4588,15 @@ function buildHorizontal96BlocksMasterSheet(week, meta){
     rowFormatsMap[rAct - 1] = { startCol: 4, endCol: 102, fmt: FMT_MWH };
     currentExcelRow++;
 
-    // Row 3: Deviation (Act - Sch) (MWh)
+    // Row 5: Deviation (Act - [Sch + SRAS]) (MWh)
     const rDev = currentExcelRow;
     const devFormulaRow = [];
     for(let c=0; c<96; c++){
       const colLetter = XLSX.utils.encode_col(4 + c);
-      devFormulaRow.push({ t: 'n', f: `${colLetter}${rAct}-${colLetter}${rSch}`, v: devVals[c] });
+      devFormulaRow.push({ t: 'n', f: `${colLetter}${rAct}-${colLetter}${rEff}`, v: devVals[c] });
     }
     aoa.push([
-      dateStr, dayName, 'Deviation (Act - Sch)', 'MWh',
+      dateStr, dayName, 'Deviation (Act - [Sch+SRAS])', 'MWh',
       ...devFormulaRow,
       { t: 'n', f: `SUM(E${rDev}:CV${rDev})`, v: Number(sumDev.toFixed(3)) },
       { t: 'n', f: `MAX(E${rDev}:CV${rDev})`, v: Number(maxPosDev.toFixed(3)) },
@@ -4573,9 +4671,23 @@ function buildHorizontal96BlocksMasterSheet(week, meta){
   // Grand Weekly Total Section
   const g = weekAgg(week);
   aoa.push([
-    'WEEKLY TOTAL', 'ALL 7 DAYS', 'Weekly Scheduled Energy (MWh)', 'MWh',
+    'WEEKLY TOTAL', 'ALL 7 DAYS', 'Weekly Scheduled Generation (Base Sch)', 'MWh',
     ...Array(96).fill(''),
-    Number(g.s.toFixed(3)), '', '', 'Weekly Total MWh'
+    Number(g.baseS !== undefined ? g.baseS.toFixed(3) : g.s.toFixed(3)), '', '', 'Excl. SRAS'
+  ]);
+  currentExcelRow++;
+
+  aoa.push([
+    'WEEKLY TOTAL', 'ALL 7 DAYS', 'Weekly Secondary Reserves (SRAS)', 'MWh',
+    ...Array(96).fill(''),
+    Number((g.sras || 0).toFixed(3)), '', '', 'NRPC Blockwise SRAS'
+  ]);
+  currentExcelRow++;
+
+  aoa.push([
+    'WEEKLY TOTAL', 'ALL 7 DAYS', 'Weekly Effective Schedule (Sch + SRAS)', 'MWh',
+    ...Array(96).fill(''),
+    Number((g.effS !== undefined ? g.effS : g.s).toFixed(3)), '', '', 'Base for DSM'
   ]);
   currentExcelRow++;
 
@@ -4701,13 +4813,15 @@ function buildHorizontal96BlocksCalcSheet(week, meta) {
     const dayName = getDayOfWeekName(d.date);
     const dayRev = d.activeRevision || activeRev || 'R0';
 
-    const sVals = [], aVals = [], devVals = [], devPctVals = [];
+    const sVals = [], srasVals = [], effSVals = [], aVals = [], devVals = [], devPctVals = [];
     const volLimitVals = [], devWithinVals = [], devBeyondVals = [];
     const fVals = [], rVals = [], multWithinVals = [], multBeyondVals = [], chargeVals = [];
 
-    let sumS = 0, sumA = 0, sumDev = 0, sumVolLimit = 0, sumDevWithin = 0, sumDevBeyond = 0, sumCharge = 0;
+    let sumS = 0, sumSras = 0, sumEffS = 0, sumA = 0, sumDev = 0, sumVolLimit = 0, sumDevWithin = 0, sumDevBeyond = 0, sumCharge = 0;
     let maxPosDev = 0, maxNegDev = 0;
     let maxS = -Infinity, minS = Infinity;
+    let maxSras = -Infinity, minSras = Infinity;
+    let maxEffS = -Infinity, minEffS = Infinity;
     let maxA = -Infinity, minA = Infinity;
     let maxF = -Infinity, minF = Infinity;
     let avgF = 0, avgR = 0, avgMultWithin = 0, avgMultBeyond = 0;
@@ -4716,13 +4830,15 @@ function buildHorizontal96BlocksCalcSheet(week, meta) {
       const b = (d.blocks || []).find((x) => Number(x.idx) === i) || (d.blocks && d.blocks[i - 1]) || { idx: i, s: 0, a: 0, f: 50, r: 0 };
       const r = revisionAwareBlock(d, b);
 
-      const bs = Number(r.s) || 0;
+      const bs = Number(r.baseS !== undefined ? r.baseS : r.s) || 0;
+      const bsras = Number(r.sras !== undefined ? r.sras : (b.sras || 0)) || 0;
+      const beffS = Number(r.effS !== undefined ? r.effS : (bs + bsras)) || 0;
       const ba = Number(b.a) || 0;
-      const bdev = Number(r.dev !== undefined && !isNaN(r.dev) ? r.dev : (ba - bs)) || 0;
-      const bdevPct = Number(r.devPct !== undefined && !isNaN(r.devPct) ? r.devPct : (bs === 0 ? 0 : (bdev / Math.abs(bs)) * 100)) || 0;
+      const bdev = Number(r.dev !== undefined && !isNaN(r.dev) ? r.dev : (ba - beffS)) || 0;
+      const bdevPct = Number(r.devPct !== undefined && !isNaN(r.devPct) ? r.devPct : (beffS === 0 ? 0 : (bdev / Math.abs(beffS)) * 100)) || 0;
       const bf = Number(b.f) || 50;
       const br = Number(b.r) || 0;
-      const bvolLimit = Number(r.volLimit !== undefined ? r.volLimit : Math.min(bs * (FP.volLimitPct / 100), FP.volLimitCap)) || 0;
+      const bvolLimit = Number(r.volLimit !== undefined ? r.volLimit : Math.min(beffS * (FP.volLimitPct / 100), FP.volLimitCap)) || 0;
       const bdevWithin = Number(r.devWithin !== undefined ? r.devWithin : (Math.abs(bdev) > bvolLimit ? Math.sign(bdev) * bvolLimit : bdev)) || 0;
       const bdevBeyond = Number(r.devBeyond !== undefined ? r.devBeyond : (bdev - bdevWithin)) || 0;
       const bmultWithin = Number(r.multWithin !== undefined ? r.multWithin : 1) || 0;
@@ -4730,6 +4846,8 @@ function buildHorizontal96BlocksCalcSheet(week, meta) {
       const bcharge = Number(r.charge) || 0;
 
       sVals.push(Number(bs.toFixed(4)));
+      srasVals.push(Number(bsras.toFixed(4)));
+      effSVals.push(Number(beffS.toFixed(4)));
       aVals.push(Number(ba.toFixed(4)));
       devVals.push(Number(bdev.toFixed(4)));
       devPctVals.push(Number(bdevPct.toFixed(2)));
@@ -4743,6 +4861,8 @@ function buildHorizontal96BlocksCalcSheet(week, meta) {
       chargeVals.push(Math.round(bcharge));
 
       sumS += bs;
+      sumSras += bsras;
+      sumEffS += beffS;
       sumA += ba;
       sumDev += bdev;
       sumVolLimit += bvolLimit;
@@ -4756,6 +4876,10 @@ function buildHorizontal96BlocksCalcSheet(week, meta) {
 
       if (bs > maxS) maxS = bs;
       if (bs < minS) minS = bs;
+      if (bsras > maxSras) maxSras = bsras;
+      if (bsras < minSras) minSras = bsras;
+      if (beffS > maxEffS) maxEffS = beffS;
+      if (beffS < minEffS) minEffS = beffS;
       if (ba > maxA) maxA = ba;
       if (ba < minA) minA = ba;
       if (bdev > maxPosDev) maxPosDev = bdev;
@@ -4770,6 +4894,10 @@ function buildHorizontal96BlocksCalcSheet(week, meta) {
     avgMultBeyond = avgMultBeyond / 96;
     if (minS === Infinity) minS = 0;
     if (maxS === -Infinity) maxS = 0;
+    if (minSras === Infinity) minSras = 0;
+    if (maxSras === -Infinity) maxSras = 0;
+    if (minEffS === Infinity) minEffS = 0;
+    if (maxEffS === -Infinity) maxEffS = 0;
     if (minA === Infinity) minA = 0;
     if (maxA === -Infinity) maxA = 0;
     if (minF === Infinity) minF = 50;
@@ -4794,21 +4922,54 @@ function buildHorizontal96BlocksCalcSheet(week, meta) {
       return r;
     }
 
-    // 1. Schedule
+    // 1. Schedule Generation (Base Schedule without SRAS)
     const rSch = currentExcelRow;
     addCalcRow(
-      'Schedule Generation',
+      'Scheduled Generation (Base Sch)',
       'MWh',
       sVals,
       { t: 'n', f: `SUM(E${rSch}:CV${rSch})`, v: Number(sumS.toFixed(3)) },
       { t: 'n', f: `MAX(E${rSch}:CV${rSch})`, v: Number(maxS.toFixed(3)) },
       { t: 'n', f: `MIN(E${rSch}:CV${rSch})`, v: Number(minS.toFixed(3)) },
-      `Active Revision: ${dayRev}`,
+      `Active Revision: ${dayRev} (Excl. SRAS)`,
       ROW_STYLE_SCH,
       FMT_MWH
     );
 
-    // 2. Actual Injection
+    // 2. Secondary Reserves Ancillary Services (SRAS)
+    const rSras = currentExcelRow;
+    addCalcRow(
+      'Secondary Reserves (SRAS)',
+      'MWh',
+      srasVals,
+      { t: 'n', f: `SUM(E${rSras}:CV${rSras})`, v: Number(sumSras.toFixed(3)) },
+      { t: 'n', f: `MAX(E${rSras}:CV${rSras})`, v: Number(maxSras.toFixed(3)) },
+      { t: 'n', f: `MIN(E${rSras}:CV${rSras})`, v: Number(minSras.toFixed(3)) },
+      'NRPC 96-Block Blockwise SRAS',
+      { fill: { fgColor: { rgb: 'E0F2FE' } }, font: { bold: false, color: { rgb: '0369A1' } } },
+      FMT_MWH_DEV
+    );
+
+    // 3. Effective Schedule (Base Schedule + SRAS)
+    const rEff = currentExcelRow;
+    const effFormulaRow = [];
+    for (let c = 0; c < 96; c++) {
+      const colLetter = XLSX.utils.encode_col(4 + c);
+      effFormulaRow.push({ t: 'n', f: `${colLetter}${rSch}+${colLetter}${rSras}`, v: effSVals[c] });
+    }
+    addCalcRow(
+      'Effective Schedule (Sch + SRAS)',
+      'MWh',
+      effFormulaRow,
+      { t: 'n', f: `SUM(E${rEff}:CV${rEff})`, v: Number(sumEffS.toFixed(3)) },
+      { t: 'n', f: `MAX(E${rEff}:CV${rEff})`, v: Number(maxEffS.toFixed(3)) },
+      { t: 'n', f: `MIN(E${rEff}:CV${rEff})`, v: Number(minEffS.toFixed(3)) },
+      'Base for CERC DSM Calculations',
+      { fill: { fgColor: { rgb: 'F0FDF4' } }, font: { bold: true, color: { rgb: '166534' } } },
+      FMT_MWH
+    );
+
+    // 4. Actual Injection
     const rAct = currentExcelRow;
     addCalcRow(
       'Actual Injection',
@@ -4822,15 +4983,15 @@ function buildHorizontal96BlocksCalcSheet(week, meta) {
       FMT_MWH
     );
 
-    // 3. Net Deviation (Act - Sch)
+    // 5. Net Deviation (Act - [Sch + SRAS])
     const rDev = currentExcelRow;
     const devFormulaRow = [];
     for (let c = 0; c < 96; c++) {
       const colLetter = XLSX.utils.encode_col(4 + c);
-      devFormulaRow.push({ t: 'n', f: `${colLetter}${rAct}-${colLetter}${rSch}`, v: devVals[c] });
+      devFormulaRow.push({ t: 'n', f: `${colLetter}${rAct}-${colLetter}${rEff}`, v: devVals[c] });
     }
     addCalcRow(
-      'Net Deviation (Act - Sch)',
+      'Net Deviation (Act - [Sch+SRAS])',
       'MWh',
       devFormulaRow,
       { t: 'n', f: `SUM(E${rDev}:CV${rDev})`, v: Number(sumDev.toFixed(3)) },
@@ -4841,7 +5002,7 @@ function buildHorizontal96BlocksCalcSheet(week, meta) {
       FMT_MWH_DEV
     );
 
-    // 4. Permissible Volume Limit
+    // 6. Permissible Volume Limit
     const rVol = currentExcelRow;
     addCalcRow(
       'Permissible Volume Limit',
@@ -4850,7 +5011,7 @@ function buildHorizontal96BlocksCalcSheet(week, meta) {
       { t: 'n', f: `SUM(E${rVol}:CV${rVol})`, v: Number(sumVolLimit.toFixed(3)) },
       { t: 'n', f: `MAX(E${rVol}:CV${rVol})`, v: Number(Math.max(...volLimitVals).toFixed(3)) },
       { t: 'n', f: `MIN(E${rVol}:CV${rVol})`, v: Number(Math.min(...volLimitVals).toFixed(3)) },
-      `Cap: ${FP.volLimitPct}% of Schedule (Max ${FP.volLimitCap} MWh)`,
+      `Cap: ${FP.volLimitPct}% of Eff Schedule (Max ${FP.volLimitCap} MWh)`,
       { fill: { fgColor: { rgb: 'FEF3C7' } }, font: { bold: false, color: { rgb: '92400E' } } },
       FMT_MWH
     );
@@ -5099,6 +5260,14 @@ function buildHorizontal96BlocksParamSheet(week, meta, paramType) {
     peakHeader = 'MAX MULT BEYOND';
     valleyHeader = 'MIN MULT BEYOND';
     fmt = '0.000';
+  } else if (paramType === 'sras') {
+    paramTitle = 'SECONDARY RESERVES ANCILLARY SERVICES (SRAS) (96 TIME-BLOCKS HORIZONTAL MATRIX)';
+    paramUnit = 'MWh';
+    colCName = 'SRAS STATUS';
+    totalHeader = 'DAY TOTAL SRAS (MWh)';
+    peakHeader = 'MAX REG-UP (+MWh)';
+    valleyHeader = 'MAX REG-DOWN (-MWh)';
+    fmt = FMT_MWH_DEV;
   }
 
   // Row 0: Title Banner
@@ -5142,12 +5311,14 @@ function buildHorizontal96BlocksParamSheet(week, meta, paramType) {
       const b = (d.blocks || []).find((x) => Number(x.idx) === i) || (d.blocks && d.blocks[i - 1]) || { idx: i, s: 0, a: 0, f: 50, r: 0 };
       const r = revisionAwareBlock(d, b);
 
-      const bs = Number(r.s) || 0;
+      const bs = Number(r.baseS !== undefined ? r.baseS : r.s) || 0;
+      const bsras = Number(r.sras !== undefined ? r.sras : (b.sras || 0)) || 0;
+      const beffS = Number(r.effS !== undefined ? r.effS : (bs + bsras)) || 0;
       const ba = Number(b.a) || 0;
-      const bdev = Number(r.dev !== undefined && !isNaN(r.dev) ? r.dev : (ba - bs)) || 0;
+      const bdev = Number(r.dev !== undefined && !isNaN(r.dev) ? r.dev : (ba - beffS)) || 0;
       const bf = Number(b.f) || 50;
       const br = Number(b.r) || 0;
-      const bvolLimit = Number(r.volLimit !== undefined ? r.volLimit : Math.min(bs * (FP.volLimitPct/100), FP.volLimitCap)) || 0;
+      const bvolLimit = Number(r.volLimit !== undefined ? r.volLimit : Math.min(beffS * (FP.volLimitPct/100), FP.volLimitCap)) || 0;
       const bdevWithin = Number(r.devWithin !== undefined ? r.devWithin : (Math.abs(bdev) > bvolLimit ? Math.sign(bdev) * bvolLimit : bdev)) || 0;
       const bdevBeyond = Number(r.devBeyond !== undefined ? r.devBeyond : (bdev - bdevWithin)) || 0;
       const bmultWithin = Number(r.multWithin !== undefined ? r.multWithin : 1) || 0;
@@ -5155,6 +5326,7 @@ function buildHorizontal96BlocksParamSheet(week, meta, paramType) {
 
       let val = 0;
       if (paramType === 'schedule') val = Number(bs.toFixed(4));
+      else if (paramType === 'sras') val = Number(bsras.toFixed(4));
       else if (paramType === 'actual') val = Number(ba.toFixed(4));
       else if (paramType === 'deviation') val = Number(bdev.toFixed(4));
       else if (paramType === 'charge') val = Math.round(Number(r.charge) || 0);
@@ -5169,7 +5341,7 @@ function buildHorizontal96BlocksParamSheet(week, meta, paramType) {
       daySum += val;
       if (val > dayMax) dayMax = val;
       if (val < dayMin) dayMin = val;
-      if (paramType === 'deviation' || paramType === 'dev_within' || paramType === 'dev_beyond') {
+      if (paramType === 'deviation' || paramType === 'dev_within' || paramType === 'dev_beyond' || paramType === 'sras') {
         if (val > maxPos) maxPos = val;
         if (val < maxNeg) maxNeg = val;
       }
@@ -5198,6 +5370,12 @@ function buildHorizontal96BlocksParamSheet(week, meta, paramType) {
       totalCell = { t: 'n', f: `AVERAGE(D${R}:CU${R})`, v: Number((daySum / 96).toFixed(3)) };
       peakCell = { t: 'n', f: `MAX(D${R}:CU${R})`, v: Number(dayMax.toFixed(3)) };
       valleyCell = { t: 'n', f: `MIN(D${R}:CU${R})`, v: Number(dayMin.toFixed(3)) };
+    } else if (paramType === 'sras') {
+      colCVal = daySum > 0 ? 'Net Reg-Up' : (daySum < 0 ? 'Net Reg-Down' : 'Zero SRAS');
+      remarksVal = `Total SRAS: ${(daySum>=0?'+':'')+daySum.toFixed(3)} MWh`;
+      totalCell = { t: 'n', f: `SUM(D${R}:CU${R})`, v: Number(daySum.toFixed(3)) };
+      peakCell = { t: 'n', f: `MAX(D${R}:CU${R})`, v: Number(maxPos.toFixed(3)) };
+      valleyCell = { t: 'n', f: `MIN(D${R}:CU${R})`, v: Number(maxNeg.toFixed(3)) };
     } else if (paramType === 'deviation') {
       colCVal = daySum >= 0 ? 'Over-Injection' : 'Under-Injection';
       remarksVal = daySum >= 0 ? `Net Over-Inj (+${daySum.toFixed(2)} MWh)` : `Net Under-Inj (${daySum.toFixed(2)} MWh)`;
@@ -5373,11 +5551,15 @@ function exportHorizontal96Blocks(){
   const calcSheet = buildHorizontal96BlocksCalcSheet(week, meta);
   XLSX.utils.book_append_sheet(wb, calcSheet, 'Calculations (96-Blk)');
 
-  // 3. Schedule (96 Blocks Horizontal)
+  // 3. Schedule (96 Blocks Horizontal - Excl. SRAS)
   const schSheet = buildHorizontal96BlocksParamSheet(week, meta, 'schedule');
   XLSX.utils.book_append_sheet(wb, schSheet, 'Schedule (96-Blk)');
 
-  // 4. Actual (96 Blocks Horizontal)
+  // 4. SRAS (96 Blocks Horizontal - Dedicated NRPC SRAS Sheet)
+  const srasSheet = buildHorizontal96BlocksParamSheet(week, meta, 'sras');
+  XLSX.utils.book_append_sheet(wb, srasSheet, 'SRAS (96-Blk)');
+
+  // 5. Actual (96 Blocks Horizontal)
   const actSheet = buildHorizontal96BlocksParamSheet(week, meta, 'actual');
   XLSX.utils.book_append_sheet(wb, actSheet, 'Actual (96-Blk)');
 
@@ -5458,23 +5640,27 @@ function exportHorizontalCalculations(){
   const chargeSheet = buildHorizontal96BlocksParamSheet(week, meta, 'charge');
   XLSX.utils.book_append_sheet(wb, chargeSheet, 'DSM Charges (96-Blk)');
 
-  // 9. Schedule Generation (96-Blk Horizontal)
+  // 9. Schedule Generation (96-Blk Horizontal - Excl. SRAS)
   const schSheet = buildHorizontal96BlocksParamSheet(week, meta, 'schedule');
   XLSX.utils.book_append_sheet(wb, schSheet, 'Schedule (96-Blk)');
 
-  // 10. Actual Injection (96-Blk Horizontal)
+  // 10. Secondary Reserves Ancillary Services (96-Blk Horizontal - Dedicated SRAS Sheet)
+  const srasSheet = buildHorizontal96BlocksParamSheet(week, meta, 'sras');
+  XLSX.utils.book_append_sheet(wb, srasSheet, 'SRAS (96-Blk)');
+
+  // 11. Actual Injection (96-Blk Horizontal)
   const actSheet = buildHorizontal96BlocksParamSheet(week, meta, 'actual');
   XLSX.utils.book_append_sheet(wb, actSheet, 'Actual (96-Blk)');
 
-  // 11. Frequency (96-Blk Horizontal)
+  // 12. Frequency (96-Blk Horizontal)
   const freqSheet = buildHorizontal96BlocksParamSheet(week, meta, 'frequency');
   XLSX.utils.book_append_sheet(wb, freqSheet, 'Frequency (96-Blk)');
 
-  // 12. Master (96-Blk Horizontal)
+  // 13. Master (96-Blk Horizontal)
   const masterSheet = buildHorizontal96BlocksMasterSheet(week, meta);
   XLSX.utils.book_append_sheet(wb, masterSheet, '96-Blk Master');
 
-  // 13. Daily Summary
+  // 14. Daily Summary
   const dailySheet = buildDailySummarySheet(week);
   XLSX.utils.book_append_sheet(wb, dailySheet, 'Daily Summary');
 
@@ -5513,7 +5699,9 @@ window.openHorizontalMatrixModal = function(initialTab = 'calculations'){
         ${[
           { id: 'calculations', label: '🧮 All Calculations' },
           { id: 'deviation', label: '📊 Deviation (Max Pos/Neg)' },
-          { id: 'schedule', label: '📋 Schedule' },
+          { id: 'schedule', label: '📋 Schedule (Base)' },
+          { id: 'sras', label: '🛡️ SRAS (NRPC)' },
+          { id: 'eff_schedule', label: '⚡ Eff Schedule (Sch+SRAS)' },
           { id: 'actual', label: '⚡ Actual' },
           { id: 'vol_limit', label: '📏 Volume Limit' },
           { id: 'dev_within', label: '🎯 Dev Within Limit' },
@@ -5620,48 +5808,59 @@ window.renderHorizontalMatrixContent = function(tabId){
       return rHtml;
     };
 
-    const sVals = [], aVals = [], devVals = [], volVals = [], withinVals = [], beyondVals = [], chargeVals = [], freqVals = [];
-    let sumS = 0, sumA = 0, sumDev = 0, sumVol = 0, sumWithin = 0, sumBeyond = 0, sumCharge = 0, avgF = 0;
+    const sVals = [], srasVals = [], effSVals = [], aVals = [], devVals = [], volVals = [], withinVals = [], beyondVals = [], chargeVals = [], freqVals = [];
+    let sumS = 0, sumSras = 0, sumEffS = 0, sumA = 0, sumDev = 0, sumVol = 0, sumWithin = 0, sumBeyond = 0, sumCharge = 0, avgF = 0;
     let maxPosDev = 0, maxNegDev = 0;
-    let maxS = 0, minS = Infinity, maxA = 0, minA = Infinity;
+    let maxS = 0, minS = Infinity, maxSras = -Infinity, minSras = Infinity, maxEffS = 0, minEffS = Infinity, maxA = 0, minA = Infinity;
 
     for(let i=1; i<=96; i++){
       const b = (d.blocks || []).find(x => Number(x.idx)===i) || (d.blocks && d.blocks[i-1]) || { idx:i, s:0, a:0, f:50, r:0 };
       const r = revisionAwareBlock(d, b);
-      const bs = Number(r.s) || 0;
+      const bs = Number(r.baseS !== undefined ? r.baseS : r.s) || 0;
+      const bsras = Number(r.sras !== undefined ? r.sras : (b.sras || 0)) || 0;
+      const beffS = Number(r.effS !== undefined ? r.effS : (bs + bsras)) || 0;
       const ba = Number(b.a) || 0;
-      const bdev = Number(r.dev !== undefined && !isNaN(r.dev) ? r.dev : (ba - bs)) || 0;
+      const bdev = Number(r.dev !== undefined && !isNaN(r.dev) ? r.dev : (ba - beffS)) || 0;
       const bf = Number(b.f) || 50;
-      const bvol = Number(r.volLimit !== undefined ? r.volLimit : Math.min(bs*(FP.volLimitPct/100), FP.volLimitCap)) || 0;
+      const bvol = Number(r.volLimit !== undefined ? r.volLimit : Math.min(beffS*(FP.volLimitPct/100), FP.volLimitCap)) || 0;
       const bwithin = Number(r.devWithin !== undefined ? r.devWithin : (Math.abs(bdev)>bvol ? Math.sign(bdev)*bvol : bdev)) || 0;
       const bbeyond = Number(r.devBeyond !== undefined ? r.devBeyond : (bdev - bwithin)) || 0;
       const bcharge = Number(r.charge) || 0;
 
-      sVals.push(bs); aVals.push(ba); devVals.push(bdev); volVals.push(bvol); withinVals.push(bwithin); beyondVals.push(bbeyond);
+      sVals.push(bs); srasVals.push(bsras); effSVals.push(beffS); aVals.push(ba); devVals.push(bdev); volVals.push(bvol); withinVals.push(bwithin); beyondVals.push(bbeyond);
       chargeVals.push(bcharge); freqVals.push(bf);
 
-      sumS += bs; sumA += ba; sumDev += bdev; sumVol += bvol; sumWithin += bwithin; sumBeyond += bbeyond;
+      sumS += bs; sumSras += bsras; sumEffS += beffS; sumA += ba; sumDev += bdev; sumVol += bvol; sumWithin += bwithin; sumBeyond += bbeyond;
       sumCharge += bcharge; avgF += bf;
 
       if(bs > maxS) maxS = bs; if(bs < minS) minS = bs;
+      if(bsras > maxSras) maxSras = bsras; if(bsras < minSras) minSras = bsras;
+      if(beffS > maxEffS) maxEffS = beffS; if(beffS < minEffS) minEffS = beffS;
       if(ba > maxA) maxA = ba; if(ba < minA) minA = ba;
       if(bdev > maxPosDev) maxPosDev = bdev;
       if(bdev < maxNegDev) maxNegDev = bdev;
     }
     avgF = avgF / 96;
+    if(minSras === Infinity) minSras = 0; if(maxSras === -Infinity) maxSras = 0;
 
     if(tabId === 'calculations'){
-      tableHtml += renderRowData('1. Schedule', 'MWh', sVals, sumS.toFixed(3), maxS.toFixed(3), minS.toFixed(3), `Rev: ${dayRev}`, '#F8FAFC');
-      tableHtml += renderRowData('2. Actual Injection', 'MWh', aVals, sumA.toFixed(3), maxA.toFixed(3), minA.toFixed(3), 'Main SEM', '#FFFFFF');
-      tableHtml += renderRowData('3. Net Deviation', 'MWh', devVals, (sumDev>=0?'+':'')+sumDev.toFixed(3), `+${maxPosDev.toFixed(3)}`, maxNegDev.toFixed(3), sumDev>=0?'Over-Inj':'Under-Inj', '#F0FDF4');
-      tableHtml += renderRowData('4. Volume Limit', 'MWh', volVals, sumVol.toFixed(3), Math.max(...volVals).toFixed(3), Math.min(...volVals).toFixed(3), `Cap: ${FP.volLimitPct}%`, '#FEF3C7');
-      tableHtml += renderRowData('5. Dev Within Limit', 'MWh', withinVals, sumWithin.toFixed(3), Math.max(...withinVals).toFixed(3), Math.min(...withinVals).toFixed(3), 'Normal Band', '#ECFDF5');
-      tableHtml += renderRowData('6. Dev Beyond Limit', 'MWh', beyondVals, sumBeyond.toFixed(3), Math.max(...beyondVals).toFixed(3), Math.min(...beyondVals).toFixed(3), Math.abs(sumBeyond)>0.001?'Excursions':'Zero', '#FEF2F2');
-      tableHtml += renderRowData('7. DSM Charges', '₹', chargeVals, `₹ ${Math.round(sumCharge).toLocaleString('en-IN')}`, `₹ ${Math.round(Math.max(...chargeVals)).toLocaleString('en-IN')}`, `₹ ${Math.round(Math.min(...chargeVals)).toLocaleString('en-IN')}`, sumCharge<0?'Credit (Receivable)':'Debit (Payable)', '#F1F5F9');
+      tableHtml += renderRowData('1. Schedule (Base)', 'MWh', sVals, sumS.toFixed(3), maxS.toFixed(3), minS.toFixed(3), `Rev: ${dayRev} (Excl. SRAS)`, '#F8FAFC');
+      tableHtml += renderRowData('2. SRAS (NRPC)', 'MWh', srasVals, (sumSras>=0?'+':'')+sumSras.toFixed(3), (maxSras>=0?'+':'')+maxSras.toFixed(3), (minSras>=0?'+':'')+minSras.toFixed(3), 'Secondary Reserves', '#E0F2FE');
+      tableHtml += renderRowData('3. Effective Schedule', 'MWh', effSVals, sumEffS.toFixed(3), maxEffS.toFixed(3), minEffS.toFixed(3), 'Base for DSM (Sch+SRAS)', '#F0FDF4');
+      tableHtml += renderRowData('4. Actual Injection', 'MWh', aVals, sumA.toFixed(3), maxA.toFixed(3), minA.toFixed(3), 'Main SEM', '#FFFFFF');
+      tableHtml += renderRowData('5. Net Deviation', 'MWh', devVals, (sumDev>=0?'+':'')+sumDev.toFixed(3), `+${maxPosDev.toFixed(3)}`, maxNegDev.toFixed(3), sumDev>=0?'Over-Inj':'Under-Inj', '#F0FDF4');
+      tableHtml += renderRowData('6. Volume Limit', 'MWh', volVals, sumVol.toFixed(3), Math.max(...volVals).toFixed(3), Math.min(...volVals).toFixed(3), `Cap: ${FP.volLimitPct}%`, '#FEF3C7');
+      tableHtml += renderRowData('7. Dev Within Limit', 'MWh', withinVals, sumWithin.toFixed(3), Math.max(...withinVals).toFixed(3), Math.min(...withinVals).toFixed(3), 'Normal Band', '#ECFDF5');
+      tableHtml += renderRowData('8. Dev Beyond Limit', 'MWh', beyondVals, sumBeyond.toFixed(3), Math.max(...beyondVals).toFixed(3), Math.min(...beyondVals).toFixed(3), Math.abs(sumBeyond)>0.001?'Excursions':'Zero', '#FEF2F2');
+      tableHtml += renderRowData('9. DSM Charges', '₹', chargeVals, `₹ ${Math.round(sumCharge).toLocaleString('en-IN')}`, `₹ ${Math.round(Math.max(...chargeVals)).toLocaleString('en-IN')}`, `₹ ${Math.round(Math.min(...chargeVals)).toLocaleString('en-IN')}`, sumCharge<0?'Credit (Receivable)':'Debit (Payable)', '#F1F5F9');
     } else if(tabId === 'deviation'){
       tableHtml += renderRowData('Net Deviation', 'MWh', devVals, (sumDev>=0?'+':'')+sumDev.toFixed(3), `+${maxPosDev.toFixed(3)}`, maxNegDev.toFixed(3), sumDev>=0?'Net Over-Inj':'Net Under-Inj', dIdx%2===0?'#F0FDF4':'#FFFFFF');
     } else if(tabId === 'schedule'){
-      tableHtml += renderRowData('Schedule', 'MWh', sVals, sumS.toFixed(3), maxS.toFixed(3), minS.toFixed(3), `Rev: ${dayRev}`, dIdx%2===0?'#F8FAFC':'#FFFFFF');
+      tableHtml += renderRowData('Schedule (Base)', 'MWh', sVals, sumS.toFixed(3), maxS.toFixed(3), minS.toFixed(3), `Rev: ${dayRev} (Excl. SRAS)`, dIdx%2===0?'#F8FAFC':'#FFFFFF');
+    } else if(tabId === 'sras'){
+      tableHtml += renderRowData('SRAS (NRPC)', 'MWh', srasVals, (sumSras>=0?'+':'')+sumSras.toFixed(3), (maxSras>=0?'+':'')+maxSras.toFixed(3), (minSras>=0?'+':'')+minSras.toFixed(3), 'NRPC Blockwise SRAS', dIdx%2===0?'#E0F2FE':'#FFFFFF');
+    } else if(tabId === 'eff_schedule'){
+      tableHtml += renderRowData('Effective Schedule', 'MWh', effSVals, sumEffS.toFixed(3), maxEffS.toFixed(3), minEffS.toFixed(3), 'Base for DSM (Sch+SRAS)', dIdx%2===0?'#F0FDF4':'#FFFFFF');
     } else if(tabId === 'actual'){
       tableHtml += renderRowData('Actual Injection', 'MWh', aVals, sumA.toFixed(3), maxA.toFixed(3), minA.toFixed(3), 'Main SEM', dIdx%2===0?'#F8FAFC':'#FFFFFF');
     } else if(tabId === 'vol_limit'){
@@ -5996,39 +6195,43 @@ function exportWeek(){
   const calc96Sheet = buildHorizontal96BlocksCalcSheet(week, metaObj);
   XLSX.utils.book_append_sheet(wb, calc96Sheet, 'Calculations (96-Blk)');
 
-  // 3. Schedule 96-Blocks Horizontal
+  // 3. Schedule 96-Blocks Horizontal (Base Schedule without SRAS)
   const schSheet = buildHorizontal96BlocksParamSheet(week, metaObj, 'schedule');
   XLSX.utils.book_append_sheet(wb, schSheet, 'Schedule (96-Blk)');
 
-  // 4. Actual 96-Blocks Horizontal
+  // 4. SRAS 96-Blocks Horizontal (Dedicated NRPC SRAS Sheet)
+  const srasSheet = buildHorizontal96BlocksParamSheet(week, metaObj, 'sras');
+  XLSX.utils.book_append_sheet(wb, srasSheet, 'SRAS (96-Blk)');
+
+  // 5. Actual 96-Blocks Horizontal
   const actSheet = buildHorizontal96BlocksParamSheet(week, metaObj, 'actual');
   XLSX.utils.book_append_sheet(wb, actSheet, 'Actual (96-Blk)');
 
-  // 5. Deviation 96-Blocks Horizontal (with Max Positive & Max Negative)
+  // 6. Deviation 96-Blocks Horizontal (with Max Positive & Max Negative)
   const devSheet = buildHorizontal96BlocksParamSheet(week, metaObj, 'deviation');
   XLSX.utils.book_append_sheet(wb, devSheet, 'Deviation (96-Blk)');
 
-  // 6. Volume Limit 96-Blocks Horizontal
+  // 7. Volume Limit 96-Blocks Horizontal
   const volSheet = buildHorizontal96BlocksParamSheet(week, metaObj, 'vol_limit');
   XLSX.utils.book_append_sheet(wb, volSheet, 'Volume Limit (96-Blk)');
 
-  // 7. Deviation Within Limit 96-Blocks Horizontal
+  // 8. Deviation Within Limit 96-Blocks Horizontal
   const withinSheet = buildHorizontal96BlocksParamSheet(week, metaObj, 'dev_within');
   XLSX.utils.book_append_sheet(wb, withinSheet, 'Dev Within Limit (96-Blk)');
 
-  // 8. Deviation Beyond Limit 96-Blocks Horizontal
+  // 9. Deviation Beyond Limit 96-Blocks Horizontal
   const beyondSheet = buildHorizontal96BlocksParamSheet(week, metaObj, 'dev_beyond');
   XLSX.utils.book_append_sheet(wb, beyondSheet, 'Dev Beyond Limit (96-Blk)');
 
-  // 9. DSM Charges 96-Blocks Horizontal
+  // 10. DSM Charges 96-Blocks Horizontal
   const chargeSheet = buildHorizontal96BlocksParamSheet(week, metaObj, 'charge');
   XLSX.utils.book_append_sheet(wb, chargeSheet, 'DSM Charges (96-Blk)');
 
-  // 10. Frequency 96-Blocks Horizontal
+  // 11. Frequency 96-Blocks Horizontal
   const freqSheet = buildHorizontal96BlocksParamSheet(week, metaObj, 'frequency');
   XLSX.utils.book_append_sheet(wb, freqSheet, 'Frequency (96-Blk)');
 
-  // 11. Executive Dashboard & Summaries
+  // 12. Executive Dashboard & Summaries
   XLSX.utils.book_append_sheet(wb, dashSheet, 'Dashboard');
   XLSX.utils.book_append_sheet(wb, summarySheet, 'Summary');
   XLSX.utils.book_append_sheet(wb, sortedSheet, 'Sorted Analysis');
@@ -8026,9 +8229,19 @@ window.addEventListener('load',()=>setTimeout(()=>{if(typeof updateTopWorkspaceC
   window.computeBlock = function(s,a,f,r){return THDC_COMPUTE_BLOCK(s,a,f,r,getCfg(window.currentPlantContext||"Khurja Floating Solar").formulas||FP)};
   /* Existing function declarations are lexical bindings, so override the call sites through revisionAwareBlock. */
   window.THDC_REVISION_AWARE = function(day,b){
-    const s=window.THDC_APPLICABLE_SCHEDULE(day,b);
-    const c=THDC_COMPUTE_BLOCK(s,b.a,b.f,b.r,getCfg(window.currentPlantContext||"Khurja Floating Solar").formulas||FP);
-    return {...c,s,revision:(window.THDC_REVISION_FOR_BLOCK(day,b.idx)?.id||"R0")};
+    const baseS = window.THDC_APPLICABLE_SCHEDULE(day,b);
+    const sras = Number(b.sras) || 0;
+    const effS = baseS + sras; // NRPC CERC DSM calculation uses Schedule + SRAS
+    const c = THDC_COMPUTE_BLOCK(effS, b.a, b.f, b.r, getCfg(window.currentPlantContext||"Khurja Floating Solar").formulas||FP);
+    return {
+      ...c,
+      baseS,
+      sras,
+      effS,
+      s: baseS, // Dashboard display schedule (without SRAS)
+      devWithoutSras: Number(b.a) - baseS,
+      revision: (window.THDC_REVISION_FOR_BLOCK(day,b.idx)?.id||"R0")
+    };
   };
 
   /* ---------- revision engine: sparse revisions safely fall back block-by-block ---------- */
@@ -8075,6 +8288,7 @@ window.addEventListener('load',()=>setTimeout(()=>{if(typeof updateTopWorkspaceC
     const dateRow=rows[0]||[];
     const blockRow=rows[rowBy(rows,["block","time"])]||[];
     const schRow=rows[rowBy(rows,["sch","scheduled"])]||[];
+    const srasRow=rows[rowBy(rows,["sras","secondary reserve","secondary","s.r.a.s"])]||[];
     const actRow=rows[rowBy(rows,["act","actual"])]||[];
     const freqRow=rows[rowBy(rows,["freq"])]||[];
     const rateRow=rows[rowBy(rows,["rate","ecr","reference"])]||[];
@@ -8085,10 +8299,12 @@ window.addEventListener('load',()=>setTimeout(()=>{if(typeof updateTopWorkspaceC
       if(!days[date])days[date]={date,blocks:[]};
       const s=Number(schRow[c]);const a=Number(actRow[c]);
       if(!Number.isFinite(s)||!Number.isFinite(a))continue;
+      const sras = srasRow.length ? (Number(srasRow[c])||0) : 0;
       days[date].blocks.push({
         idx:days[date].blocks.length+1,
         t:blockRow[c]??"",
         s:s*(Number(cfg.inputMultiplier)||1),
+        sras:sras*(Number(cfg.inputMultiplier)||1),
         a:a*(Number(cfg.inputMultiplier)||1),
         f:Number(freqRow[c]??50),
         r:Number(rateRow[c]??0)
