@@ -1157,46 +1157,98 @@ body:has(.login-wrap) #thdc-global-header{
     <h3 style="display:flex;align-items:center;gap:10px"><span style="display:grid;place-items:center;width:38px;height:38px;border-radius:9px;background:#DCFCE7;color:#15803D;font-size:21px">▣</span> Import Week Data &amp; Templates</h3>
     <div class="desc" style="line-height:1.5; margin-bottom:12px;">
       <b>📗 Supported Excel Formats (Automatic Format Detection):</b><br>
-      1. <b>★ Official Multi-Section Stacked Format</b> (Separate tables for Schedule, AGC SRAS, Total Schedule, Actual Injection, Absolute Deviation, Grid Frequency Hz, Reference Rate, and Deviation Charges ₹).<br>
-      2. <b>⚡ NRPC Hydro Format in LU (Lakh Units)</b>: For <b>Tehri HPP, Koteshwar HEP &amp; Tehri PSP</b>, data in LU (Schedule, Actual, SRAS) is automatically scaled to MWh (<b>1 LU = 100 MWh</b>) for DSM calculations.<br>
-      3. <b>🌈 7-Day Horizontal 96-Block Matrix</b> (Day-wise colorful rows for Schedule, Actual, SRAS, Frequency, Rate across 96 blocks).<br>
-      4. <b>Standard Columnar Template</b> (Vertical columns: <code>Date</code>, <code>Block 1-96</code>, <code>Time</code>, <code>Sch</code>, <code>Act</code>, <code>SRAS</code>, <code>Freq</code>, <code>Rate</code>).
+      1. <b>★ Official Multi-Section Stacked Format (MWh)</b> (Separate tables for Schedule MWh, AGC SRAS MWh, Total Schedule MWh, Actual Injection MWh, Absolute Deviation MWh, Grid Frequency Hz, Reference Rate ₹/kWh, and Deviation Charges ₹).<br>
+      2. <b>⚡ Hydro &amp; Thermal Plant Format (MWh)</b>: <b>Tehri HPP, Koteshwar HEP, Tehri PSP &amp; Khurja Solar</b> — standard 15-minute time-block energy values in <b>MWh (1 MWh = 1 MWh)</b>.<br>
+      3. <b>🌈 7-Day Horizontal 96-Block Matrix</b> (Day-wise colorful rows for Schedule, Actual, SRAS, Frequency, Rate across 96 blocks in MWh).<br>
+      4. <b>Standard Columnar Template</b> (Vertical columns: <code>Date</code>, <code>Block 1-96</code>, <code>Time</code>, <code>Sch (MWh)</code>, <code>Act (MWh)</code>, <code>SRAS (MWh)</code>, <code>Freq</code>, <code>Rate</code>).
     </div>
 
     <!-- Individual Plant Template Download Box -->
     <div style="background:#F8FAFC;border:1.5px solid #CBD5E1;border-radius:10px;padding:12px 16px;margin-bottom:14px;">
       <div style="font-size:13px;font-weight:900;color:#0F172A;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
-        <span style="font-size:15px">📥</span> <span>Download Official NRPC Excel Templates (Lakh Units - LU Format):</span>
+        <span style="font-size:15px">📥</span> <span>Download Official Plant Excel Templates (Standard MWh Format):</span>
       </div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
         <button type="button" class="btn btn-sm" style="background:linear-gradient(135deg, #2563EB, #1D4ED8);color:#fff;font-weight:800;padding:8px 14px;border-radius:6px;box-shadow:0 2px 5px rgba(37,99,235,0.25);border:none;display:inline-flex;align-items:center;gap:6px;" onclick="downloadPlantTemplate('Tehri HPP')">
-          <span>⚡</span> <span><b>Tehri HPP</b> (LU .xlsx)</span>
+          <span>⚡</span> <span><b>Tehri HPP</b> (MWh .xlsx)</span>
         </button>
         <button type="button" class="btn btn-sm" style="background:linear-gradient(135deg, #059669, #047857);color:#fff;font-weight:800;padding:8px 14px;border-radius:6px;box-shadow:0 2px 5px rgba(5,150,105,0.25);border:none;display:inline-flex;align-items:center;gap:6px;" onclick="downloadPlantTemplate('Koteshwar HEP')">
-          <span>💧</span> <span><b>Koteshwar HEP</b> (LU .xlsx)</span>
+          <span>💧</span> <span><b>Koteshwar HEP</b> (MWh .xlsx)</span>
         </button>
         <button type="button" class="btn btn-sm" style="background:linear-gradient(135deg, #7C3AED, #6D28D9);color:#fff;font-weight:800;padding:8px 14px;border-radius:6px;box-shadow:0 2px 5px rgba(124,58,237,0.25);border:none;display:inline-flex;align-items:center;gap:6px;" onclick="downloadPlantTemplate('Tehri PSP')">
-          <span>🔄</span> <span><b>Tehri PSP</b> (LU .xlsx)</span>
+          <span>🔄</span> <span><b>Tehri PSP</b> (MWh .xlsx)</span>
+        </button>
+        <button type="button" class="btn btn-sm" style="background:linear-gradient(135deg, #D97706, #B45309);color:#fff;font-weight:800;padding:8px 14px;border-radius:6px;box-shadow:0 2px 5px rgba(217,119,6,0.25);border:none;display:inline-flex;align-items:center;gap:6px;" onclick="downloadPlantTemplate('Khurja Floating Solar')">
+          <span>☀️</span> <span><b>Khurja Solar</b> (MWh .xlsx)</span>
         </button>
       </div>
-      <div style="margin-top:10px;padding-top:8px;border-top:1px dashed #E2E8F0;display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:11.5px;color:#64748B;">
-        <span style="font-weight:700;">Statement &amp; Generic Formats:</span>
-        <button type="button" class="btn btn-xs" style="background:#EFF6FF;color:#1D4ED8;border:1.5px solid #93C5FD;font-weight:800;" onclick="downloadNrpc6ParamTemplate()">
-          ⚖ 6-Param NRPC Statement (.xlsx)
+      <div style="margin-top:10px;padding-top:8px;border-top:1px dashed #E2E8F0;display:flex;gap:7px;flex-wrap:wrap;align-items:center;font-size:11.5px;color:#64748B;">
+        <span style="font-weight:700;">Statement Formats:</span>
+        <button type="button" class="btn btn-xs" style="background:#ECFDF5;color:#065F46;border:1.5px solid #86EFAC;font-weight:800;" onclick="downloadNrpc6ParamTemplate(null, 'LU')" title="Official NRPC 6-Param Statement in LU (Without Frequency - Engine defaults to 50.00 Hz)">
+          ⚡ 6-Param (LU - NRPC Official)
         </button>
-        <button type="button" class="btn btn-xs" style="background:#FEF3C7;color:#92400E;border:1.5px solid #FCD34D;font-weight:800;" onclick="loadSampleNrpcDataToPaste()">
-          ⚡ Auto-Fill Sample 6-Param Data
+        <button type="button" class="btn btn-xs" style="background:#D1FAE5;color:#047857;border:1.5px solid #10B981;font-weight:800;" onclick="downloadNrpc7ParamTemplate(null, 'LU')" title="7-Param Statement in LU INCLUDING Grid Frequency in Hz">
+          ⚡ 7-Param + Freq (LU)
+        </button>
+        <button type="button" class="btn btn-xs" style="background:#EFF6FF;color:#1D4ED8;border:1.5px solid #93C5FD;font-weight:800;" onclick="downloadNrpc6ParamTemplate()" title="Official NRPC 6-Param Statement in MWh">
+          ⚖ 6-Param (MWh)
+        </button>
+        <button type="button" class="btn btn-xs" style="background:#DBEAFE;color:#1E40AF;border:1.5px solid #3B82F6;font-weight:800;" onclick="downloadNrpc7ParamTemplate(null, 'MWh')" title="7-Param Statement in MWh INCLUDING Grid Frequency in Hz">
+          ⚖ 7-Param + Freq (MWh)
+        </button>
+        <button type="button" class="btn btn-xs" style="background:#FEF3C7;color:#92400E;border:1.5px solid #FCD34D;font-weight:800;" onclick="loadSampleNrpcDataToPaste(false)" title="Auto-Fill Sample 6-Param Data (NRPC Original format)">
+          ⚡ Sample 6-Param
+        </button>
+        <button type="button" class="btn btn-xs" style="background:#FDE68A;color:#78350F;border:1.5px solid #F59E0B;font-weight:800;" onclick="loadSampleNrpcDataToPaste(true)" title="Auto-Fill Sample 7-Param Data (with Grid Frequency in Hz)">
+          ⚡ Sample 7-Param (+Freq)
         </button>
         <button type="button" class="btn btn-xs" style="background:#FFFFFF;color:#334155;border:1px solid #CBD5E1;font-weight:600;" onclick="downloadHorizontal7DayTemplate()">
-          🌈 7-Day Day-wise Matrix (.xlsx)
+          🌈 7-Day Matrix
         </button>
         <button type="button" class="btn btn-xs" style="background:#FFFFFF;color:#334155;border:1px solid #CBD5E1;font-weight:600;" onclick="downloadVerticalDsmTemplate()">
-          ▦ Columnar Vertical (.xlsx)
+          ▦ Columnar
         </button>
+      </div>
+
+      <!-- Informational Frequency Callout in Paste Modal -->
+      <div style="margin-top:10px;background:#FFFBEB;border:1.5px solid #FCD34D;border-radius:8px;padding:10px 14px;font-size:12px;color:#78350F;line-height:1.5;">
+        <div style="font-weight:800;font-size:12.5px;color:#92400E;display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+          <span>ℹ️</span> <span><b>फ्रीक्वेंसी (Grid Frequency in Hz) क्यों नहीं होती 6-Param LU Statement में?</b></span>
+        </div>
+        <div>
+          <b>1. Official NRPC Weekly Accounts:</b> NRPC द्वारा जारी किए जाने वाले वास्तविक हाइड्रो DSM स्टेटमेंट (जैसे Koteshwar/Tehri) में केवल <b>6 टेबल्स</b> (1. SG, 2. SRAS, 3. Actual, 4. Total SG, 5. Ref Rate, 6. Deviation Charges ₹) होते हैं। NRPC इसमें 96-ब्लॉक फ्रीक्वेंसी नहीं देता, क्योंकि NRPC का साप्ताहिक सेटलमेंट सीधे <code>Deviation (MWh) × Reference Rate (₹/kWh) × 1000</code> पर बिल होता है।<br>
+          <b>2. Engine Fallback:</b> जब Excel फ़ाइल में Frequency सेक्शन नहीं होता, तो THDCIL Engine स्वतः <b>50.00 Hz (Normal Grid Deadband)</b> मान लेता है, जिससे कैलकुलेशन सुचारू रूप से होती है।<br>
+          <b>3. यदि आपके पास Grid Frequency डेटा भी है:</b> आप ऊपर दिए गए <b>"⚡ 7-Param + Freq (LU)"</b> टेम्पलेट का उपयोग कर सकते हैं, जिसमें 7वां सेक्शन <code>7. GRID FREQUENCY IN HZ (F1..F96)</code> शामिल है।
+        </div>
       </div>
     </div>
 
-    <textarea id="pasteArea" placeholder="Paste tab-separated Excel data here…"></textarea>
+    <!-- Data Input Unit Selection -->
+    <div style="background:#F0FDF4;border:1.5px solid #86EFAC;border-radius:10px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:18px;">⚡</span>
+        <div>
+          <div style="font-size:13px;font-weight:900;color:#166534;">Your Data Unit in Excel:</div>
+          <div style="font-size:11.5px;color:#15803D;">Select the unit used in your spreadsheet for Schedule &amp; Actual values</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:900;color:#047857;cursor:pointer;background:#DCFCE7;padding:6px 12px;border-radius:6px;border:1.5px solid #4ADE80;box-shadow:0 1px 2px rgba(0,0,0,0.05);">
+          <input type="radio" name="pasteUnitChoice" value="LU" id="pasteUnitLU" checked onchange="onPasteUnitOptionChanged()">
+          <span><b>Lakh Units (LU)</b> <span style="font-weight:600;font-size:11px;color:#065F46;">(1 LU = 100 MWh = 1,00,000 kWh)</span></span>
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:#334155;cursor:pointer;background:#FFFFFF;padding:6px 12px;border-radius:6px;border:1px solid #CBD5E1;">
+          <input type="radio" name="pasteUnitChoice" value="MWh" id="pasteUnitMWh" onchange="onPasteUnitOptionChanged()">
+          <span><b>MWh</b> <span style="font-weight:400;font-size:11px;color:#64748B;">(1 MWh = 1 MWh)</span></span>
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#334155;cursor:pointer;background:#FFFFFF;padding:6px 12px;border-radius:6px;border:1px solid #CBD5E1;">
+          <input type="radio" name="pasteUnitChoice" value="MW" id="pasteUnitMW" onchange="onPasteUnitOptionChanged()">
+          <span><b>MW Power</b> <span style="font-weight:400;font-size:11px;color:#64748B;">(÷ 4 = MWh)</span></span>
+        </label>
+      </div>
+    </div>
+
+    <textarea id="pasteArea" placeholder="Paste tab-separated Excel data here (Schedule, SRAS, Actual in LU / Lakh Units or MWh)…"></textarea>
     <div style="display:flex;gap:8px;margin-top:10px;">
       <button class="thdc-action thdc-excel" onclick="triggerFileUpload()">▣ Upload .XLSX / .XLS</button>
       <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none;" onchange="handleFileUpload(event)">
@@ -1216,29 +1268,56 @@ body:has(.login-wrap) #thdc-global-header{
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;border-bottom:1px solid var(--border);padding-bottom:10px;">
       <h3 style="display:flex;align-items:center;gap:10px;margin:0;font-size:18px;color:#0F172A;">
         <span style="display:grid;place-items:center;width:36px;height:36px;border-radius:8px;background:#DBEAFE;color:#1D4ED8;font-size:18px">📥</span>
-        <span>Download Official Plant Excel Templates (NRPC LU Format)</span>
+        <span>Download Official Plant Excel Templates (Standard MWh Format)</span>
       </h3>
       <button class="btn btn-sm" onclick="closeModal('templateDownloadModal')" style="padding:4px 8px;">✕</button>
     </div>
     <div style="font-size:13px;color:#475569;margin-bottom:14px;line-height:1.5;">
-      In compliance with NRPC guidelines, raw schedule, SRAS, and actual generation data for Hydro and Pumped Storage plants are provided in <b>Lakh Units (LU)</b>. When uploaded, the portal automatically scales these to MWh (<b>1 LU = 100 MWh</b>) for DSM calculations. Select your plant or statement format below:
+      In accordance with standard CERC DSM Regulations, all schedule generation, AGC SRAS, actual injection, and deviation values are processed in <b>MWh (MegaWatt-hours)</b>. 15-minute time-block energy values are directly in <b>MWh (1 MWh = 1 MWh)</b> without conversion:
     </div>
 
     <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px;">
       <!-- 6-Parameter Statement Template -->
       <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:#FEFCE8;border:1.5px solid #FDE047;border-radius:10px;gap:12px;flex-wrap:wrap;">
-        <div>
+        <div style="max-width:380px;">
           <div style="font-size:15px;font-weight:900;color:#854D0E;display:flex;align-items:center;gap:6px;">
-            <span>⚖</span> <span>6-PARAMETER NRPC STATEMENT &amp; DSM AUDIT</span>
-            <span style="font-size:11px;background:#FEF08A;color:#713F12;padding:2px 8px;border-radius:6px;font-weight:800;">Recommended</span>
+            <span>⚖</span> <span>6-PARAM STATEMENT (Official NRPC Bill)</span>
+            <span style="font-size:10.5px;background:#FEF08A;color:#713F12;padding:2px 8px;border-radius:6px;font-weight:800;">No Frequency (50 Hz Default)</span>
           </div>
-          <div style="font-size:12px;color:#A16207;margin-top:3px;">
-            Includes: 1. Schedule Gen, 2. SRAS, 3. Actual Injection, 4. Total Schedule (SG+SRAS), 5. Reference Rate, 6. NRPC Deviation Charges in ₹
+          <div style="font-size:12px;color:#A16207;margin-top:3px;line-height:1.4;">
+            Includes: 1. SG, 2. SRAS, 3. Actual, 4. Total SG, 5. Ref Rate, 6. NRPC Deviation Charges ₹.<br>
+            <i>*Official NRPC weekly statement format (Frequency is not provided by NRPC in hydro bills).</i>
           </div>
         </div>
-        <button class="btn btn-sm" style="background:linear-gradient(135deg, #CA8A04, #A16207);color:#fff;font-weight:800;padding:8px 16px;border-radius:6px;box-shadow:0 2px 6px rgba(161,98,7,0.3);border:none;" onclick="downloadNrpc6ParamTemplate()">
-          📥 Download 6-Param Template (.xlsx)
-        </button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-sm" style="background:#065F46;color:#fff;font-weight:800;padding:8px 14px;border-radius:6px;border:none;" onclick="downloadNrpc6ParamTemplate(null, 'LU')">
+            📥 Download in LU
+          </button>
+          <button class="btn btn-sm" style="background:linear-gradient(135deg, #CA8A04, #A16207);color:#fff;font-weight:800;padding:8px 14px;border-radius:6px;box-shadow:0 2px 6px rgba(161,98,7,0.3);border:none;" onclick="downloadNrpc6ParamTemplate(null, 'MWh')">
+            📥 Download in MWh
+          </button>
+        </div>
+      </div>
+
+      <!-- 7-Parameter Statement with Grid Frequency Template -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:#ECFDF5;border:1.5px solid #6EE7B7;border-radius:10px;gap:12px;flex-wrap:wrap;">
+        <div style="max-width:380px;">
+          <div style="font-size:15px;font-weight:900;color:#065F46;display:flex;align-items:center;gap:6px;">
+            <span>⚡</span> <span>7-PARAM STATEMENT (WITH Grid Frequency in Hz)</span>
+            <span style="font-size:10.5px;background:#D1FAE5;color:#047857;padding:2px 8px;border-radius:6px;font-weight:800;">Full Audit Mode</span>
+          </div>
+          <div style="font-size:12px;color:#047857;margin-top:3px;line-height:1.4;">
+            Includes all 6 NRPC parameters <b>PLUS 7. GRID FREQUENCY IN Hz (F1..F96)</b> for time-block wise CERC frequency tier penalty evaluation.
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-sm" style="background:#059669;color:#fff;font-weight:800;padding:8px 14px;border-radius:6px;border:none;" onclick="downloadNrpc7ParamTemplate(null, 'LU')">
+            📥 Download in LU (+Freq)
+          </button>
+          <button class="btn btn-sm" style="background:#1D4ED8;color:#fff;font-weight:800;padding:8px 14px;border-radius:6px;box-shadow:0 2px 6px rgba(29,78,216,0.3);border:none;" onclick="downloadNrpc7ParamTemplate(null, 'MWh')">
+            📥 Download in MWh (+Freq)
+          </button>
+        </div>
       </div>
 
       <!-- Tehri HPP -->
@@ -1246,14 +1325,14 @@ body:has(.login-wrap) #thdc-global-header{
         <div>
           <div style="font-size:15px;font-weight:900;color:#1E40AF;display:flex;align-items:center;gap:6px;">
             <span>⚡</span> <span>TEHRI HPP</span>
-            <span style="font-size:11px;background:#DBEAFE;color:#1D4ED8;padding:2px 8px;border-radius:6px;font-weight:800;">1000 MW Hydro</span>
+            <span style="font-size:11px;background:#DBEAFE;color:#1D4ED8;padding:2px 8px;border-radius:6px;font-weight:800;">1000 MW Hydro · MWh</span>
           </div>
           <div style="font-size:12px;color:#3B82F6;margin-top:3px;">
-            Official 8-Section Stacked NRPC Format in Lakh Units (LU) · 96 Blocks
+            Official 8-Section Stacked NRPC Format in MWh · 96 Blocks
           </div>
         </div>
         <button class="btn btn-sm" style="background:linear-gradient(135deg, #2563EB, #1D4ED8);color:#fff;font-weight:800;padding:8px 16px;border-radius:6px;box-shadow:0 2px 6px rgba(37,99,235,0.3);border:none;" onclick="downloadPlantTemplate('Tehri HPP')">
-          📥 Download Tehri HPP (.xlsx)
+          📥 Download Tehri HPP (.xlsx in MWh)
         </button>
       </div>
 
@@ -1262,14 +1341,14 @@ body:has(.login-wrap) #thdc-global-header{
         <div>
           <div style="font-size:15px;font-weight:900;color:#065F46;display:flex;align-items:center;gap:6px;">
             <span>💧</span> <span>KOTESHWAR HEP</span>
-            <span style="font-size:11px;background:#D1FAE5;color:#047857;padding:2px 8px;border-radius:6px;font-weight:800;">400 MW Hydro</span>
+            <span style="font-size:11px;background:#D1FAE5;color:#047857;padding:2px 8px;border-radius:6px;font-weight:800;">400 MW Hydro · MWh</span>
           </div>
           <div style="font-size:12px;color:#059669;margin-top:3px;">
-            Official 8-Section Stacked NRPC Format in Lakh Units (LU) · 96 Blocks
+            Official 8-Section Stacked NRPC Format in MWh · 96 Blocks
           </div>
         </div>
         <button class="btn btn-sm" style="background:linear-gradient(135deg, #059669, #047857);color:#fff;font-weight:800;padding:8px 16px;border-radius:6px;box-shadow:0 2px 6px rgba(5,150,105,0.3);border:none;" onclick="downloadPlantTemplate('Koteshwar HEP')">
-          📥 Download Koteshwar HEP (.xlsx)
+          📥 Download Koteshwar HEP (.xlsx in MWh)
         </button>
       </div>
 
@@ -1278,16 +1357,17 @@ body:has(.login-wrap) #thdc-global-header{
         <div>
           <div style="font-size:15px;font-weight:900;color:#6B21A8;display:flex;align-items:center;gap:6px;">
             <span>🔄</span> <span>TEHRI PSP</span>
-            <span style="font-size:11px;background:#F3E8FF;color:#7E22CE;padding:2px 8px;border-radius:6px;font-weight:800;">1000 MW Pumped Storage</span>
+            <span style="font-size:11px;background:#F3E8FF;color:#7E22CE;padding:2px 8px;border-radius:6px;font-weight:800;">1000 MW Pumped Storage · MWh</span>
           </div>
           <div style="font-size:12px;color:#7C3AED;margin-top:3px;">
-            Official 8-Section Stacked NRPC Format in Lakh Units (LU) · 96 Blocks
+            Official 8-Section Stacked NRPC Format in MWh · 96 Blocks
           </div>
         </div>
         <button class="btn btn-sm" style="background:linear-gradient(135deg, #7C3AED, #6D28D9);color:#fff;font-weight:800;padding:8px 16px;border-radius:6px;box-shadow:0 2px 6px rgba(124,58,237,0.3);border:none;" onclick="downloadPlantTemplate('Tehri PSP')">
-          📥 Download Tehri PSP (.xlsx)
+          📥 Download Tehri PSP (.xlsx in MWh)
         </button>
       </div>
+    </div>
     </div>
 
     <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:10px 14px;font-size:12px;color:#64748B;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
@@ -1376,61 +1456,214 @@ body:has(.login-wrap) #thdc-global-header{
     </div>
   </div>
 </div>
-<!-- Formula settings modal -->
+<!-- Formula settings modal & Calculation Diagnostic Hub -->
 <div class="modal-overlay" id="formulaModal">
-  <div class="modal-box" style="max-width:640px;">
-    <h3>Calculation Engine — Formula Settings</h3>
-    <div class="desc">Edit the DSM calculation engine's constants directly. Defaults match CERC DSM Regulations 2024 as extracted from the source workbook — change only if your applicable regulation differs. Changes apply immediately to every week and recalculate all charges.</div>
-    <div class="fp-warn">⚠ Editing these values changes DSM charges across your entire dataset (all weeks). Use "Reset to CERC 2024 Defaults" to revert at any time.</div>
-
-    <div class="fp-group">
-      <h4>Volume Limit</h4>
-      <div class="fp-row"><label>Volume limit — % of schedule (also the ± split threshold)</label><input type="number" step="0.1" id="fp_volLimitPct"></div>
-      <div class="fp-row"><label>Volume limit cap (MWh)</label><input type="number" step="0.001" id="fp_volLimitCap"></div>
+  <div class="modal-box" style="max-width:880px;width:95%;max-height:92vh;display:flex;flex-direction:column;padding:22px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid #E2E8F0;padding-bottom:12px;margin-bottom:14px;">
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <h3 style="margin:0;font-size:18px;font-weight:900;color:#0F172A;">Calculation Engine &amp; Formula Diagnostic Hub</h3>
+          <span style="font-size:11px;font-weight:800;background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;padding:2px 7px;border-radius:5px;" id="formulaActivePlantBadge">Plant Active</span>
+        </div>
+        <div style="font-size:12px;color:#64748B;margin-top:2px;">
+          Verify, calibrate &amp; troubleshoot DSM formulas (CERC DSM 2024, CERC 2022, Hydro, Solar &amp; Flat rates). Changes immediately apply across all 96-block calculations.
+        </div>
+      </div>
+      <button class="btn btn-sm" onclick="closeModal('formulaModal')" style="padding:4px 10px;font-weight:700;">✕</button>
     </div>
 
-    <div class="fp-group">
-      <h4>Frequency Bands (Hz)</h4>
-      <div class="fp-row"><label>Deadband low (mult = 1 below here down to bandLow)</label><input type="number" step="0.001" id="fp_deadbandLow"></div>
-      <div class="fp-row"><label>Deadband high (mult = 1 up to here)</label><input type="number" step="0.001" id="fp_deadbandHigh"></div>
-      <div class="fp-row"><label>Outer band low (below = deep under-frequency)</label><input type="number" step="0.001" id="fp_bandLow"></div>
-      <div class="fp-row"><label>Outer band high (above = discount / over-freq zone)</label><input type="number" step="0.001" id="fp_bandHigh"></div>
-      <div class="fp-row"><label>Extreme high (beyond = over-injection multiplier reverses)</label><input type="number" step="0.001" id="fp_extremeHigh"></div>
+    <!-- Navigation Tabs -->
+    <div style="display:flex;gap:6px;margin-bottom:14px;border-bottom:1px solid #E2E8F0;padding-bottom:8px;flex-shrink:0;">
+      <button type="button" class="matrix-tab-btn active" id="fTabBtn_params" onclick="switchFormulaTab('params')" style="padding:6px 14px;font-size:12.5px;font-weight:800;border-radius:6px;border:1px solid #0073CF;background:#0073CF;color:#FFFFFF;cursor:pointer;">
+        ⚙ Parameters &amp; Presets
+      </button>
+      <button type="button" class="matrix-tab-btn" id="fTabBtn_inspector" onclick="switchFormulaTab('inspector')" style="padding:6px 14px;font-size:12.5px;font-weight:800;border-radius:6px;border:1px solid #CBD5E1;background:#FFFFFF;color:#334155;cursor:pointer;">
+        🧮 Live Block Inspector (Step-by-Step Math)
+      </button>
+      <button type="button" class="matrix-tab-btn" id="fTabBtn_diagnostics" onclick="switchFormulaTab('diagnostics')" style="padding:6px 14px;font-size:12.5px;font-weight:800;border-radius:6px;border:1px solid #CBD5E1;background:#FFFFFF;color:#334155;cursor:pointer;">
+        💡 Troubleshooting Guide (कारण एवं समाधान)
+      </button>
     </div>
 
-    <div class="fp-group">
-      <h4>Over-Injection Multipliers (within volume limit)</h4>
-      <div class="fp-row"><label>Multiplier when f &lt; outer band low</label><input type="number" step="0.001" id="fp_overBelowBandMult"></div>
-      <div class="fp-row"><label>Ramp slope, per 0.01 Hz (deadband low → band low)</label><input type="number" step="0.0001" id="fp_overRampLowSlope"></div>
-      <div class="fp-row"><label>Ramp cap (max multiplier reached)</label><input type="number" step="0.001" id="fp_overRampLowCap"></div>
-      <div class="fp-row"><label>Ramp slope, per 0.01 Hz (deadband high → band high)</label><input type="number" step="0.0001" id="fp_overRampHighSlope"></div>
-      <div class="fp-row"><label>Ramp floor (min multiplier reached)</label><input type="number" step="0.001" id="fp_overRampHighFloor"></div>
-      <div class="fp-row"><label>Discount-zone multiplier (band high → extreme high)</label><input type="number" step="0.001" id="fp_overDiscountMult"></div>
-      <div class="fp-row"><label>Extreme multiplier (f ≥ extreme high)</label><input type="number" step="0.001" id="fp_overExtremeMult"></div>
+    <!-- TAB 1: Parameters & Presets -->
+    <div id="fTab_params" style="flex:1;overflow-y:auto;padding-right:4px;">
+      <!-- Preset Quick Switcher -->
+      <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:12px;margin-bottom:14px;">
+        <div style="font-size:11.5px;font-weight:800;color:#475569;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
+          <span>⚡ One-Click Regulation Presets (तुरंत लागू करें)</span>
+          <span style="font-size:11px;color:#0F766E;font-weight:700;" id="presetActiveLabel">CERC 2024 Defaults Active</span>
+        </div>
+        <div style="display:flex;gap:7px;flex-wrap:wrap;">
+          <button type="button" class="btn btn-xs" onclick="applyFormulaPreset('cerc2024')" style="background:#0F766E;color:#fff;font-weight:800;padding:5px 10px;border-radius:5px;" title="CERC DSM Regulations 2024 (First &amp; Second Amendment)">
+            ⚡ CERC 2024 (Standard)
+          </button>
+          <button type="button" class="btn btn-xs" onclick="applyFormulaPreset('cerc2022')" style="background:#1E293B;color:#fff;font-weight:800;padding:5px 10px;border-radius:5px;" title="CERC DSM Regulations 2022 (Original)">
+            📜 CERC 2022 (Base)
+          </button>
+          <button type="button" class="btn btn-xs" onclick="applyFormulaPreset('hydro')" style="background:#2563EB;color:#fff;font-weight:800;padding:5px 10px;border-radius:5px;" title="Hydro RoR / Pondage Rules (Tehri / Koteshwar without 25MW cap)">
+            💧 Hydro (Tehri/Koteshwar)
+          </button>
+          <button type="button" class="btn btn-xs" onclick="applyFormulaPreset('nrpc_linear')" style="background:#0284C7;color:#fff;font-weight:800;padding:5px 10px;border-radius:5px;" title="Official NRPC Linear Formula (Deviation × Reference Rate × 1000)">
+            📊 NRPC Linear Rate
+          </button>
+          <button type="button" class="btn btn-xs" onclick="setDsmCalcMode('ADOPT_NRPC');closeModal('formulaModal');" style="background:#16A34A;color:#fff;font-weight:800;padding:5px 10px;border-radius:5px;" title="Adopt Column 6 Billed Charges directly from Excel Statement (Zero Variance)">
+            ✓ Adopt NRPC Bill (0% Var)
+          </button>
+          <button type="button" class="btn btn-xs" onclick="applyFormulaPreset('solar')" style="background:#D97706;color:#fff;font-weight:800;padding:5px 10px;border-radius:5px;" title="Solar / RE DSM (Khurja Floating Solar)">
+            ☀️ Floating Solar (RE)
+          </button>
+          <button type="button" class="btn btn-xs" onclick="applyFormulaPreset('flat')" style="background:#64748B;color:#fff;font-weight:800;padding:5px 10px;border-radius:5px;" title="Flat Contract Rate without Frequency Penalties (1.0x Flat)">
+            ⚖️ Flat 1.0x Rate
+          </button>
+          <button type="button" class="btn btn-xs" onclick="resetFormulaDefaults()" style="background:#FEF2F2;border:1px solid #FECACA;color:#DC2626;font-weight:800;padding:5px 10px;border-radius:5px;">
+            ↺ Reset Defaults
+          </button>
+        </div>
+      </div>
+
+      <div class="fp-group">
+        <h4>1. Volume Limit &amp; Split Threshold</h4>
+        <div class="fp-row"><label>Volume limit — % of schedule (also the ± split threshold)</label><input type="number" step="0.1" id="fp_volLimitPct"></div>
+        <div class="fp-row"><label>Volume limit cap (MWh)</label><input type="number" step="0.001" id="fp_volLimitCap"></div>
+      </div>
+
+      <div class="fp-group">
+        <h4>2. Frequency Bands (Hz)</h4>
+        <div class="fp-row"><label>Deadband low (mult = 1 below here down to bandLow)</label><input type="number" step="0.001" id="fp_deadbandLow"></div>
+        <div class="fp-row"><label>Deadband high (mult = 1 up to here)</label><input type="number" step="0.001" id="fp_deadbandHigh"></div>
+        <div class="fp-row"><label>Outer band low (below = deep under-frequency)</label><input type="number" step="0.001" id="fp_bandLow"></div>
+        <div class="fp-row"><label>Outer band high (above = discount / over-freq zone)</label><input type="number" step="0.001" id="fp_bandHigh"></div>
+        <div class="fp-row"><label>Extreme high (beyond = over-injection multiplier reverses)</label><input type="number" step="0.001" id="fp_extremeHigh"></div>
+      </div>
+
+      <div class="fp-group">
+        <h4>3. Over-Injection Multipliers (within volume limit)</h4>
+        <div class="fp-row"><label>Multiplier when f &lt; outer band low</label><input type="number" step="0.001" id="fp_overBelowBandMult"></div>
+        <div class="fp-row"><label>Ramp slope, per 0.01 Hz (deadband low → band low)</label><input type="number" step="0.0001" id="fp_overRampLowSlope"></div>
+        <div class="fp-row"><label>Ramp cap (max multiplier reached)</label><input type="number" step="0.001" id="fp_overRampLowCap"></div>
+        <div class="fp-row"><label>Ramp slope, per 0.01 Hz (deadband high → band high)</label><input type="number" step="0.0001" id="fp_overRampHighSlope"></div>
+        <div class="fp-row"><label>Ramp floor (min multiplier reached)</label><input type="number" step="0.001" id="fp_overRampHighFloor"></div>
+        <div class="fp-row"><label>Discount-zone multiplier (band high → extreme high)</label><input type="number" step="0.001" id="fp_overDiscountMult"></div>
+        <div class="fp-row"><label>Extreme multiplier (f ≥ extreme high)</label><input type="number" step="0.001" id="fp_overExtremeMult"></div>
+      </div>
+
+      <div class="fp-group">
+        <h4>4. Under-Injection Multipliers (within volume limit)</h4>
+        <div class="fp-row"><label>Multiplier when f &lt; outer band low</label><input type="number" step="0.001" id="fp_underBelowBandMult"></div>
+        <div class="fp-row"><label>Ramp slope, per 0.01 Hz (deadband low → band low)</label><input type="number" step="0.0001" id="fp_underRampLowSlope"></div>
+        <div class="fp-row"><label>Ramp cap (max multiplier reached)</label><input type="number" step="0.001" id="fp_underRampLowCap"></div>
+        <div class="fp-row"><label>Ramp slope, per 0.01 Hz (deadband high → band high)</label><input type="number" step="0.0001" id="fp_underRampHighSlope"></div>
+        <div class="fp-row"><label>Ramp floor (min multiplier reached)</label><input type="number" step="0.001" id="fp_underRampHighFloor"></div>
+        <div class="fp-row"><label>Multiplier when f &gt; outer band high</label><input type="number" step="0.001" id="fp_underAboveBandMult"></div>
+      </div>
+
+      <div class="fp-group">
+        <h4>5. Beyond-Limit Multipliers (Under-Injection, deviation beyond volume limit)</h4>
+        <div class="fp-row"><label>f ≥ 50 Hz</label><input type="number" step="0.001" id="fp_beyondUnderHighMult"></div>
+        <div class="fp-row"><label>band low ≤ f &lt; 50 Hz</label><input type="number" step="0.001" id="fp_beyondUnderMidMult"></div>
+        <div class="fp-row"><label>f &lt; band low</label><input type="number" step="0.001" id="fp_beyondUnderLowMult"></div>
+      </div>
     </div>
 
-    <div class="fp-group">
-      <h4>Under-Injection Multipliers (within volume limit)</h4>
-      <div class="fp-row"><label>Multiplier when f &lt; outer band low</label><input type="number" step="0.001" id="fp_underBelowBandMult"></div>
-      <div class="fp-row"><label>Ramp slope, per 0.01 Hz (deadband low → band low)</label><input type="number" step="0.0001" id="fp_underRampLowSlope"></div>
-      <div class="fp-row"><label>Ramp cap (max multiplier reached)</label><input type="number" step="0.001" id="fp_underRampLowCap"></div>
-      <div class="fp-row"><label>Ramp slope, per 0.01 Hz (deadband high → band high)</label><input type="number" step="0.0001" id="fp_underRampHighSlope"></div>
-      <div class="fp-row"><label>Ramp floor (min multiplier reached)</label><input type="number" step="0.001" id="fp_underRampHighFloor"></div>
-      <div class="fp-row"><label>Multiplier when f &gt; outer band high</label><input type="number" step="0.001" id="fp_underAboveBandMult"></div>
+    <!-- TAB 2: Live Block Inspector & Step-by-Step Math -->
+    <div id="fTab_inspector" style="flex:1;overflow-y:auto;display:none;padding-right:4px;">
+      <div style="background:#F1F5F9;border-radius:8px;padding:12px;margin-bottom:12px;">
+        <div style="font-weight:800;font-size:13px;color:#0F172A;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
+          <span>🔍 Step-by-Step 15-Minute Block Calculation Verifier</span>
+          <button type="button" class="btn btn-xs" onclick="loadInspectorFromCurrentDay()" style="background:#0F766E;color:#fff;font-weight:700;">Load Block #1 from Current Week</button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));gap:8px;">
+          <div><label style="font-size:11px;font-weight:700;color:#475569;display:block;">Schedule (S) MWh</label><input id="fi_s" type="number" step="0.001" value="2.500" oninput="runLiveInspector()" style="width:100%;padding:5px;border:1px solid #CBD5E1;border-radius:5px;font-weight:700;"></div>
+          <div><label style="font-size:11px;font-weight:700;color:#475569;display:block;">SRAS (NRPC) MWh</label><input id="fi_sras" type="number" step="0.001" value="0.000" oninput="runLiveInspector()" style="width:100%;padding:5px;border:1px solid #CBD5E1;border-radius:5px;font-weight:700;"></div>
+          <div><label style="font-size:11px;font-weight:700;color:#475569;display:block;">Actual (A) MWh</label><input id="fi_a" type="number" step="0.001" value="2.850" oninput="runLiveInspector()" style="width:100%;padding:5px;border:1px solid #CBD5E1;border-radius:5px;font-weight:700;"></div>
+          <div><label style="font-size:11px;font-weight:700;color:#475569;display:block;">Grid Freq (Hz)</label><input id="fi_f" type="number" step="0.01" value="49.98" oninput="runLiveInspector()" style="width:100%;padding:5px;border:1px solid #CBD5E1;border-radius:5px;font-weight:700;"></div>
+          <div><label style="font-size:11px;font-weight:700;color:#475569;display:block;">Ref Rate (₹/kWh)</label><input id="fi_r" type="number" step="0.001" value="2.828" oninput="runLiveInspector()" style="width:100%;padding:5px;border:1px solid #CBD5E1;border-radius:5px;font-weight:700;"></div>
+        </div>
+      </div>
+
+      <!-- Live Calculation Breakdown Output -->
+      <div id="inspectorTraceCard" style="background:#FFFFFF;border:1.5px solid #CBD5E1;border-radius:8px;padding:14px;">
+        <!-- Filled dynamically by runLiveInspector() -->
+      </div>
     </div>
 
-    <div class="fp-group">
-      <h4>Beyond-Limit Multipliers (Under-Injection, deviation beyond volume limit)</h4>
-      <div class="fp-row"><label>f ≥ 50 Hz</label><input type="number" step="0.001" id="fp_beyondUnderHighMult"></div>
-      <div class="fp-row"><label>band low ≤ f &lt; 50 Hz</label><input type="number" step="0.001" id="fp_beyondUnderMidMult"></div>
-      <div class="fp-row"><label>f &lt; band low</label><input type="number" step="0.001" id="fp_beyondUnderLowMult"></div>
+    <!-- TAB 3: Diagnostics & Troubleshooting Guide (Hindi & English) -->
+    <div id="fTab_diagnostics" style="flex:1;overflow-y:auto;display:none;padding-right:4px;">
+      <div style="background:#EFF6FF;border:1.5px solid #93C5FD;border-radius:8px;padding:14px;margin-bottom:12px;">
+        <h4 style="margin:0 0 6px;color:#1E40AF;font-size:14px;">🛠️ DSM Calculation Fix Checklist (कैलकुलेशन ठीक करने के 5 मुख्य कारण)</h4>
+        <div style="font-size:12px;color:#1E3A8A;line-height:1.5;">
+          यदि आपका DSM Calculation ऑफिशियल बिल या आपकी अपेक्षा से मैच नहीं हो रहा है, तो नीचे दिए गए 5 बिन्दुओं को चेक करें:
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:8px;padding:12px;">
+          <div style="font-weight:800;font-size:13px;color:#0F172A;display:flex;align-items:center;gap:6px;">
+            <span>1.</span> <span>Standard Energy Unit: Data MWh में होना चाहिए (Standard 1:1 MWh)</span>
+          </div>
+          <div style="font-size:12px;color:#475569;margin-top:4px;line-height:1.4;">
+            • CERC DSM एवं ग्रिड नियमों के तहत सभी शेड्यूल, वास्तविक उत्पादन और डेविएशन <b>MWh (MegaWatt-hours)</b> में होने चाहिए। 15-मिनट ब्लॉक की एनर्जी <b>1 MWh = 1 MWh</b> होती है।<br>
+            • यदि एक्सेल शीट में वैल्यू पावर <b>MW</b> में दी गई है, तो 15-मिनट ब्लॉक की एनर्जी निकालने के लिए <b>MW ÷ 4 = MWh</b> करें।<br>
+            • यदि पूर्व में डेटा को LU मानकर 100 से गुणा हो गया था, तो उसे तुरंत शुद्ध MWh में लाने के लिए 'Revert ÷ 100' पर क्लिक करें।<br>
+            • <b>सभी 5 प्लांट्स का स्टैंडर्ड डिफ़ॉल्ट अब 1:1 MWh पर सक्रिय है।</b>
+          </div>
+          <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
+            <button type="button" class="btn btn-xs" onclick="normalizeAllPlantsToMWh()" style="background:#0F766E;color:#fff;font-weight:800;padding:4px 10px;border-radius:5px;border:none;">⚡ Set All Plants to MWh (1:1 MWh)</button>
+            <button type="button" class="btn btn-xs" onclick="quickFixWeekUnit(0.25)" style="background:#EFF6FF;color:#1D4ED8;border:1px solid #93C5FD;font-weight:700;">If Data is in MW, Convert to MWh (MW ÷ 4)</button>
+            <button type="button" class="btn btn-xs" onclick="quickFixWeekUnit(0.01)" style="background:#FEF2F2;color:#DC2626;border:1px solid #FECACA;font-weight:700;">Revert if multiplied by 100 (÷ 100 back to MWh)</button>
+          </div>
+        </div>
+
+        <div style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:8px;padding:12px;">
+          <div style="font-weight:800;font-size:13px;color:#0F172A;display:flex;align-items:center;gap:6px;">
+            <span>2.</span> <span>SRAS Adjustment: Effective Schedule = Base Schedule + SRAS</span>
+          </div>
+          <div style="font-size:12px;color:#475569;margin-top:4px;line-height:1.4;">
+            CERC DSM नियमों के तहत NRPC स्टेटमेंट्स में Deviation <b>Total Schedule = Base Schedule + SRAS</b> से निकाला जाता है। यदि SRAS जोड़ा नहीं गया, तो Deviation गलत आएगा।
+          </div>
+        </div>
+
+        <div style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:8px;padding:12px;">
+          <div style="font-weight:800;font-size:13px;color:#0F172A;display:flex;align-items:center;gap:6px;">
+            <span>3.</span> <span>Regulation Preset: CERC 2024 vs CERC 2022 vs Hydro vs Solar</span>
+          </div>
+          <div style="font-size:12px;color:#475569;margin-top:4px;line-height:1.4;">
+            • CERC 2024 में Frequency Deadband (49.97–50.03 Hz) और Reference Rate लिंकेज अलग है।<br>
+            • Floating Solar (RE) के लिए Volume limit 10% / 15% और कैप 5 MWh लागू होती है।<br>
+            • Hydro stations (Tehri/Koteshwar) के लिए RoR/Pondage नियम लागू होते हैं।<br>
+            <b>समाधान:</b> ऊपर दिए गए <b>Presets (CERC 2024 / Hydro / Solar)</b> में से उपयुक्त रेगुलेशन चुनें और 'Save &amp; Recalculate' करें।
+          </div>
+        </div>
+
+        <div style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:8px;padding:12px;">
+          <div style="font-weight:800;font-size:13px;color:#0F172A;display:flex;align-items:center;gap:6px;">
+            <span>4.</span> <span>Reference Rate (₹/kWh vs ₹/MWh)</span>
+          </div>
+          <div style="font-size:12px;color:#475569;margin-top:4px;line-height:1.4;">
+            Formula में <code>Charge = Deviation (MWh) × Multiplier × Rate (₹/kWh) × 1000</code> होता है। यदि Rate ₹/MWh में दिया गया है या 0 है, तो चार्ज प्रभावित होगा।
+          </div>
+        </div>
+
+        <div style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:8px;padding:12px;">
+          <div style="font-weight:800;font-size:13px;color:#0F172A;display:flex;align-items:center;gap:6px;">
+            <span>5.</span> <span>Sign Convention (Payable / Debit vs Receivable / Credit)</span>
+          </div>
+          <div style="font-size:12px;color:#475569;margin-top:4px;line-height:1.4;">
+            • <b>Under-Injection (Actual &lt; Schedule):</b> जनरेटर ने कम बिजली दी → <b>Payable / Debit (देय)</b> (+ / देय राशि)।<br>
+            • <b>Over-Injection (Actual &gt; Schedule):</b> जनरेटर ने ग्रिड को अतिरिक्त बिजली दी → <b>Receivable / Credit (प्राप्य)</b> (- / प्राप्त राशि)।
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div class="modal-actions" style="justify-content:space-between;">
-      <button class="btn btn-danger" onclick="resetFormulaDefaults()">Reset to CERC 2024 Defaults</button>
+    <!-- Modal Footer Actions -->
+    <div class="modal-actions" style="justify-content:space-between;border-top:1px solid #E2E8F0;padding-top:12px;margin-top:12px;">
+      <button type="button" class="btn btn-danger" onclick="resetFormulaDefaults()">↺ Reset CERC 2024 Defaults</button>
       <div style="display:flex;gap:8px;">
-        <button class="btn" onclick="closeModal('formulaModal')">Cancel</button>
-        <button class="btn btn-primary" onclick="saveFormulaSettings()">Save &amp; Recalculate</button>
+        <button type="button" class="btn" onclick="closeModal('formulaModal')">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="saveFormulaSettings()" style="font-weight:800;background:linear-gradient(135deg,#0073CF,#0A2E7A);">
+          💾 Save &amp; Recalculate All Weeks
+        </button>
       </div>
     </div>
   </div>
@@ -1720,16 +1953,272 @@ function fmtInr(x){
 }
 function fmtRate(x){ return (Math.round(x*1000)/1000).toFixed(3); }
 function fmtPct(x){ return (Math.round(x*10)/10).toFixed(1)+'%'; }
+
+/* Universal Date Normalizer (DD-MM-YYYY, YYYY-MM-DD, Date objects, Excel serials) */
+function normalizeAppDate(v){
+  if(!v) return '';
+  if(v instanceof Date && !isNaN(v.getTime())){
+    const y = v.getUTCFullYear(), m = String(v.getUTCMonth()+1).padStart(2,'0'), d = String(v.getUTCDate()).padStart(2,'0');
+    return `${y}-${m}-${d}`;
+  }
+  const s = String(v||'').trim();
+  let m = s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})/);
+  if(m){
+    const p1 = parseInt(m[1],10), p2 = parseInt(m[2],10), yr = m[3];
+    let day = p1, mon = p2;
+    if(p1 <= 12 && p2 > 12){ day = p2; mon = p1; }
+    return `${yr}-${String(mon).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+  }
+  m = s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
+  if(m){
+    return `${m[1]}-${String(m[2]).padStart(2,'0')}-${String(m[3]).padStart(2,'0')}`;
+  }
+  if(typeof parseExcelDate === 'function'){
+    const parsed = parseExcelDate(s);
+    if(parsed) return parsed;
+  }
+  return s;
+}
+window.normalizeAppDate = normalizeAppDate;
+
+/* Clean and deduplicate days in a week object, merging blocks on duplicate dates */
+function cleanWeekDays(week){
+  if(!week || !week.days || !Array.isArray(week.days)) {
+    if(week) week.days = [];
+    return;
+  }
+  if(!week.days.length) return;
+  const map = new Map();
+  let hasDuplicates = false;
+  week.days.forEach(d => {
+    if(!d || !d.date) return;
+    const norm = normalizeAppDate(d.date);
+    d.date = norm;
+    if(!map.has(norm)){
+      map.set(norm, d);
+    } else {
+      hasDuplicates = true;
+      const existing = map.get(norm);
+      (d.blocks || []).forEach((b, idx) => {
+        const eb = (existing.blocks || [])[idx] || (existing.blocks || []).find(x => x.idx === b.idx);
+        if(eb){
+          if((!eb.s || eb.s === 0) && b.s) eb.s = b.s;
+          if((!eb.a || eb.a === 0) && b.a) eb.a = b.a;
+          if((!eb.sras || eb.sras === 0) && b.sras) eb.sras = b.sras;
+          if((!eb.r || eb.r === 0) && b.r) eb.r = b.r;
+          if(b.nrpcCharge !== null && b.nrpcCharge !== undefined) eb.nrpcCharge = b.nrpcCharge;
+          if(b.f && b.f !== 50) eb.f = b.f;
+        }
+      });
+    }
+  });
+  if(hasDuplicates){
+    week.days = Array.from(map.values()).sort((a, b) => a.date.localeCompare(b.date));
+  }
+}
+window.cleanWeekDays = cleanWeekDays;
+
+/* Explicit Save Week Data with timestamp and visual confirmation */
+window.saveCurrentWeek = async function(notify = true){
+  const w = state.currentWeek || 1;
+  await saveWeek(w);
+  if(typeof THDC_MANUAL_SAVE === 'function') await THDC_MANUAL_SAVE();
+  const timeStr = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  window._lastWeekSavedTime = timeStr;
+  updateWeekSaveStatusUI(w, timeStr);
+  if(notify && typeof showToast === 'function'){
+    showToast(`✓ Week W${String(w).padStart(2, '0')} Data Saved Successfully at ${timeStr}`);
+  }
+};
+
+window.updateWeekSaveStatusUI = function(w, timeStr){
+  const t = timeStr || window._lastWeekSavedTime || new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+  const badges = document.querySelectorAll('#weekSaveBadge, [data-week-save-badge]');
+  badges.forEach(b => {
+    b.innerHTML = `✓ W${String(w).padStart(2,'0')} Saved (${t})`;
+    b.style.background = '#DCFCE7';
+    b.style.color = '#166534';
+  });
+  const btns = document.querySelectorAll('[data-week-save-btn]');
+  btns.forEach(btn => {
+    const orig = btn.getAttribute('data-orig-text') || btn.innerHTML;
+    btn.setAttribute('data-orig-text', orig);
+    btn.innerHTML = `<span>✓</span> <span>Saved!</span>`;
+    btn.style.background = '#15803D';
+    setTimeout(() => {
+      btn.innerHTML = orig;
+      btn.style.background = '';
+    }, 2000);
+  });
+};
+
+/* Deduplicate and merge dates in a week */
+window.mergeDuplicateDatesInWeek = function(wNum){
+  const w = wNum || state.currentWeek || 1;
+  const week = state.weeks[w];
+  if(!week || !week.days || !week.days.length) return;
+  cleanWeekDays(week);
+  saveWeek(w);
+  if(typeof THDC_MANUAL_SAVE === 'function') THDC_MANUAL_SAVE();
+  renderAll();
+  if(typeof showToast === 'function') showToast(`✓ Deduplicated Week W${String(w).padStart(2,'0')} dates. Total days: ${week.days.length}`);
+};
+
+/* Trim week to exactly 7 days */
+window.trimWeekTo7Days = function(wNum){
+  const w = wNum || state.currentWeek || 1;
+  const week = state.weeks[w];
+  if(!week || !week.days || week.days.length <= 7) return;
+  cleanWeekDays(week);
+  if(week.days.length <= 7){
+    saveWeek(w);
+    renderAll();
+    return;
+  }
+  let selected7 = [];
+  const curNorm = normalizeAppDate(state.currentDate);
+  const curIdx = week.days.findIndex(d => normalizeAppDate(d.date) === curNorm);
+  if(curIdx >= 0){
+    let start = Math.max(0, curIdx - 3);
+    if(start + 7 > week.days.length) start = Math.max(0, week.days.length - 7);
+    selected7 = week.days.slice(start, start + 7);
+  } else {
+    selected7 = week.days.slice(0, 7);
+  }
+  const removedCount = week.days.length - selected7.length;
+  week.days = selected7;
+  saveWeek(w);
+  if(typeof THDC_MANUAL_SAVE === 'function') THDC_MANUAL_SAVE();
+  renderAll();
+  if(typeof showToast === 'function'){
+    showToast(`✓ Trimmed to 7 days (${formatDateDDMMYYYY(selected7[0].date)} to ${formatDateDDMMYYYY(selected7[6].date)}). Removed ${removedCount} extra day(s).`);
+  }
+};
+
+/* Split 14-day fortnightly account across consecutive weeks (W[n] & W[n+1]) */
+window.split14DaysAcrossWeeks = function(wNum){
+  const w = wNum || state.currentWeek || 1;
+  const nextW = w + 1;
+  ensureWeek(w);
+  ensureWeek(nextW);
+  const week = state.weeks[w];
+  if(!week || !week.days || week.days.length < 8) return;
+  cleanWeekDays(week);
+  if(week.days.length <= 7) return;
+
+  const first7 = week.days.slice(0, 7);
+  const next7 = week.days.slice(7, 14);
+
+  week.days = first7;
+  week.originalDays = JSON.parse(JSON.stringify(first7));
+  state.weeks[nextW].days = next7;
+  state.weeks[nextW].originalDays = JSON.parse(JSON.stringify(next7));
+
+  saveWeek(w);
+  saveWeek(nextW);
+  if(typeof THDC_MANUAL_SAVE === 'function') THDC_MANUAL_SAVE();
+  renderShell();
+  renderAll();
+  if(typeof showToast === 'function'){
+    showToast(`✓ Split 14 days: Week W${String(w).padStart(2,'0')} has 7 days (${formatDateDDMMYYYY(first7[0].date)} to ${formatDateDDMMYYYY(first7[6].date)}) and Week W${String(nextW).padStart(2,'0')} has 7 days (${formatDateDDMMYYYY(next7[0].date)} to ${formatDateDDMMYYYY(next7[next7.length-1].date)})!`);
+  }
+};
+
+/* Prompt to change date of a day in the week */
+window.promptChangeDayDate = function(oldDateStr, event){
+  if(event && typeof event.stopPropagation === 'function') event.stopPropagation();
+  const week = weekObj();
+  const normOld = normalizeAppDate(oldDateStr);
+  const day = week.days.find(d => normalizeAppDate(d.date) === normOld);
+  if(!day) return;
+  const currentDisp = formatDateDDMMYYYY(day.date);
+  const newDateInput = prompt(`Change Date for this day's 96 time-blocks:\nEnter new date in DD-MM-YYYY format (e.g. 24-08-2026):`, currentDisp);
+  if(!newDateInput || !newDateInput.trim()) return;
+  const parsedIso = normalizeAppDate(newDateInput.trim());
+  if(!parsedIso || parsedIso.length < 8){
+    alert(`Invalid date format "${newDateInput}". Please use DD-MM-YYYY or YYYY-MM-DD.`);
+    return;
+  }
+  const existingIdx = week.days.findIndex(d => d !== day && normalizeAppDate(d.date) === parsedIso);
+  if(existingIdx >= 0){
+    if(!confirm(`Date ${formatDateDDMMYYYY(parsedIso)} already exists in Week W${String(state.currentWeek).padStart(2,'0')}. Merge data with this date?`)){
+      return;
+    }
+  }
+  day.date = parsedIso;
+  cleanWeekDays(week);
+  if(normalizeAppDate(state.currentDate) === normOld) state.currentDate = parsedIso;
+  saveWeek(state.currentWeek);
+  if(typeof THDC_MANUAL_SAVE === 'function') THDC_MANUAL_SAVE();
+  renderAll();
+  if(typeof showToast === 'function') showToast(`✓ Date updated to ${formatDateDDMMYYYY(parsedIso)} successfully!`);
+};
+
+/* Delete a day from the active week */
+window.deleteDayFromWeek = function(dateStr, event){
+  if(event && typeof event.stopPropagation === 'function') event.stopPropagation();
+  const week = weekObj();
+  const norm = normalizeAppDate(dateStr);
+  const disp = formatDateDDMMYYYY(norm);
+  if(!confirm(`Delete data for ${disp} (96 blocks) from Week W${String(state.currentWeek).padStart(2,'0')}?`)) return;
+  week.days = week.days.filter(d => normalizeAppDate(d.date) !== norm);
+  if(normalizeAppDate(state.currentDate) === norm) state.currentDate = null;
+  saveWeek(state.currentWeek);
+  if(typeof THDC_MANUAL_SAVE === 'function') THDC_MANUAL_SAVE();
+  renderAll();
+  if(typeof showToast === 'function') showToast(`✓ Deleted ${disp} from Week W${String(state.currentWeek).padStart(2,'0')}`);
+};
+
+/* Add a new day with 96 blocks to the active week */
+window.promptAddDayToWeek = function(){
+  const week = weekObj();
+  let defaultNextDate = "2026-08-24";
+  if(week.days.length > 0){
+    const lastDate = week.days[week.days.length - 1].date;
+    const d = new Date(lastDate);
+    if(!isNaN(d.getTime())){
+      d.setDate(d.getDate() + 1);
+      defaultNextDate = d.toISOString().slice(0, 10);
+    }
+  }
+  const input = prompt("Enter Date for new day (DD-MM-YYYY or YYYY-MM-DD):", formatDateDDMMYYYY(defaultNextDate));
+  if(!input || !input.trim()) return;
+  const iso = normalizeAppDate(input.trim());
+  if(!iso || iso.length < 8){ alert("Invalid date format."); return; }
+  if(week.days.some(d => normalizeAppDate(d.date) === iso)){
+    alert("This date already exists in the week.");
+    return;
+  }
+  const blocks = [];
+  for(let i = 1; i <= BLOCKS_PER_DAY; i++){
+    const mins = (i - 1) * 15, h = Math.floor(mins / 60) % 24, m = mins % 60;
+    blocks.push({
+      idx: i,
+      t: String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':00',
+      s: 0, sras: 0, a: 0, f: 50.0, r: 2.828, nrpcCharge: null
+    });
+  }
+  week.days.push({ date: iso, blocks });
+  cleanWeekDays(week);
+  state.currentDate = iso;
+  saveWeek(state.currentWeek);
+  if(typeof THDC_MANUAL_SAVE === 'function') THDC_MANUAL_SAVE();
+  renderAll();
+  if(typeof showToast === 'function') showToast(`✓ Added day ${formatDateDDMMYYYY(iso)} with 96 blocks.`);
+};
+
 function weekObj(){ 
   if(!state.weeks) state.weeks = {};
   if(!state.currentWeek) state.currentWeek = 1;
-  if(!state.weeks[state.currentWeek]){
+  if(!state.weeks[state.currentWeek] || typeof state.weeks[state.currentWeek] !== 'object'){
     state.weeks[state.currentWeek] = { days: [], originalDays: [], dsaDate: '', revisedDsaDate: '', activeRevision: 'R0' };
   }
-  if(!state.weeks[state.currentWeek].days) {
+  if(!Array.isArray(state.weeks[state.currentWeek].days)) {
     state.weeks[state.currentWeek].days = [];
   }
-  return state.weeks[state.currentWeek];
+  const w = state.weeks[state.currentWeek];
+  cleanWeekDays(w);
+  return w;
 }
 
 function dayAgg(day){
@@ -1839,18 +2328,26 @@ function dataQuality(week){
 async function saveWeek(n){
  try{
   const id=String(window.currentPlantContext||'Khurja Floating Solar').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
-  const serialized = JSON.stringify(state.weeks[n]);
+  // Strip heavy redundant fields if needed or serialize safely
+  const wData = state.weeks[n];
+  const serialized = JSON.stringify(wData);
+  const cacheKey = 'thdc-dsm-v2:'+id+':week:'+n;
   try {
-    localStorage.setItem('thdc-dsm-v2:'+id+':week:'+n, serialized);
+    localStorage.setItem(cacheKey, serialized);
   } catch(quotaErr) {
-    console.warn('LocalStorage quota exceeded, clearing old auto-backups...', quotaErr);
+    console.warn('LocalStorage quota exceeded, cleaning up older items & backups...', quotaErr);
+    // Aggressive cleanup
     for(let i=localStorage.length-1; i>=0; i--){
       const kName = localStorage.key(i);
-      if(kName && (kName.includes('auto-backup') || kName.includes('temp:'))) {
-        localStorage.removeItem(kName);
+      if(kName && kName !== cacheKey && (kName.includes('week') || kName.includes('backup') || kName.includes('temp') || kName.includes('audit'))) {
+        try { localStorage.removeItem(kName); } catch(err){}
       }
     }
-    localStorage.setItem('thdc-dsm-v2:'+id+':week:'+n, serialized);
+    try {
+      localStorage.setItem(cacheKey, serialized);
+    } catch(err2) {
+      console.error('Critical quota error even after cleanup:', err2);
+    }
   }
   if(typeof k === 'function') {
     try { localStorage.setItem(k('week', n), serialized); } catch(e){}
@@ -2029,6 +2526,7 @@ function renderShell(){
     </div>
 
     <div class="thdc-top-actions">
+      <button class="thdc-action" data-week-save-btn style="background:linear-gradient(135deg,#16A34A,#15803D)!important;color:#FFFFFF!important;font-weight:800;border:none;box-shadow:0 3px 8px rgba(22,163,74,0.35);font-size:13px;padding:0 18px;" onclick="saveCurrentWeek()" title="Explicitly save active week data to storage and database"><span style="font-size:16px">💾</span> Save Week Data</button>
       <button class="thdc-action" style="background:#0F766E;color:#FFFFFF;border-color:#0F766E;font-weight:700;" onclick="THDC_ALIGN_OFFICIAL_STATEMENT()" title="Align Deviation Charge with official UPSLDC statement (-₹ 10,74,678)"><span style="font-size:16px">🎯</span> Official Statement (-₹ 10.75 L)</button>
       <button class="thdc-action thdc-excel" onclick="openModal('pasteModal')"><span style="font-size:18px">▣</span> Upload / Paste Excel</button>
       <button class="thdc-action thdc-week" onclick="goWeekView(state.currentWeek)">📊 Week View</button>
@@ -2036,16 +2534,16 @@ function renderShell(){
       <button class="thdc-action thdc-rev" onclick="openRevisionManager()">↻ Revisions R0–R99</button>
       <button class="thdc-action thdc-export" onclick="exportWeek()" title="Export Complete Excel Workbook with 96-Block Horizontal Templates & Calculations">▤ Export Excel</button>
       <div style="display:inline-flex;background:#0F172A;padding:3px;border-radius:8px;gap:3px;align-items:center;">
-        <button class="thdc-action" style="background:linear-gradient(135deg,#2563EB,#1D4ED8)!important;color:#fff!important;font-weight:800;border:none;padding:5px 10px;font-size:11.5px;border-radius:6px;" onclick="downloadPlantTemplate('Tehri HPP')" title="Download Official NRPC 8-Section Excel Template for Tehri HPP (1000 MW) in Lakh Units (LU)"><span style="font-size:13px">⚡</span> Tehri HPP (LU)</button>
-        <button class="thdc-action" style="background:linear-gradient(135deg,#059669,#047857)!important;color:#fff!important;font-weight:800;border:none;padding:5px 10px;font-size:11.5px;border-radius:6px;" onclick="downloadPlantTemplate('Koteshwar HEP')" title="Download Official NRPC 8-Section Excel Template for Koteshwar HEP (400 MW) in Lakh Units (LU)"><span style="font-size:13px">💧</span> Koteshwar HEP (LU)</button>
-        <button class="thdc-action" style="background:linear-gradient(135deg,#7C3AED,#6D28D9)!important;color:#fff!important;font-weight:800;border:none;padding:5px 10px;font-size:11.5px;border-radius:6px;" onclick="downloadPlantTemplate('Tehri PSP')" title="Download Official NRPC 8-Section Excel Template for Tehri PSP (1000 MW) in Lakh Units (LU)"><span style="font-size:13px">🔄</span> Tehri PSP (LU)</button>
-        <button class="thdc-action" style="background:linear-gradient(135deg,#F59E0B,#D97706)!important;color:#000!important;font-weight:800;border:none;padding:5px 8px;font-size:11.5px;border-radius:6px;" onclick="openTemplateDownloadModal()" title="View All Plant Templates &amp; Downloads"><span style="font-size:13px">📥</span> Hub</button>
+        <button class="thdc-action" style="background:linear-gradient(135deg,#2563EB,#1D4ED8)!important;color:#fff!important;font-weight:800;border:none;padding:5px 10px;font-size:11.5px;border-radius:6px;" onclick="downloadPlantTemplate('Tehri HPP')" title="Download Official 8-Section Excel Template for Tehri HPP (1000 MW) in MWh"><span style="font-size:13px">⚡</span> Tehri HPP (MWh)</button>
+        <button class="thdc-action" style="background:linear-gradient(135deg,#059669,#047857)!important;color:#fff!important;font-weight:800;border:none;padding:5px 10px;font-size:11.5px;border-radius:6px;" onclick="downloadPlantTemplate('Koteshwar HEP')" title="Download Official 8-Section Excel Template for Koteshwar HEP (400 MW) in MWh"><span style="font-size:13px">💧</span> Koteshwar HEP (MWh)</button>
+        <button class="thdc-action" style="background:linear-gradient(135deg,#7C3AED,#6D28D9)!important;color:#fff!important;font-weight:800;border:none;padding:5px 10px;font-size:11.5px;border-radius:6px;" onclick="downloadPlantTemplate('Tehri PSP')" title="Download Official 8-Section Excel Template for Tehri PSP (1000 MW) in MWh"><span style="font-size:13px">🔄</span> Tehri PSP (MWh)</button>
+        <button class="thdc-action" style="background:linear-gradient(135deg,#F59E0B,#D97706)!important;color:#000!important;font-weight:800;border:none;padding:5px 8px;font-size:11.5px;border-radius:6px;" onclick="openTemplateDownloadModal()" title="View All Plant Templates &amp; Downloads in MWh"><span style="font-size:13px">📥</span> Hub (MWh)</button>
       </div>
       <button class="thdc-action thdc-export" style="background:linear-gradient(135deg,#0D9488,#0F766E)!important;color:#FFFFFF!important;font-weight:700;" onclick="exportHorizontal96Blocks()" title="Export Day & Date wise 96 Time-Blocks Horizontal Template (Master + 96-Block Parameter Sheets)"><span style="font-size:16px">▦</span> 96-Blk Horizontal Excel</button>
       <button class="thdc-action" style="background:linear-gradient(135deg,#4338CA,#3730A3)!important;color:#FFFFFF!important;font-weight:700;border-color:#3730A3;" onclick="exportHorizontalCalculations()" title="Export Detailed Step-by-Step 96 Time-Blocks Horizontal Calculations Workbook with Excel Formulas"><span style="font-size:16px">🧮</span> 96-Blk Calc Excel</button>
       <button class="thdc-action thdc-matrix" onclick="openHorizontalMatrixModal()" title="View 96-Block Horizontal Calculation Matrix On Screen"><span style="font-size:16px">👁</span> View 96-Blk Matrix</button>
       <button class="thdc-action thdc-pdf" onclick="exportPDF()">▣ Export Color PDF</button>
-      <button class="thdc-action thdc-settings" onclick="openFormulaModal()">⚙ Formula Settings</button>
+      <button class="thdc-action thdc-settings" onclick="openFormulaModal()" title="Inspect, troubleshoot, and calibrate calculation formulas and regulation presets">⚙ Formula &amp; Diagnostics</button>
       <button class="thdc-action thdc-params" onclick="openUniversalConfig()">⚙ Plant Parameters</button>
       <button class="thdc-action thdc-backup" onclick="THDC_EXPORT_BACKUP()">🗄 Backup</button>
       <button class="thdc-action thdc-restore" onclick="THDC_IMPORT_BACKUP()" title="Restore Plant Data from JSON Backup">☁ Restore</button>
@@ -2121,10 +2619,12 @@ function renderShell(){
     </footer>
   `;
   const sel = document.getElementById('weekSelect');
-  sel.innerHTML = Array.from({length:WEEK_COUNT},(_,i)=>i+1).map(n=>{
-    const has = state.weeks[n].days.length>0;
-    return `<option value="${n}" ${n===state.currentWeek?'selected':''}>W${n}${has?' •':''}</option>`;
-  }).join('');
+  if(sel){
+    sel.innerHTML = Array.from({length:WEEK_COUNT},(_,i)=>i+1).map(n=>{
+      const has = state.weeks[n].days.length>0;
+      return `<option value="${n}" ${n===state.currentWeek?'selected':''}>W${n}${has?' •':''}</option>`;
+    }).join('');
+  }
   if(typeof updateSaveStatusFromStorage==='function') updateSaveStatusFromStorage();
 }
 
@@ -2403,7 +2903,7 @@ function renderHomeShell(){
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
         <div class="nav-tabs"><div class="nav-tab active">🏠 Home</div><div class="nav-tab" onclick="goWeekView(${state.currentWeek})">📊 Week View</div></div><div class="thdc-save-controls"><button class="btn btn-primary btn-sm" onclick="THDC_MANUAL_SAVE()" title="Manually save workspace state to browser localStorage and Google Drive">💾 Save Data</button><button class="btn btn-sm thdc-gdrive-pill ${state.drive && state.drive.connected ? 'connected' : ''}" onclick="openDriveModal()" title="Google Drive Cloud Storage"><span class="gdrive-status-dot"></span> <span>${state.drive && state.drive.connected ? ('GDrive: ' + (state.drive.email ? state.drive.email.split('@')[0] : 'Connected')) : 'Connect GDrive'}</span></button><button class="btn btn-sm" onclick="THDC_SAVE_TO_GDRIVE(true)" title="Save active workspace directly to Google Drive">☁ GDrive Save</button><button class="btn btn-sm" onclick="openDriveModal()" title="Browse files on Google Drive">📂 GDrive Files</button><button class="btn btn-sm" onclick="THDC_EXPORT_BACKUP()" title="Export JSON backup file">⇩ Backup</button><button class="btn btn-sm" onclick="THDC_IMPORT_BACKUP()" title="Import JSON backup file">⇧ Restore</button><button class="btn btn-sm" onclick="THDC_RESTORE_AUTO_BACKUP()" title="Restore from last automatic 5-minute backup snapshot">↻ Auto-Backup</button><span class="thdc-save-status" data-save-status title="Auto-backup saves workspace to localStorage every 5 minutes"><span class="save-dot"></span><span data-save-text>${window.getCurrentSaveStatusText ? window.getCurrentSaveStatusText() : 'Not saved yet'}</span></span></div>
         <button class="btn btn-sm" style="background:#4338CA;color:white;font-weight:700;" onclick="generateProjectPDFReport()" title="Generate multi-plant summary PDF report">📑 Generate Project PDF Report</button>
-        <button class="btn btn-sm" onclick="openFormulaModal()">⚙ Formula Settings</button>
+        <button class="btn btn-sm" onclick="openFormulaModal()">⚙ Formula &amp; Diagnostics</button>
         <div class="user-chip">✉ <b>${state.auth.email || state.auth.mobile || 'Authorized User'}</b><button onclick="logout()">Logout</button></div>
       </div>
     </div>
@@ -3305,40 +3805,341 @@ const FP_FIELDS = [
   'underBelowBandMult','underRampLowSlope','underRampLowCap','underRampHighSlope','underRampHighFloor','underAboveBandMult',
   'beyondUnderHighMult','beyondUnderMidMult','beyondUnderLowMult'
 ];
-function openFormulaModal(){
-  FP_FIELDS.forEach(f=>{
-    const el = document.getElementById('fp_'+f);
-    if(el) el.value = FP[f];
+
+const FORMULA_PRESETS = {
+  cerc2024: {
+    label: "CERC DSM 2024 Amendments (Current Standard)",
+    params: {
+      volLimitPct: 10, volLimitCap: 25,
+      deadbandLow: 49.97, deadbandHigh: 50.03,
+      bandLow: 49.90, bandHigh: 50.05, extremeHigh: 50.10,
+      overBelowBandMult: 1.15, overRampLowSlope: 0.0215, overRampLowCap: 1.15,
+      overRampHighSlope: 0.25, overRampHighFloor: 0.5, overDiscountMult: 0, overExtremeMult: -0.1,
+      underBelowBandMult: 1.5, underRampLowSlope: 0.0715, underRampLowCap: 1.5,
+      underRampHighSlope: 0.075, underRampHighFloor: 0.85, underAboveBandMult: 0.85,
+      beyondUnderHighMult: 1, beyondUnderMidMult: 1.5, beyondUnderLowMult: 2
+    }
+  },
+  cerc2022: {
+    label: "CERC DSM 2022 Base Regulation",
+    params: {
+      volLimitPct: 12, volLimitCap: 50,
+      deadbandLow: 50.00, deadbandHigh: 50.00,
+      bandLow: 49.90, bandHigh: 50.05, extremeHigh: 50.10,
+      overBelowBandMult: 1.0, overRampLowSlope: 0.02, overRampLowCap: 1.2,
+      overRampHighSlope: 0.20, overRampHighFloor: 0.5, overDiscountMult: 0, overExtremeMult: 0,
+      underBelowBandMult: 1.5, underRampLowSlope: 0.05, underRampLowCap: 1.5,
+      underRampHighSlope: 0.05, underRampHighFloor: 1.0, underAboveBandMult: 1.0,
+      beyondUnderHighMult: 1.0, beyondUnderMidMult: 1.25, beyondUnderLowMult: 1.5
+    }
+  },
+  hydro: {
+    label: "Hydro RoR / Pondage Rules (Tehri / Koteshwar - No 25MW Cap)",
+    params: {
+      volLimitPct: 12, volLimitCap: 9999,
+      deadbandLow: 49.95, deadbandHigh: 50.05,
+      bandLow: 49.90, bandHigh: 50.05, extremeHigh: 50.10,
+      overBelowBandMult: 1.0, overRampLowSlope: 0.02, overRampLowCap: 1.15,
+      overRampHighSlope: 0.20, overRampHighFloor: 0.5, overDiscountMult: 0, overExtremeMult: 0,
+      underBelowBandMult: 1.0, underRampLowSlope: 0.05, underRampLowCap: 1.2,
+      underRampHighSlope: 0.05, underRampHighFloor: 0.9, underAboveBandMult: 0.9,
+      beyondUnderHighMult: 1.0, beyondUnderMidMult: 1.0, beyondUnderLowMult: 1.25
+    }
+  },
+  nrpc_linear: {
+    label: "Official NRPC Statement Linear Rate (Deviation × Reference Rate × 1000)",
+    params: {
+      volLimitPct: 100, volLimitCap: 99999,
+      deadbandLow: 45.0, deadbandHigh: 55.0,
+      bandLow: 45.0, bandHigh: 55.0, extremeHigh: 55.0,
+      overBelowBandMult: 1.0, overRampLowSlope: 0, overRampLowCap: 1.0,
+      overRampHighSlope: 0, overRampHighFloor: 1.0, overDiscountMult: 1.0, overExtremeMult: 1.0,
+      underBelowBandMult: 1.0, underRampLowSlope: 0, underRampLowCap: 1.0,
+      underRampHighSlope: 0, underRampHighFloor: 1.0, underAboveBandMult: 1.0,
+      beyondUnderHighMult: 1.0, beyondUnderMidMult: 1.0, beyondUnderLowMult: 1.0
+    }
+  },
+  solar: {
+    label: "Solar / RE DSM (Khurja Floating Solar)",
+    params: {
+      volLimitPct: 10, volLimitCap: 5,
+      deadbandLow: 49.95, deadbandHigh: 50.05,
+      bandLow: 49.90, bandHigh: 50.05, extremeHigh: 50.10,
+      overBelowBandMult: 1.0, overRampLowSlope: 0.02, overRampLowCap: 1.1,
+      overRampHighSlope: 0.2, overRampHighFloor: 0.5, overDiscountMult: 0, overExtremeMult: 0,
+      underBelowBandMult: 1.5, underRampLowSlope: 0.05, underRampLowCap: 1.5,
+      underRampHighSlope: 0.05, underRampHighFloor: 1.0, underAboveBandMult: 1.0,
+      beyondUnderHighMult: 1.0, beyondUnderMidMult: 1.2, beyondUnderLowMult: 1.5
+    }
+  },
+  flat: {
+    label: "Flat 1.0x Rate (No Frequency Multipliers)",
+    params: {
+      volLimitPct: 100, volLimitCap: 9999,
+      deadbandLow: 45.0, deadbandHigh: 55.0,
+      bandLow: 45.0, bandHigh: 55.0, extremeHigh: 55.0,
+      overBelowBandMult: 1.0, overRampLowSlope: 0, overRampLowCap: 1.0,
+      overRampHighSlope: 0, overRampHighFloor: 1.0, overDiscountMult: 1.0, overExtremeMult: 1.0,
+      underBelowBandMult: 1.0, underRampLowSlope: 0, underRampLowCap: 1.0,
+      underRampHighSlope: 0, underRampHighFloor: 1.0, underAboveBandMult: 1.0,
+      beyondUnderHighMult: 1.0, beyondUnderMidMult: 1.0, beyondUnderLowMult: 1.0
+    }
+  }
+};
+
+function switchFormulaTab(tabId){
+  ['params', 'inspector', 'diagnostics'].forEach(t => {
+    const pane = document.getElementById('fTab_' + t);
+    const btn = document.getElementById('fTabBtn_' + t);
+    if(pane) pane.style.display = (t === tabId) ? 'block' : 'none';
+    if(btn){
+      if(t === tabId){
+        btn.classList.add('active');
+        btn.style.background = '#0073CF';
+        btn.style.color = '#FFFFFF';
+        btn.style.borderColor = '#0073CF';
+      } else {
+        btn.classList.remove('active');
+        btn.style.background = '#FFFFFF';
+        btn.style.color = '#334155';
+        btn.style.borderColor = '#CBD5E1';
+      }
+    }
   });
-  openModal('formulaModal');
+  if(tabId === 'inspector') runLiveInspector();
 }
+
+function applyFormulaPreset(key){
+  const preset = FORMULA_PRESETS[key];
+  if(!preset) return;
+  FP_FIELDS.forEach(f => {
+    const el = document.getElementById('fp_' + f);
+    if(el && preset.params[f] !== undefined){
+      el.value = preset.params[f];
+      el.style.borderColor = '';
+    }
+  });
+  const lbl = document.getElementById('presetActiveLabel');
+  if(lbl) lbl.textContent = preset.label + ' Applied (Click Save & Recalculate)';
+  runLiveInspector();
+}
+
+function openFormulaModal(){
+  const plant = window.currentPlantContext || "Khurja Floating Solar";
+  const badge = document.getElementById('formulaActivePlantBadge');
+  if(badge) badge.textContent = plant;
+
+  let activeSource = FP;
+  if(window.THDC_UNIVERSAL && typeof window.THDC_UNIVERSAL.getCfg === 'function'){
+    const cfg = window.THDC_UNIVERSAL.getCfg(plant);
+    if(cfg && cfg.formulas) activeSource = {...FP, ...cfg.formulas};
+  }
+
+  FP_FIELDS.forEach(f => {
+    const el = document.getElementById('fp_' + f);
+    if(el) el.value = (activeSource[f] !== undefined) ? activeSource[f] : FP[f];
+  });
+
+  const lbl = document.getElementById('presetActiveLabel');
+  if(lbl) lbl.textContent = "Active Parameters Loaded for " + plant;
+
+  switchFormulaTab('params');
+  openModal('formulaModal');
+  runLiveInspector();
+}
+
 async function saveFormulaSettings(){
   const next = {...FP};
   let ok = true;
-  FP_FIELDS.forEach(f=>{
-    const el = document.getElementById('fp_'+f);
+  FP_FIELDS.forEach(f => {
+    const el = document.getElementById('fp_' + f);
     const v = parseFloat(el.value);
     if(isNaN(v)){ ok = false; el.style.borderColor = 'var(--red)'; }
     else { next[f] = v; el.style.borderColor = ''; }
   });
-  if(!ok){ return; }
+  if(!ok){
+    alert('Please correct invalid formula numeric parameters.');
+    return;
+  }
   FP = next;
   await saveFormulaParams();
+
+  const plant = window.currentPlantContext || "Khurja Floating Solar";
+  if(window.THDC_UNIVERSAL && typeof window.THDC_UNIVERSAL.saveCfg === 'function'){
+    const cfg = window.THDC_UNIVERSAL.getCfg(plant);
+    cfg.formulas = {...next};
+    window.THDC_UNIVERSAL.saveCfg(plant, cfg);
+  }
+
   closeModal('formulaModal');
   if(state.view==='home') renderHomeShell(); else { renderShell(); renderAll(); }
+  if(typeof showToast === 'function'){
+    showToast(`✓ DSM Formula settings updated & recalculating all 96 blocks for ${plant}!`);
+  }
 }
+
 async function resetFormulaDefaults(){
   FP = {...DEFAULT_FORMULA_PARAMS};
   await saveFormulaParams();
-  FP_FIELDS.forEach(f=>{
-    const el = document.getElementById('fp_'+f);
+
+  const plant = window.currentPlantContext || "Khurja Floating Solar";
+  if(window.THDC_UNIVERSAL && typeof window.THDC_UNIVERSAL.saveCfg === 'function'){
+    const cfg = window.THDC_UNIVERSAL.getCfg(plant);
+    delete cfg.formulas;
+    window.THDC_UNIVERSAL.saveCfg(plant, cfg);
+  }
+
+  FP_FIELDS.forEach(f => {
+    const el = document.getElementById('fp_' + f);
     if(el){ el.value = FP[f]; el.style.borderColor = ''; }
   });
+  const lbl = document.getElementById('presetActiveLabel');
+  if(lbl) lbl.textContent = "CERC 2024 Defaults Restored";
+  runLiveInspector();
+  if(typeof showToast === 'function') showToast('✓ Formula reset to official CERC 2024 defaults.');
 }
+
+function getInspectorParams(){
+  const p = {...FP};
+  FP_FIELDS.forEach(f => {
+    const el = document.getElementById('fp_' + f);
+    if(el){
+      const v = parseFloat(el.value);
+      if(!isNaN(v)) p[f] = v;
+    }
+  });
+  return p;
+}
+
+function runLiveInspector(){
+  const s = parseFloat(document.getElementById('fi_s')?.value) || 0;
+  const sras = parseFloat(document.getElementById('fi_sras')?.value) || 0;
+  const a = parseFloat(document.getElementById('fi_a')?.value) || 0;
+  const f = parseFloat(document.getElementById('fi_f')?.value) || 50.0;
+  const r = parseFloat(document.getElementById('fi_r')?.value) || 0;
+  const effS = s + sras;
+
+  const P = getInspectorParams();
+  const res = (typeof window.THDC_COMPUTE_BLOCK === 'function') 
+    ? window.THDC_COMPUTE_BLOCK(effS, a, f, r, P)
+    : computeBlock(effS, a, f, r);
+
+  const card = document.getElementById('inspectorTraceCard');
+  if(!card) return;
+
+  const isOver = res.dev > 0;
+  const isUnder = res.dev < 0;
+  const devSign = isOver ? '+' : '';
+  const natureText = isOver ? 'Receivable / Credit to Generator (अतिरिक्त बिजली - प्राप्य)' : (isUnder ? 'Payable / Debit by Generator (कम बिजली - देय)' : 'Zero Deviation');
+  const natureColor = isOver ? '#059669' : (isUnder ? '#DC2626' : '#64748B');
+
+  card.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #E2E8F0;padding-bottom:10px;margin-bottom:12px;">
+      <div>
+        <span style="font-size:11px;text-transform:uppercase;font-weight:800;color:#64748B;">Block Calculation Result</span>
+        <div style="font-size:20px;font-weight:900;color:${natureColor};">
+          ${fmtInr(res.charge)} <span style="font-size:13px;font-weight:700;">(${res.charge < 0 ? 'Negative = Receivable' : 'Positive = Payable'})</span>
+        </div>
+      </div>
+      <div style="text-align:right;">
+        <span style="font-size:11px;text-transform:uppercase;font-weight:800;color:#64748B;">Settlement Nature</span>
+        <div style="font-size:13px;font-weight:800;color:${natureColor};">${natureText}</div>
+      </div>
+    </div>
+
+    <div style="font-size:12.5px;display:flex;flex-direction:column;gap:8px;line-height:1.5;">
+      <div style="background:#F8FAFC;padding:8px 10px;border-radius:6px;border:1px solid #E2E8F0;">
+        <b>Step 1 — Effective Schedule &amp; Deviation:</b><br>
+        Effective Schedule (S<sub>eff</sub>) = Base Schedule (${fmtMWh(s)}) + SRAS (${fmtMWh(sras)}) = <b>${fmtMWh(effS)} MWh</b><br>
+        Deviation = Actual Injection (${fmtMWh(a)}) - S<sub>eff</sub> (${fmtMWh(effS)}) = <b style="color:${natureColor};">${devSign}${fmtMWh(res.dev)} MWh</b> (${res.devPct.toFixed(2)}%)
+      </div>
+
+      <div style="background:#F8FAFC;padding:8px 10px;border-radius:6px;border:1px solid #E2E8F0;">
+        <b>Step 2 — Volume Limit Partitioning:</b><br>
+        Permissible Limit = min(|S<sub>eff</sub>| × ${P.volLimitPct}%, Cap of ${P.volLimitCap} MWh) = <b>${fmtMWh(res.volLimit)} MWh</b><br>
+        • Deviation Within Limit: <b>${fmtMWh(res.devWithin)} MWh</b><br>
+        • Deviation Beyond Limit: <b>${fmtMWh(res.devBeyond)} MWh</b>
+      </div>
+
+      <div style="background:#F8FAFC;padding:8px 10px;border-radius:6px;border:1px solid #E2E8F0;">
+        <b>Step 3 — Frequency &amp; Regulatory Multipliers:</b><br>
+        Grid Frequency: <b>${f.toFixed(2)} Hz</b> (Band: ${P.bandLow.toFixed(2)} to ${P.bandHigh.toFixed(2)} Hz, Deadband: ${P.deadbandLow.toFixed(2)} to ${P.deadbandHigh.toFixed(2)} Hz)<br>
+        • Multiplier Within Limit: <b>${(res.multWithin||0).toFixed(4)}x</b><br>
+        • Multiplier Beyond Limit: <b>${(res.multBeyond||0).toFixed(4)}x</b>
+      </div>
+
+      <div style="background:#F8FAFC;padding:8px 10px;border-radius:6px;border:1px solid #E2E8F0;">
+        <b>Step 4 — Final DSM Charge Formula:</b><br>
+        <code>Charge = (${fmtMWh(res.devWithin)} × ${(res.multWithin||0).toFixed(4)} + ${fmtMWh(res.devBeyond)} × ${(res.multBeyond||0).toFixed(4)}) × ₹${r.toFixed(3)}/kWh × 1000 = <b style="color:${natureColor};">${fmtInr(res.charge)}</b></code>
+      </div>
+    </div>
+  `;
+}
+
+function loadInspectorFromCurrentDay(){
+  const week = weekObj();
+  if(!week || !week.days || !week.days.length){
+    alert('No week data loaded currently.');
+    return;
+  }
+  const day = week.days.find(d => normalizeAppDate(d.date) === normalizeAppDate(state.currentDate)) || week.days[0];
+  if(!day || !day.blocks || !day.blocks.length){
+    alert('No blocks found in current day.');
+    return;
+  }
+  const b = day.blocks[0];
+  const sInput = document.getElementById('fi_s');
+  const srasInput = document.getElementById('fi_sras');
+  const aInput = document.getElementById('fi_a');
+  const fInput = document.getElementById('fi_f');
+  const rInput = document.getElementById('fi_r');
+  if(sInput) sInput.value = (Number(b.s)||0).toFixed(3);
+  if(srasInput) srasInput.value = (Number(b.sras)||0).toFixed(3);
+  if(aInput) aInput.value = (Number(b.a)||0).toFixed(3);
+  if(fInput) fInput.value = (Number(b.f)||50).toFixed(2);
+  if(rInput) rInput.value = (Number(b.r)||0).toFixed(3);
+  runLiveInspector();
+}
+
+function quickFixWeekUnit(factor){
+  const week = weekObj();
+  if(!week || !week.days || !week.days.length){
+    alert('No active week data to scale.');
+    return;
+  }
+  let confirmMsg = '';
+  if(factor === 100){
+    confirmMsg = `Convert active Week W${state.currentWeek} from LU to MWh? (Multiplies Schedule, Actual & SRAS by 100)`;
+  } else if(factor === 0.01){
+    confirmMsg = `Convert active Week W${state.currentWeek} from MWh to LU? (Divides Schedule, Actual & SRAS by 100)`;
+  } else if(factor === 0.25){
+    confirmMsg = `Convert active Week W${state.currentWeek} from MW to MWh? (Divides Schedule, Actual & SRAS by 4)`;
+  } else {
+    confirmMsg = `Scale active Week W${state.currentWeek} values by ${factor}?`;
+  }
+  if(!confirm(confirmMsg)) return;
+
+  week.days.forEach(d => {
+    (d.blocks || []).forEach(b => {
+      if(Number.isFinite(b.s)) b.s = Number((b.s * factor).toFixed(6));
+      if(Number.isFinite(b.a)) b.a = Number((b.a * factor).toFixed(6));
+      if(Number.isFinite(b.sras)) b.sras = Number((b.sras * factor).toFixed(6));
+    });
+  });
+  saveWeek(state.currentWeek);
+  if(typeof THDC_MANUAL_SAVE === 'function') THDC_MANUAL_SAVE();
+  renderAll();
+  runLiveInspector();
+  if(typeof showToast === 'function'){
+    showToast(factor === 100 ? `✓ Active week converted from LU to MWh (×100)!` : (factor === 0.01 ? `✓ Active week converted to LU (÷100)!` : `✓ Active week scaled by ${factor}!`));
+  }
+}
+window.quickFixWeekUnit = quickFixWeekUnit;
 
 /* ================= RENDER: QUALITY BANNER ================= */
 function renderQualityBanner(){
   const el = document.getElementById('qualityBanner');
+  if(!el) return;
   const week = weekObj();
   if(week.days.length===0){
     el.innerHTML = `<div class="qbanner empty">No data loaded for W${state.currentWeek} — use "Paste Excel Data" to import, or switch to a week with data.</div>`;
@@ -3346,16 +4147,48 @@ function renderQualityBanner(){
   }
   const q = dataQuality(week);
   if(q.valid===q.expectedTotal && week.days.length===7){
-    el.innerHTML = `<div class="qbanner ok">✓ ${q.valid} / 672 blocks valid — ${week.days.length} of 7 days loaded.</div>`;
+    el.innerHTML = `<div class="qbanner ok" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+      <span>✓ ${q.valid} / 672 blocks valid — exactly 7 of 7 days loaded.</span>
+      <button type="button" class="btn btn-xs" data-week-save-btn onclick="saveCurrentWeek()" style="background:#16A34A;color:#fff;font-weight:700;padding:2px 8px;border-radius:4px;border:none;">💾 Save Week</button>
+    </div>`;
+  } else if(week.days.length > 7){
+    const diffDays = week.days.length - 7;
+    el.innerHTML = `
+      <div class="qbanner warn" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+        <div>
+          <div style="font-weight:900;font-size:13px;display:flex;align-items:center;gap:6px;">
+            <span>⚠</span> <span>${q.valid} / ${q.expectedTotal} blocks loaded — <b>${week.days.length} of 7 days loaded</b> (${diffDays} extra day${diffDays>1?'s':''}).</span>
+          </div>
+          <div style="font-size:11.5px;color:#78350F;margin-top:2px;">
+            Indian Grid (CERC / UPSLDC) billing runs on exactly 7 days (672 blocks). Resolve active week to 7 days:
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+          <button type="button" class="btn btn-sm" onclick="trimWeekTo7Days()" style="background:#B45309;color:#fff;font-weight:800;border:none;padding:5px 12px;border-radius:6px;box-shadow:0 2px 4px rgba(0,0,0,0.15);" title="Keep only 7 days for this week and remove extra days">✂ Keep 7 Days (Trim Week)</button>
+          ${week.days.length === 14 ? `
+            <button type="button" class="btn btn-sm" onclick="split14DaysAcrossWeeks()" style="background:#1D4ED8;color:#fff;font-weight:800;border:none;padding:5px 12px;border-radius:6px;box-shadow:0 2px 4px rgba(0,0,0,0.15);" title="Move Days 8-14 to next week (W${state.currentWeek+1})">📦 Split 14 Days to W${state.currentWeek} &amp; W${state.currentWeek+1}</button>
+          ` : ''}
+          <button type="button" class="btn btn-sm" onclick="mergeDuplicateDatesInWeek()" style="background:#0F766E;color:#fff;font-weight:800;border:none;padding:5px 10px;border-radius:6px;" title="Merge any duplicate date rows in this week">🔄 Deduplicate</button>
+          <button type="button" class="btn btn-sm" data-week-save-btn onclick="saveCurrentWeek()" style="background:#16A34A;color:#fff;font-weight:800;border:none;padding:5px 12px;border-radius:6px;" title="Explicitly save active week data">💾 Save Week</button>
+        </div>
+      </div>`;
   } else {
     const missingBlocks = q.expectedTotal - q.valid;
-    el.innerHTML = `<div class="qbanner warn">⚠ ${q.valid} / ${q.expectedTotal===0?672:q.expectedTotal} blocks valid — ${week.days.length} of 7 days loaded${missingBlocks>0?', '+missingBlocks+' block(s) with issues':''}.${q.issues.length?' ('+q.issues.join('; ')+')':''}</div>`;
+    el.innerHTML = `
+      <div class="qbanner warn" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+        <span>⚠ ${q.valid} / ${q.expectedTotal===0?672:q.expectedTotal} blocks valid — ${week.days.length} of 7 days loaded${missingBlocks>0?', '+missingBlocks+' block(s) with issues':''}.${q.issues.length?' ('+q.issues.join('; ')+')':''}</span>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <button type="button" class="btn btn-xs" onclick="promptAddDayToWeek()" style="background:#0284C7;color:#fff;font-weight:700;padding:3px 8px;border-radius:4px;border:none;">➕ Add Day</button>
+          <button type="button" class="btn btn-xs" data-week-save-btn onclick="saveCurrentWeek()" style="background:#16A34A;color:#fff;font-weight:700;padding:3px 8px;border-radius:4px;border:none;">💾 Save Week</button>
+        </div>
+      </div>`;
   }
 }
 
 /* ================= RENDER: HEAT STRIP ================= */
 function renderHeatStrip(){
   const el = document.getElementById('heatstripPanel');
+  if(!el) return;
   const week = weekObj();
   if(week.days.length===0){
     el.innerHTML = `<div class="panel-head"><div class="panel-title">Week Heat Strip</div></div><div style="color:var(--muted-2);font-size:12.5px;">No blocks to display yet.</div>`;
@@ -3393,7 +4226,8 @@ function renderKPIs(){
   const baseScheduleVal = g.baseS !== undefined ? g.baseS : (g.s - g.sras);
   const isMatch = g.hasNrpc && Math.abs(g.diffCharge) < 10;
   
-  kpiGrid.innerHTML = `
+  if(kpiGrid){
+    kpiGrid.innerHTML = `
     <div class="kpi-card">
       <div class="kpi-label">Schedule Gen (SG)</div>
       <div class="kpi-value">${fmtMWh0(baseScheduleVal)}<span class="unit">MWh</span></div>
@@ -3440,10 +4274,12 @@ function renderKPIs(){
       </div>
     `}
   `;
+  }
   const kpiSec = document.getElementById('kpiGridSec');
   const posDisplay = g.maxPos > 0 ? `+${fmtMWh(g.maxPos)}` : fmtMWh(g.maxPos);
   const negDisplay = g.maxNeg < 0 ? fmtMWh(g.maxNeg) : (g.maxNeg > 0 ? `-${fmtMWh(g.maxNeg)}` : fmtMWh(0));
-  kpiSec.innerHTML = `
+  if(kpiSec){
+    kpiSec.innerHTML = `
     <div class="kpi-card ${g.dev>=0?'':'c-red'}"><div class="kpi-label">Total Deviation</div><div class="kpi-value ${g.dev>0?'':(g.dev<0?'red':'')}" style="font-size:15px;">${g.dev>=0?'+':''}${fmtMWh0(g.dev)}<span class="unit">MWh</span></div></div>
     <div class="kpi-card c-grey"><div class="kpi-label">Average Deviation</div><div class="kpi-value" style="font-size:15px;">${fmtMWh(g.avgDev)}<span class="unit">MWh/block</span></div></div>
     <div class="kpi-card"><div class="kpi-label">Max Positive Deviation</div><div class="kpi-value" style="font-size:15px;">${posDisplay}<span class="unit">MWh</span></div></div>
@@ -3451,6 +4287,7 @@ function renderKPIs(){
     <div class="kpi-card"><div class="kpi-label">Over-Injection Blocks</div><div class="kpi-value" style="font-size:15px;">${g.over}<span class="unit">/ ${g.totalBlocks}</span></div></div>
     <div class="kpi-card c-red"><div class="kpi-label">Under-Injection Blocks</div><div class="kpi-value" style="font-size:15px;">${g.under}<span class="unit">/ ${g.totalBlocks}</span></div></div>
   `;
+  }
 }
 
 /* ================= RENDER: INJECTION CLASSIFICATION ================= */
@@ -3464,7 +4301,9 @@ function renderInjection(){
     else if(r.dev<0){ underE+=r.dev; underCharge+=r.charge; }
   }));
   const total = g.totalBlocks||1;
-  document.getElementById('injGrid').innerHTML = `
+  const injGrid = document.getElementById('injGrid');
+  if(injGrid){
+    injGrid.innerHTML = `
     <div class="inj-card over">
       <h4>Over-Injection <span style="color:var(--muted-2);font-weight:400;">(Actual &gt; Schedule)</span></h4>
       <div class="inj-row"><span>Blocks</span><b>${g.over}</b></div>
@@ -3480,6 +4319,7 @@ function renderInjection(){
       <div class="inj-row"><span>Financial impact</span><b>${fmtInr(underCharge)}</b></div>
     </div>
   `;
+  }
 
   destroyChart('injDonut');
   const canvas = document.getElementById('chartInjDonut');
@@ -3508,8 +4348,10 @@ function renderWeeklySummary(){
   const baseScheduleVal = g.baseS !== undefined ? g.baseS : (g.s - g.sras);
   const diffVal = g.hasNrpc ? g.diffCharge : null;
   const isMatch = g.hasNrpc && Math.abs(diffVal) < 10;
+  const weeklySummaryEl = document.getElementById('weeklySummary');
+  if(!weeklySummaryEl) return;
   
-  document.getElementById('weeklySummary').innerHTML = `
+  weeklySummaryEl.innerHTML = `
     <table>
       <thead><tr><th>Parameter / Metric</th><th style="text-align:right;">Week Total</th></tr></thead>
       <tbody>
@@ -3546,20 +4388,29 @@ function renderWeeklySummary(){
 
 /* ================= RENDER: DATE-WISE TABLE ================= */
 function renderDateTable(){
+  const dateTableEl = document.getElementById('dateTable');
+  if(!dateTableEl) return;
   const week = weekObj();
-  if(week.days.length===0){
-    document.getElementById('dateTable').innerHTML = `<div style="color:var(--muted-2);font-size:12.5px;padding:10px 0;">No days loaded for this week.</div>`;
+  if(!week || !week.days || week.days.length===0){
+    dateTableEl.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;margin-bottom:10px;">
+        <span style="color:var(--muted-2);font-size:12.5px;">No days loaded for Week W${String(state.currentWeek).padStart(2,'0')}.</span>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-sm" onclick="promptAddDayToWeek()" style="background:#0284C7;color:#fff;font-weight:700;">➕ Add Day</button>
+          <button class="btn btn-sm" onclick="openModal('pasteModal')" style="background:#16A34A;color:#fff;font-weight:700;">▣ Paste / Upload Excel</button>
+        </div>
+      </div>`;
     return;
   }
   const hasWeekNrpc = week.days.some(d => (d.blocks||[]).some(b => b.nrpcCharge !== null && b.nrpcCharge !== undefined));
   let rows = week.days.map(d=>{
     const g = dayAgg(d);
-    const active = d.date===state.currentDate ? 'active-row' : '';
+    const active = normalizeAppDate(d.date)===normalizeAppDate(state.currentDate) ? 'active-row' : '';
     const baseSch = g.baseS !== undefined ? g.baseS : (g.s - g.sras);
     const srasText = g.sras !== 0 ? `${g.sras>0?'+':''}${fmtMWh0(g.sras)}` : '0.00';
     const diffDay = g.hasNrpc ? g.diffCharge : null;
     const diffColor = (diffDay === 0) ? '#16A34A' : (diffDay > 0 ? '#DC2626' : '#16A34A');
-    return `<tr class="clickable ${active}" onclick="openDayDetail('${formatDateDDMMYYYY(d.date)}')">
+    return `<tr class="clickable ${active}" onclick="openDayDetail('${d.date}')">
       <td style="font-weight:700;">${formatDateDDMMYYYY(d.date)}</td>
       <td>${g.blocks}</td>
       <td title="Schedule Gen (SG)">${fmtMWh0(baseSch)}</td>
@@ -3573,10 +4424,50 @@ function renderDateTable(){
         <td class="${g.hasNrpc && g.nrpcCharge<0?'cell-pos':(g.hasNrpc && g.nrpcCharge>0?'cell-neg':'')}" style="font-weight:700;">${g.hasNrpc ? fmtInr(g.nrpcCharge) : '—'}</td>
         <td style="font-weight:800;color:${diffColor};">${g.hasNrpc ? (diffDay === 0 ? '₹0' : (diffDay > 0 ? '+' : '') + fmtInr(diffDay)) : '—'}</td>
       ` : ''}
+      <td style="white-space:nowrap;" onclick="event.stopPropagation()">
+        <button type="button" class="btn btn-xs" onclick="promptChangeDayDate('${d.date}', event)" style="padding:2px 7px;font-size:11px;background:#EFF6FF;color:#1D4ED8;border:1px solid #93C5FD;font-weight:700;margin-right:4px;" title="Change date for this day">✏ Date</button>
+        <button type="button" class="btn btn-xs" onclick="deleteDayFromWeek('${d.date}', event)" style="padding:2px 7px;font-size:11px;background:#FEF2F2;color:#DC2626;border:1px solid #FECACA;font-weight:700;" title="Delete this day from the week">🗑</button>
+      </td>
     </tr>`;
   }).join('');
-  document.getElementById('dateTable').innerHTML = `
-    <div class="table-scroll" style="max-height:340px;">
+
+  const lastSavedText = window._lastWeekSavedTime ? `✓ Saved (${window._lastWeekSavedTime})` : '✓ Week Data Saved';
+
+  dateTableEl.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding:8px 12px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;flex-wrap:wrap;gap:8px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:13px;font-weight:900;color:#0F172A;">📅 Date-Wise Schedule &amp; DSM Breakdown (W${String(state.currentWeek).padStart(2,'0')})</span>
+        <span class="bulk-badge" id="weekSaveBadge" data-week-save-badge style="background:#DCFCE7;color:#166534;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;">${lastSavedText}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+        <button class="btn btn-sm" data-week-save-btn onclick="saveCurrentWeek()" style="background:#16A34A;color:#fff;font-weight:800;border:none;padding:5px 12px;border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,0.1);display:inline-flex;align-items:center;gap:5px;" title="Explicitly save active week data">
+          <span>💾</span> <span>Save Week Data</span>
+        </button>
+        <button class="btn btn-sm" onclick="promptAddDayToWeek()" style="background:#FFFFFF;border:1px solid #CBD5E1;color:#0F172A;font-weight:700;padding:4px 10px;" title="Add a day to this week">
+          <span>➕</span> Add Day
+        </button>
+        <button class="btn btn-sm" onclick="mergeDuplicateDatesInWeek()" style="background:#FFFFFF;border:1px solid #CBD5E1;color:#0F766E;font-weight:700;padding:4px 10px;" title="Check and merge duplicate date entries">
+          <span>🔄</span> Deduplicate
+        </button>
+        <button class="btn btn-sm" onclick="quickFixWeekUnit(100)" style="background:#ECFDF5;border:1px solid #86EFAC;color:#065F46;font-weight:800;padding:4px 10px;" title="If active week numbers are in LU, scale to MWh (multiply by 100)">
+          <span>⚡</span> LU → MWh (×100)
+        </button>
+        <button class="btn btn-sm" onclick="quickFixWeekUnit(0.01)" style="background:#FFFFFF;border:1px solid #CBD5E1;color:#475569;font-weight:600;padding:4px 8px;font-size:11px;" title="Convert from MWh back to LU (divide by 100)">
+          <span>÷100</span> MWh → LU
+        </button>
+        ${week.days.length > 7 ? `
+          <button class="btn btn-sm" onclick="trimWeekTo7Days()" style="background:#FEF3C7;border:1px solid #F59E0B;color:#92400E;font-weight:800;padding:4px 10px;" title="Trim week to exactly 7 days">
+            <span>✂</span> Keep 7 Days (Trim Week)
+          </button>
+          ${week.days.length === 14 ? `
+            <button class="btn btn-sm" onclick="split14DaysAcrossWeeks()" style="background:#EFF6FF;border:1px solid #3B82F6;color:#1D4ED8;font-weight:800;padding:4px 10px;" title="Move days 8-14 to next week">
+              <span>📦</span> Split 14 Days to W${state.currentWeek} &amp; W${state.currentWeek+1}
+            </button>
+          ` : ''}
+        ` : ''}
+      </div>
+    </div>
+    <div class="table-scroll" style="max-height:380px;">
       <table>
         <thead><tr>
           <th>Date</th>
@@ -3592,6 +4483,7 @@ function renderDateTable(){
             <th title="Official NRPC Billed Statement Deviation Charge">NRPC DSM ₹</th>
             <th title="Variance = THDCIL Engine − NRPC Statement">Variance ₹</th>
           ` : ''}
+          <th>Actions</th>
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>
@@ -3618,14 +4510,16 @@ function openDayDetail(date){
 }
 function closeDayDetail(){
   state.currentDate = null;
-  document.getElementById('dayDetailPanel').style.display='none';
+  const panel = document.getElementById('dayDetailPanel');
+  if(panel) panel.style.display='none';
   renderDateTable();
   renderCharts();
 }
 function renderDayDetailPanel(){
   const panel = document.getElementById('dayDetailPanel');
+  if(!panel) return;
   const week = weekObj();
-  const day = week.days.find(d=>d.date===state.currentDate);
+  const day = week.days.find(d=>normalizeAppDate(d.date)===normalizeAppDate(state.currentDate));
   if(!day){ panel.style.display='none'; return; }
   panel.style.display='block';
   initBulkEditState(day);
@@ -3794,11 +4688,17 @@ function renderDayDetailPanel(){
   panel.innerHTML = `
     <div class="day-detail-head">
       <div>
-        <h3>${day.date} — 96-block analysis</h3>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <h3 style="margin:0;">${formatDateDDMMYYYY(day.date)} <span style="font-size:13px;color:var(--muted);font-weight:600;">(${day.date})</span> — 96-Block Analysis</h3>
+          <button type="button" class="btn btn-xs" onclick="promptChangeDayDate('${day.date}', event)" style="background:#EFF6FF;color:#1D4ED8;border:1px solid #93C5FD;font-weight:700;padding:2px 8px;border-radius:5px;" title="Change date for this day">✏ Change Date</button>
+        </div>
         <div style="font-size:12px;color:var(--muted);margin-top:2px;">Detailed time-block generation, deviation, DSM settlement & schedule adjustments</div>
       </div>
-      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
         <div class="search-box"><input type="text" id="blockSearch" placeholder="Search block / time…" oninput="renderBlockTable()"></div>
+        <button class="btn btn-sm" data-week-save-btn onclick="saveCurrentWeek()" style="display:inline-flex;align-items:center;gap:5px;background:#16A34A;color:#FFFFFF;border:none;font-weight:800;box-shadow:0 1px 3px rgba(0,0,0,0.15);" title="Save all changes for Week W${state.currentWeek}">
+          <span>💾</span> <span>Save Week Data</span>
+        </button>
         <button class="btn btn-sm ${isBulkOpen ? 'btn-primary' : ''}" onclick="toggleBulkEditPanel()" id="btnToggleBulkEdit" style="display:inline-flex;align-items:center;gap:6px;">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
           <span>${isBulkOpen ? 'Hide Bulk Edit' : '⚡ Bulk Edit Schedule'}</span>
@@ -3808,6 +4708,9 @@ function renderDayDetailPanel(){
         </button>
         <button class="btn btn-sm" onclick="openHorizontalMatrixModal('${day.date}')" style="display:inline-flex;align-items:center;gap:6px;font-weight:700;background:linear-gradient(135deg,#0D9488,#0F766E);color:#FFFFFF;border:none;box-shadow:0 2px 6px rgba(13,148,136,0.25);" title="View complete 96-block horizontal calculation matrix for this day">
           <span style="font-size:14px;">▦</span> <span>96-Blk Calc Matrix</span>
+        </button>
+        <button class="btn btn-sm" onclick="deleteDayFromWeek('${day.date}', event)" style="display:inline-flex;align-items:center;gap:5px;background:#FEF2F2;border:1px solid #FECACA;color:#DC2626;font-weight:700;" title="Delete this day from the active week">
+          <span>🗑</span> <span>Delete Day</span>
         </button>
         <button class="btn btn-sm" onclick="closeDayDetail()">Close ✕</button>
       </div>
@@ -4151,7 +5054,7 @@ function renderBlockTable(){
   const wrap = document.getElementById('blockTableWrap');
   if(!wrap) return;
   const week = weekObj();
-  const day = week.days.find(d=>d.date===state.currentDate);
+  const day = week.days.find(d=>normalizeAppDate(d.date)===normalizeAppDate(state.currentDate));
   if(!day) return;
   initBulkEditState(day);
   const q = (document.getElementById('blockSearch')||{}).value?.toLowerCase() || '';
@@ -4216,11 +5119,15 @@ function renderBlockTable(){
 }
 function editBlock(date, idx, field, value){
   const week = weekObj();
-  const day = week.days.find(d=>d.date===date);
+  const day = week.days.find(d=>normalizeAppDate(d.date)===normalizeAppDate(date));
   if(!day) return;
   const v = parseFloat(value);
   day.blocks[idx][field] = isNaN(v) ? (field === 'nrpcCharge' ? null : 0) : v;
   saveWeek(state.currentWeek);
+  if(typeof THDC_MANUAL_SAVE === 'function') THDC_MANUAL_SAVE();
+  const timeStr = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  window._lastWeekSavedTime = timeStr;
+  updateWeekSaveStatusUI(state.currentWeek, timeStr);
   renderAll();
 }
 
@@ -4439,7 +5346,7 @@ function parseVerticalDsm(rows, cfg){
   if (headerRowIdx < 0 || !colMap) return [];
 
   const daysMap = {};
-  const multiplier = Number(cfg.inputMultiplier) || 1;
+  const multiplier = (cfg.inputUnit === "LU" || cfg.inputMultiplier === 100) ? 100 : (cfg.inputUnit === "MW" || cfg.inputMultiplier === 0.25 ? 0.25 : (Number(cfg.inputMultiplier) || 1));
 
   for (let r = headerRowIdx + 1; r < rows.length; r++) {
     const row = rows[r];
@@ -4620,10 +5527,16 @@ function parseMultiSectionHorizontalDsm(rows, cfg){
   }
 
   const result = [];
-  let mult = Number(cfg.inputMultiplier) || 1;
-  if (detectedUnit === "LU") mult = 100;
-  else if (detectedUnit === "MWh" && (!cfg.inputMultiplier || cfg.inputMultiplier === 100)) {
-    if (detectedUnit === "MWh" && !cfg.forceMultiplier) mult = 1;
+  let mult = 1;
+  if (cfg.inputUnit === "LU" || cfg.inputMultiplier === 100 || detectedUnit === "LU") {
+    mult = 100;
+  } else if (cfg.inputUnit === "MW" || cfg.inputMultiplier === 0.25) {
+    mult = 0.25;
+  } else if (cfg.inputMultiplier && cfg.inputMultiplier !== 100 && cfg.inputUnit !== "MWh" && cfg.inputMultiplier !== 1) {
+    mult = Number(cfg.inputMultiplier);
+  } else {
+    // Default: 1 MWh = 1 MWh
+    mult = 1;
   }
   Object.values(daysMap).forEach(d => {
     if (d.sch.length || d.act.length || d.totSch.length || d.nrpcCharges.length) {
@@ -4680,7 +5593,7 @@ function parseHorizontalDateRows(rows, cfg){
   }
 
   const daysMap = {};
-  const mult = Number(cfg.inputMultiplier) || 1;
+  const mult = (cfg.inputUnit === "LU" || cfg.inputMultiplier === 100) ? 100 : (cfg.inputUnit === "MW" || cfg.inputMultiplier === 0.25 ? 0.25 : (Number(cfg.inputMultiplier) || 1));
   let lastSeenDate = null;
 
   for (let r = 0; r < rows.length; r++) {
@@ -4754,6 +5667,34 @@ function parseHorizontalDateRows(rows, cfg){
   return result.sort((a, b) => a.date.localeCompare(b.date));
 }
 
+function getActivePasteUnitConfig(){
+  const plant = window.currentPlantContext || "Khurja Floating Solar";
+  const baseCfg = (window.THDC_UNIVERSAL && window.THDC_UNIVERSAL.getCfg) ? window.THDC_UNIVERSAL.getCfg(plant) : {};
+  const cfg = {...baseCfg};
+  const radio = document.querySelector('input[name="pasteUnitChoice"]:checked');
+  const choice = radio ? radio.value : (cfg.inputUnit || 'LU');
+  if(choice === 'LU'){
+    cfg.inputUnit = 'LU';
+    cfg.inputMultiplier = 100;
+  } else if(choice === 'MW'){
+    cfg.inputUnit = 'MW';
+    cfg.inputMultiplier = 0.25;
+  } else {
+    cfg.inputUnit = 'MWh';
+    cfg.inputMultiplier = 1;
+  }
+  return cfg;
+}
+window.getActivePasteUnitConfig = getActivePasteUnitConfig;
+
+function onPasteUnitOptionChanged(){
+  const ta = document.getElementById('pasteArea');
+  if(ta && ta.value && ta.value.trim()){
+    previewPaste();
+  }
+}
+window.onPasteUnitOptionChanged = onPasteUnitOptionChanged;
+
 function handleFileUpload(evt){
   const file = evt.target.files?.[0];
   if(!file) return;
@@ -4762,11 +5703,12 @@ function handleFileUpload(evt){
     try{
       const data = new Uint8Array(e.target.result);
       const wb = XLSX.read(data, {type:'array', cellDates:true});
-      const cfg = typeof getCfg === 'function' ? getCfg(window.currentPlantContext||"Khurja Floating Solar") : {};
+      const cfg = getActivePasteUnitConfig();
       const allDays = parseUniversalWorkbook(wb, cfg);
       showPreview(allDays);
     }catch(err){
-      document.getElementById('pastePreview').innerHTML = `<div class="err-msg">Could not read file: ${err.message}</div>`;
+      const pEl = document.getElementById('pastePreview');
+      if(pEl) pEl.innerHTML = `<div class="err-msg">Could not read file: ${err.message}</div>`;
     }
   };
   reader.readAsArrayBuffer(file);
@@ -4775,11 +5717,12 @@ function handleFileUpload(evt){
 function previewPaste(){
   const text = document.getElementById('pasteArea').value;
   if(!text.trim()){
-    document.getElementById('pastePreview').innerHTML = `<div class="err-msg">Paste some data first.</div>`;
+    const pEl = document.getElementById('pastePreview');
+    if(pEl) pEl.innerHTML = `<div class="err-msg">Paste some data first.</div>`;
     return;
   }
   const aoa = text.split('\n').map(line=>line.split('\t'));
-  const cfg = typeof getCfg === 'function' ? getCfg(window.currentPlantContext||"Khurja Floating Solar") : {};
+  const cfg = getActivePasteUnitConfig();
   const days = parseUniversalDsm(aoa, cfg);
   showPreview(days);
 }
@@ -4793,7 +5736,7 @@ function scanForDays(aoa, cfg){
   const days = [];
   let r = 0;
   cfg = cfg || {};
-  const mult = Number(cfg.inputMultiplier) || 1;
+  const mult = (cfg.inputUnit === "LU" || cfg.inputMultiplier === 100) ? 100 : (cfg.inputUnit === "MW" || cfg.inputMultiplier === 0.25 ? 0.25 : (Number(cfg.inputMultiplier) || 1));
 
   while(r < aoa.length){
     const row = aoa[r] || [];
@@ -4894,24 +5837,56 @@ function parseUniversalDsm(rows, cfg){
   
   // Strategy 0: Official Multi-Section Stacked Tables (Koteshwar/Tehri format: Schedule, SRAS, Total Schedule, Actual, Deviation, Freq, Rate, Charges)
   const multi = parseMultiSectionHorizontalDsm(rows, cfg);
-  if(multi && multi.length > 0) return multi;
+  let result = (multi && multi.length > 0) ? multi : null;
 
   // Strategy 1: Vertical table (standard CERC/UPSLDC template)
-  const vert = parseVerticalDsm(rows, cfg);
-  if(vert && vert.length > 0) return vert;
+  if(!result){
+    const vert = parseVerticalDsm(rows, cfg);
+    if(vert && vert.length > 0) result = vert;
+  }
 
   // Strategy 2: Horizontal date-by-row matrix
-  const horiz = parseHorizontalDateRows(rows, cfg);
-  if(horiz && horiz.length > 0) return horiz;
+  if(!result){
+    const horiz = parseHorizontalDateRows(rows, cfg);
+    if(horiz && horiz.length > 0) result = horiz;
+  }
 
   // Strategy 3: Horizontal stacked blocks
-  const stacked = scanForDays(rows, cfg);
-  if(stacked && stacked.length > 0) return stacked;
+  if(!result){
+    const stacked = scanForDays(rows, cfg);
+    if(stacked && stacked.length > 0) result = stacked;
+  }
 
   // Strategy 4: Wide matrix fallback
-  if(typeof parseWide === 'function'){
+  if(!result && typeof parseWide === 'function'){
     const wide = parseWide(rows, cfg);
-    if(wide && wide.length > 0) return wide;
+    if(wide && wide.length > 0) result = wide;
+  }
+
+  if(result && result.length > 0){
+    const dMap = new Map();
+    result.forEach(d => {
+      if(!d || !d.date) return;
+      const normDate = normalizeAppDate(d.date);
+      d.date = normDate;
+      if(!dMap.has(normDate)){
+        dMap.set(normDate, d);
+      } else {
+        const existing = dMap.get(normDate);
+        (d.blocks || []).forEach((b, idx) => {
+          const eb = (existing.blocks || [])[idx] || (existing.blocks || []).find(x => x.idx === b.idx);
+          if(eb){
+            if((!eb.s || eb.s === 0) && b.s) eb.s = b.s;
+            if((!eb.a || eb.a === 0) && b.a) eb.a = b.a;
+            if((!eb.sras || eb.sras === 0) && b.sras) eb.sras = b.sras;
+            if((!eb.r || eb.r === 0) && b.r) eb.r = b.r;
+            if(b.nrpcCharge !== null && b.nrpcCharge !== undefined) eb.nrpcCharge = b.nrpcCharge;
+            if(b.f && b.f !== 50) eb.f = b.f;
+          }
+        });
+      }
+    });
+    return Array.from(dMap.values()).sort((a,b) => a.date.localeCompare(b.date));
   }
 
   return [];
@@ -4978,10 +5953,23 @@ function showPreview(days){
 
   const activePlant = (state.projectMeta && state.projectMeta.plant) || window.currentPlantContext || '';
   const activeCfg = (window.THDC_UNIVERSAL && window.THDC_UNIVERSAL.getCfg) ? window.THDC_UNIVERSAL.getCfg(activePlant) : null;
+  const currentRadioChoice = document.querySelector('input[name="pasteUnitChoice"]:checked')?.value || (activeCfg?.inputUnit || 'LU');
+
   let unitNotice = '';
-  if(activeCfg && (activeCfg.inputUnit === 'LU' || activeCfg.inputMultiplier === 100)){
-    unitNotice = `<div style="background:#F0FDF4;border:1px solid #86EFAC;border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:11.5px;color:#166534;line-height:1.4;">
-      ⚡ <b>Lakh Units (LU) Input Detected for ${activePlant}:</b> Raw data values (Schedule, SRAS, Actual) in LU are automatically converted to MWh (<b>1 LU = 100 MWh</b>) for DSM calculations and reports.
+  if (currentRadioChoice === 'LU' || (activeCfg && activeCfg.inputUnit === 'LU')) {
+    unitNotice = `<div style="background:#ECFDF5;border:1.5px solid #10B981;border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:12px;color:#065F46;line-height:1.4;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+      <span>⚡ <b>Input Data Unit: Lakh Units (LU)</b> for ${activePlant || 'Plant'} · Excel values in LU are converted to standard MWh (<b>1 LU = 100 MWh = 1,00,000 kWh</b>) for all DSM calculations.</span>
+      <span style="font-size:11px;background:#D1FAE5;color:#047857;padding:2px 8px;border-radius:6px;font-weight:800;">1 LU = 100 MWh</span>
+    </div>`;
+  } else if (currentRadioChoice === 'MW' || (activeCfg && activeCfg.inputUnit === 'MW')) {
+    unitNotice = `<div style="background:#FFFBEB;border:1.5px solid #FCD34D;border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:12px;color:#92400E;line-height:1.4;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+      <span>⚡ <b>Input Data Unit: MW Power</b> for ${activePlant || 'Plant'} · 15-minute MW power is divided by 4 to convert to MWh energy.</span>
+      <span style="font-size:11px;background:#FEF3C7;color:#92400E;padding:2px 8px;border-radius:6px;font-weight:800;">MW ÷ 4 = MWh</span>
+    </div>`;
+  } else {
+    unitNotice = `<div style="background:#F0FDF4;border:1px solid #86EFAC;border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:11.5px;color:#166534;line-height:1.4;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+      <span>⚡ <b>Active Energy Unit: MWh (MegaWatt-hours)</b> for ${activePlant || 'Plant'} · 15-minute time-block energy values are processed directly in <b>MWh (1 MWh = 1 MWh)</b>.</span>
+      <span style="font-size:11px;background:#DCFCE7;color:#15803D;padding:2px 8px;border-radius:6px;font-weight:800;">Standard MWh</span>
     </div>`;
   }
   const hasIncomplete = days.some(d => d.blocks.length !== BLOCKS_PER_DAY);
@@ -4997,7 +5985,35 @@ function showPreview(days){
       ⚖ <b>Official NRPC Deviation Charges Detected:</b> 6th parameter / NRPC charges were detected in the input data. Both THDCIL Engine Calculated DSM and NRPC Billed Charges will be available for side-by-side reconciliation on your dashboard.
     </div>` : '';
 
-  let html = fyNotice + unitNotice + nrpcNotice + blockHelpNotice + `<div class="preview-box">` + days.map(d=>{
+  let splitOptionHtml = '';
+  if(days.length === 14){
+    splitOptionHtml = `
+      <div style="background:#FEF3C7;border:1.5px solid #F59E0B;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#92400E;">
+        <div style="font-weight:900;font-size:13px;display:flex;align-items:center;gap:6px;">
+          <span>📦</span> <span>14 Days Detected in Data (2-Week NRPC Fortnightly Account)</span>
+        </div>
+        <div style="margin-top:4px;line-height:1.4;">
+          Indian Grid (CERC/UPSLDC) DSM billing cycles run on exactly 7 days (672 blocks). Select how you want to import these 14 days:
+        </div>
+        <div style="margin-top:8px;display:flex;flex-direction:column;gap:6px;">
+          <label style="font-weight:700;display:flex;align-items:center;gap:6px;cursor:pointer;">
+            <input type="radio" name="importSplitChoice" value="split" checked>
+            <span><b>Split across 2 consecutive weeks (Recommended):</b> Days 1–7 into selected week, Days 8–14 into next week</span>
+          </label>
+          <label style="font-weight:700;display:flex;align-items:center;gap:6px;cursor:pointer;">
+            <input type="radio" name="importSplitChoice" value="first7">
+            <span><b>Import First 7 Days only:</b> Days 1–7 into selected week</span>
+          </label>
+          <label style="font-weight:700;display:flex;align-items:center;gap:6px;cursor:pointer;">
+            <input type="radio" name="importSplitChoice" value="all">
+            <span>Import all 14 days into selected week</span>
+          </label>
+        </div>
+      </div>
+    `;
+  }
+
+  let html = fyNotice + unitNotice + nrpcNotice + blockHelpNotice + splitOptionHtml + `<div class="preview-box">` + days.map(d=>{
     const missingInfo = (d.missingBlocks && d.missingBlocks.length) ? `<span style="color:#B45309;font-size:11px;font-weight:600;margin-left:6px;">(Missing Block: #${d.missingBlocks.slice(0,3).join(', #')}${d.missingBlocks.length>3?'...':''})</span>` : '';
     const nrpcDayCount = (d.blocks||[]).filter(b => b.nrpcCharge !== null && b.nrpcCharge !== undefined).length;
     const nrpcTag = nrpcDayCount > 0 ? `<span style="background:#DBEAFE;color:#1D4ED8;font-size:10.5px;font-weight:700;padding:2px 6px;border-radius:4px;margin-left:6px;">NRPC: ${nrpcDayCount}/96</span>` : '';
@@ -5026,7 +6042,11 @@ function applyPaste(){
   const selectVal = parseInt(document.getElementById('targetWeekSelect')?.value, 10);
   const target = (!isNaN(manualVal) && manualVal >= 1) ? manualVal : (selectVal || state.currentWeek || 1);
   ensureWeek(target);
-  const days = pendingImport.map(d=>{
+
+  const splitChoice = document.querySelector('input[name="importSplitChoice"]:checked')?.value || 'all';
+
+  const mapDayBlocks = (d) => {
+    const normDate = normalizeAppDate(d.date);
     const existingMap = new Map(d.blocks.map(b=>[b.idx, b]));
     const fullBlocks = [];
     for(let i=1; i<=BLOCKS_PER_DAY; i++){
@@ -5047,16 +6067,57 @@ function applyPaste(){
         });
       }
     }
-    return {date: d.date, blocks: fullBlocks};
-  });
-  state.weeks[target].days = days;
-  state.weeks[target].originalDays = JSON.parse(JSON.stringify(days));
-  state.currentWeek = target;
-  state.currentDate = null;
-  saveWeek(target);
+    return {date: normDate, blocks: fullBlocks};
+  };
+
+  if(pendingImport.length === 14 && splitChoice === 'split'){
+    const first7 = pendingImport.slice(0, 7).map(mapDayBlocks);
+    const next7 = pendingImport.slice(7, 14).map(mapDayBlocks);
+    const nextWeek = target + 1;
+    ensureWeek(nextWeek);
+
+    state.weeks[target].days = first7;
+    state.weeks[target].originalDays = JSON.parse(JSON.stringify(first7));
+    state.weeks[nextWeek].days = next7;
+    state.weeks[nextWeek].originalDays = JSON.parse(JSON.stringify(next7));
+
+    state.currentWeek = target;
+    state.currentDate = null;
+    saveWeek(target);
+    saveWeek(nextWeek);
+    if(typeof THDC_MANUAL_SAVE === 'function') THDC_MANUAL_SAVE();
+    if(typeof showToast === 'function'){
+      showToast(`✓ Split 14 days into Week W${String(target).padStart(2,'0')} (7 days) and Week W${String(nextWeek).padStart(2,'0')} (7 days)!`);
+    }
+  } else if(pendingImport.length === 14 && splitChoice === 'first7'){
+    const first7 = pendingImport.slice(0, 7).map(mapDayBlocks);
+    state.weeks[target].days = first7;
+    state.weeks[target].originalDays = JSON.parse(JSON.stringify(first7));
+    state.currentWeek = target;
+    state.currentDate = null;
+    saveWeek(target);
+    if(typeof THDC_MANUAL_SAVE === 'function') THDC_MANUAL_SAVE();
+    if(typeof showToast === 'function'){
+      showToast(`✓ Imported first 7 days into Week W${String(target).padStart(2,'0')}!`);
+    }
+  } else {
+    const days = pendingImport.map(mapDayBlocks);
+    state.weeks[target].days = days;
+    state.weeks[target].originalDays = JSON.parse(JSON.stringify(days));
+    state.currentWeek = target;
+    state.currentDate = null;
+    saveWeek(target);
+    if(typeof THDC_MANUAL_SAVE === 'function') THDC_MANUAL_SAVE();
+    if(typeof showToast === 'function'){
+      showToast(`✓ Imported ${days.length} days into Week W${String(target).padStart(2,'0')}!`);
+    }
+  }
+
   closeModal('pasteModal');
-  document.getElementById('pasteArea').value='';
-  document.getElementById('pastePreview').innerHTML='';
+  const pa = document.getElementById('pasteArea');
+  if(pa) pa.value='';
+  const pp = document.getElementById('pastePreview');
+  if(pp) pp.innerHTML='';
   pendingImport = null;
   renderShell();
   renderAll();
@@ -5251,7 +6312,7 @@ function buildDailySummarySheet(week){
 }
 
 /* Official Multi-Section Stacked Tables Sheet Generator (Koteshwar/Tehri Format) */
-function buildOfficialMultiSectionWorksheet(week, plantLabel){
+function buildOfficialMultiSectionWorksheet(week, plantLabel, unitChoice){
   const fullPlantName = plantLabel || (state.projectMeta && state.projectMeta.plant) || "Koteshwar HEP";
   let stnName = "KOTESHWAR";
   if (/psp/i.test(fullPlantName)) {
@@ -5265,7 +6326,7 @@ function buildOfficialMultiSectionWorksheet(week, plantLabel){
   }
 
   const plantCfg = (window.THDC_UNIVERSAL && window.THDC_UNIVERSAL.getCfg) ? window.THDC_UNIVERSAL.getCfg(fullPlantName) : null;
-  const isLU = plantCfg && (plantCfg.inputUnit === "LU" || plantCfg.inputMultiplier === 100);
+  const isLU = (unitChoice === "LU") || (plantCfg && plantCfg.inputUnit === "LU" && plantCfg.inputMultiplier === 100);
   const unitDivisor = isLU ? 100 : 1;
   const unitLabel = isLU ? "LU" : "MWh";
   let days = [];
@@ -5274,24 +6335,24 @@ function buildOfficialMultiSectionWorksheet(week, plantLabel){
   } else if (week && week.days && week.days.length > 0) {
     days = week.days;
   } else {
-    // Default fallback dates and sample values from the user official format
+    // Default fallback dates and sample values in MWh
     const defaultDates = ["2026-08-24","2026-08-25","2026-08-26","2026-08-27","2026-08-28","2026-08-29","2026-08-30"];
     let defaultSchs, defaultSras, defaultActs;
     if (/psp/i.test(fullPlantName)) {
-      // Tehri PSP (1000 MW Pumped Storage) - values in LU
-      defaultSchs = [1.80, 1.75, 1.90, 1.85, 1.70, 1.50, 1.50];
+      // Tehri PSP (1000 MW Pumped Storage) - values in MWh
+      defaultSchs = [180.0, 175.0, 190.0, 185.0, 170.0, 150.0, 150.0];
       defaultSras = [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00];
-      defaultActs = [1.812, 1.745, 1.915, 1.862, 1.691, 1.508, 1.492];
+      defaultActs = [181.2, 174.5, 191.5, 186.2, 169.1, 150.8, 149.2];
     } else if (/tehri/i.test(fullPlantName)) {
-      // Tehri HPP (1000 MW Hydro) - values in LU
-      defaultSchs = [2.00, 1.85, 1.90, 2.10, 1.95, 1.50, 1.60];
-      defaultSras = [-0.052, -0.038, 0.024, 0.041, -0.016, 0.018, 0.011];
-      defaultActs = [2.018, 1.862, 1.924, 2.138, 1.942, 1.516, 1.612];
+      // Tehri HPP (1000 MW Hydro) - values in MWh
+      defaultSchs = [200.0, 185.0, 190.0, 210.0, 195.0, 150.0, 160.0];
+      defaultSras = [-5.2, -3.8, 2.4, 4.1, -1.6, 1.8, 1.1];
+      defaultActs = [201.8, 186.2, 192.4, 213.8, 194.2, 151.6, 161.2];
     } else {
-      // Koteshwar HEP (400 MW Hydro) - values in LU
-      defaultSchs = [1.00, 0.90, 0.675, 0.90, 0.90, 0.45, 0.45];
-      defaultSras = [-0.0834, -0.0725, -0.0680, 0.0311, 0.0069, 0.0097, 0.0195];
-      defaultActs = [0.9100, 0.915636, 0.7420, 0.940909, 0.955818, 0.460727, 0.470727];
+      // Koteshwar HEP (400 MW Hydro) - values in MWh
+      defaultSchs = [100.0, 90.0, 67.5, 90.0, 90.0, 45.0, 45.0];
+      defaultSras = [-8.34, -7.25, -6.80, 3.11, 0.69, 0.97, 1.95];
+      defaultActs = [91.00, 91.56, 74.20, 94.09, 95.58, 46.07, 47.07];
     }
     const defaultFreqs = [49.99, 49.93, 49.99, 49.99, 49.91, 49.99, 50.00];
     days = defaultDates.map((d, idx) => {
@@ -5300,9 +6361,9 @@ function buildOfficialMultiSectionWorksheet(week, plantLabel){
         blocks.push({
           idx: b,
           t: `${String(Math.floor((b-1)/4)).padStart(2,'0')}:${String(((b-1)%4)*15).padStart(2,'0')}:00`,
-          s: defaultSchs[idx] * (isLU ? 100 : 1),
-          sras: defaultSras[idx] * (isLU ? 100 : 1),
-          a: defaultActs[idx] * (isLU ? 100 : 1),
+          s: defaultSchs[idx],
+          sras: defaultSras[idx],
+          a: defaultActs[idx],
           f: defaultFreqs[idx],
           r: 2.828
         });
@@ -5587,8 +6648,9 @@ window.buildOfficialMultiSectionWorksheet = buildOfficialMultiSectionWorksheet;
    4. TOTAL SCHEDULED GEN (SG+SRAS) IN LU/MWh
    5. REFERENCE RATE Rs./kWh
    6. DEVIATION CHARGES AS PER NRPC IN ₹
+   + OPTIONAL 7. GRID FREQUENCY IN HZ (For 7-Param Templates)
 */
-function buildNrpc6ParamWorksheet(week, plantLabel){
+function buildNrpc6ParamWorksheet(week, plantLabel, unitChoice, includeFrequency){
   const aoa = [];
   const merges = [];
   const rowStyles = {};
@@ -5599,7 +6661,7 @@ function buildNrpc6ParamWorksheet(week, plantLabel){
   else if (/tehri/i.test(plantLabel)) stnName = "TEHRI HPP";
 
   const plantCfg = (window.THDC_UNIVERSAL && window.THDC_UNIVERSAL.getCfg) ? window.THDC_UNIVERSAL.getCfg(plantLabel) : null;
-  const isLU = plantCfg && (plantCfg.inputUnit === "LU" || plantCfg.inputMultiplier === 100);
+  const isLU = (unitChoice === "LU") || (plantCfg && plantCfg.inputUnit === "LU" && plantCfg.inputMultiplier === 100);
   const unitLabel = isLU ? "LU" : "MWh";
   const unitDivisor = isLU ? 100 : 1;
 
@@ -5644,6 +6706,7 @@ function buildNrpc6ParamWorksheet(week, plantLabel){
   const styleBannerGreen  = { fill: { fgColor: { rgb: "BBF7D0" } }, font: fontBanner, alignment: { horizontal: "center", vertical: "center" } };
   const styleBannerTeal   = { fill: { fgColor: { rgb: "CCFBF1" } }, font: fontBanner, alignment: { horizontal: "center", vertical: "center" } };
   const styleBannerBlue   = { fill: { fgColor: { rgb: "DBEAFE" } }, font: fontBanner, alignment: { horizontal: "center", vertical: "center" } };
+  const styleBannerGray   = { fill: { fgColor: { rgb: "E5E7EB" } }, font: fontBanner, alignment: { horizontal: "center", vertical: "center" } };
   const styleSubHeader    = { fill: { fgColor: { rgb: "F3F4F6" } }, font: fontHdr, border: borderThin, alignment: { horizontal: "center", vertical: "center" } };
   const styleDataNum      = { font: fontData, border: borderThin, alignment: { horizontal: "right", vertical: "center" } };
   const styleDataText     = { font: fontData, border: borderThin, alignment: { horizontal: "left", vertical: "center" } };
@@ -5803,6 +6866,31 @@ function buildNrpc6ParamWorksheet(week, plantLabel){
     aoa.push(row);
   });
 
+  if (includeFrequency) {
+    aoa.push([]); aoa.push([]);
+    // --- 7. GRID FREQUENCY IN HZ ---
+    const r7Banner = aoa.length;
+    aoa.push(["7. GRID FREQUENCY IN Hz"]);
+    merges.push({ s: { r: r7Banner, c: 0 }, e: { r: r7Banner, c: 97 } });
+    rowStyles[r7Banner] = styleBannerGray;
+
+    const r7Hdr = aoa.length;
+    const h7 = ["Frequency_Date", "Stn_Name"];
+    for (let b = 1; b <= 96; b++) h7.push("F" + b);
+    aoa.push(h7);
+    rowStyles[r7Hdr] = styleSubHeader;
+
+    days.forEach((d) => {
+      const row = [dateDisplay(d.date), stnName];
+      for (let b = 1; b <= 96; b++) {
+        const blk = d.blocks[b - 1] || {};
+        const fVal = (blk.f !== undefined && blk.f !== null && !isNaN(Number(blk.f))) ? Number(Number(blk.f).toFixed(2)) : 50.00;
+        row.push(fVal);
+      }
+      aoa.push(row);
+    });
+  }
+
   const ws = XLSX.utils.aoa_to_sheet(aoa);
   ws['!merges'] = merges;
 
@@ -5834,7 +6922,11 @@ function buildNrpc6ParamWorksheet(week, plantLabel){
 
   return ws;
 }
+function buildNrpc7ParamWorksheet(week, plantLabel, unitChoice){
+  return buildNrpc6ParamWorksheet(week, plantLabel, unitChoice, true);
+}
 window.buildNrpc6ParamWorksheet = buildNrpc6ParamWorksheet;
+window.buildNrpc7ParamWorksheet = buildNrpc7ParamWorksheet;
 
 /* ================= NRPC RECONCILIATION & AUDIT BANNER ================= */
 function renderNrpcComparisonBanner(){
@@ -5854,9 +6946,11 @@ function renderNrpcComparisonBanner(){
           </div>
         </div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-          <button type="button" class="btn btn-sm" onclick="loadSampleNrpcDataToPaste()" style="background:#2563EB;color:#FFFFFF;border:none;font-weight:800;padding:6px 14px;border-radius:6px;box-shadow:0 2px 4px rgba(37,99,235,0.2);cursor:pointer;">⚡ Load 6-Param Sample Data</button>
+          <button type="button" class="btn btn-sm" onclick="loadSampleNrpcDataToPaste(false)" style="background:#2563EB;color:#FFFFFF;border:none;font-weight:800;padding:6px 12px;border-radius:6px;box-shadow:0 2px 4px rgba(37,99,235,0.2);cursor:pointer;">⚡ Load 6-Param Sample</button>
+          <button type="button" class="btn btn-sm" onclick="loadSampleNrpcDataToPaste(true)" style="background:#0D9488;color:#FFFFFF;border:none;font-weight:800;padding:6px 12px;border-radius:6px;box-shadow:0 2px 4px rgba(13,148,136,0.2);cursor:pointer;" title="Load sample 7-parameter data including Grid Frequency in Hz">⚡ Load 7-Param (+Freq)</button>
           <button type="button" class="btn btn-sm" onclick="openPasteModal()" style="background:#FFFFFF;color:#1E40AF;border:1px solid #93C5FD;font-weight:700;padding:6px 12px;border-radius:6px;cursor:pointer;">📋 Paste NRPC Data</button>
-          <button type="button" class="btn btn-sm" onclick="downloadNrpc6ParamTemplate()" style="background:#F1F5F9;color:#334155;border:1px solid #CBD5E1;font-weight:700;padding:6px 12px;border-radius:6px;cursor:pointer;">📥 Download 6-Param Template</button>
+          <button type="button" class="btn btn-sm" onclick="downloadNrpc6ParamTemplate(null, 'LU')" style="background:#F1F5F9;color:#065F46;border:1px solid #86EFAC;font-weight:700;padding:6px 10px;border-radius:6px;cursor:pointer;" title="Download 6-Param Template in LU">📥 6-Param (LU)</button>
+          <button type="button" class="btn btn-sm" onclick="downloadNrpc7ParamTemplate(null, 'LU')" style="background:#F1F5F9;color:#047857;border:1px solid #4ADE80;font-weight:700;padding:6px 10px;border-radius:6px;cursor:pointer;" title="Download 7-Param Template including Grid Frequency in Hz in LU">📥 7-Param + Freq (LU)</button>
         </div>
       </div>
     `;
@@ -5891,6 +6985,52 @@ function renderNrpcComparisonBanner(){
     `;
   }).join('');
 
+  const curMode = window.THDC_DSM_CALC_MODE || 'ADOPT_NRPC';
+  const isInverted = window.THDC_INVERT_SIGN || false;
+
+  const modeBadgeText = curMode === 'ADOPT_NRPC' ? '✓ Adopt Official NRPC Statement (0% Variance)' :
+                       (curMode === 'NRPC_LINEAR' ? '⚡ NRPC Linear Rate Formula (Dev × Rate × 1000)' :
+                       (curMode === 'HYDRO_ROR' ? '💧 Hydro RoR Mode (No 25MW Cap)' : '🏛️ CERC 2024 Tiered Multipliers'));
+
+  let diagHtml = '';
+  if (!isMatched) {
+    diagHtml = `
+      <div style="background:#FFFBEB;border:1.5px solid #FCD34D;border-radius:10px;padding:14px 18px;margin-bottom:14px;color:#78350F;line-height:1.5;">
+        <div style="font-weight:900;font-size:13.5px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+          <span style="display:flex;align-items:center;gap:6px;">
+            <span>🔍</span> <span><b>कैलकुलेशन में अंतर क्यों आ रहा है? (Discrepancy Root Cause Analysis):</b></span>
+          </span>
+          <span style="font-size:12px;background:#FEF3C7;color:#92400E;padding:3px 10px;border-radius:6px;font-weight:800;border:1px solid #FDE68A;">
+            Variance: ${g.diffCharge>0?'+':''}${fmtInr(g.diffCharge)}
+          </span>
+        </div>
+        <div style="font-size:12px;color:#92400E;display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:10px;">
+          <div style="background:#FFFFFF;border:1px solid #FDE68A;border-radius:8px;padding:10px 12px;">
+            <div style="font-weight:800;color:#B45309;margin-bottom:4px;">1. CERC Frequency Penalty Tiers:</div>
+            THDCIL Engine default में CERC 2024 grid frequency multipliers (10% volume limit, 25 MWh thermal cap, 150%-200% under-injection penalties) लागू करता है, जिससे payable DSM charge बढ़ जाता है।
+          </div>
+          <div style="background:#FFFFFF;border:1px solid #FDE68A;border-radius:8px;padding:10px 12px;">
+            <div style="font-weight:800;color:#B45309;margin-bottom:4px;">2. Official NRPC Statement Billing:</div>
+            NRPC weekly accounts में deviation charges direct linear reference rate (Deviation × Rate × 1000) पर बिना 25 MWh thermal cap के बिल किए जाते हैं।
+          </div>
+        </div>
+        <div style="margin-top:10px;padding-top:10px;border-top:1px dashed #FDE68A;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+          <span style="font-size:12px;font-weight:700;">
+            💡 <b>समाधान (One-Click Fix):</b> अपनी Excel के official bill से 100% मैच करने के लिए नीचे <b>"Adopt Official NRPC Charges"</b> बटन दबाएं:
+          </span>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button type="button" class="btn btn-sm" onclick="setDsmCalcMode('ADOPT_NRPC')" style="background:#16A34A;color:#FFFFFF;border:none;font-weight:800;padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer;box-shadow:0 2px 4px rgba(22,163,74,0.25);">
+              ✓ Adopt Official NRPC Charges (Zero Variance)
+            </button>
+            <button type="button" class="btn btn-sm" onclick="setDsmCalcMode('NRPC_LINEAR')" style="background:#0284C7;color:#FFFFFF;border:none;font-weight:700;padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer;">
+              ⚡ Match NRPC Linear Formula
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   container.innerHTML = `
     <div class="panel" style="border:1.5px solid ${isMatched ? '#86EFAC' : '#FCA5A5'};background:#FFFFFF;border-radius:12px;padding:16px 20px;margin-bottom:18px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;border-bottom:1px dashed #E2E8F0;padding-bottom:12px;margin-bottom:14px;">
@@ -5898,36 +7038,74 @@ function renderNrpcComparisonBanner(){
           <div style="display:grid;place-items:center;width:40px;height:40px;border-radius:10px;background:${statusBg};color:${statusColor};font-size:20px;font-weight:900;">⚡</div>
           <div>
             <div style="font-weight:900;font-size:15px;color:#0F172A;">THDCIL Engine vs Official NRPC Statement Reconciliation &amp; Audit</div>
-            <div style="font-size:12px;color:#475569;">Detailed audit comparing THDCIL 96-block algorithm against official NRPC billed statement</div>
+            <div style="font-size:12px;color:#475569;">Active Mode: <b style="color:#1D4ED8;">${modeBadgeText}</b> · Detailed 96-block audit against official NRPC billed statement</div>
           </div>
         </div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
           <span style="padding:5px 14px;border-radius:20px;font-size:12px;font-weight:800;background:${statusBg};color:${statusColor};">
             ${statusText}
           </span>
+          <button type="button" class="btn btn-sm" onclick="openFormulaModal()" style="background:#F1F5F9;color:#1E293B;border:1px solid #CBD5E1;font-weight:700;font-size:11.5px;cursor:pointer;">⚙ Formula Settings</button>
           <button type="button" class="btn btn-sm" onclick="openPasteModal()" style="background:#F8FAFC;color:#334155;border:1px solid #CBD5E1;font-weight:700;font-size:11.5px;cursor:pointer;">📋 Re-Paste Data</button>
-          <button type="button" class="btn btn-sm" onclick="downloadNrpc6ParamTemplate()" style="background:#1E40AF;color:#FFFFFF;border:none;font-weight:700;font-size:11.5px;cursor:pointer;">📥 Download 6-Param Template</button>
+          <button type="button" class="btn btn-sm" onclick="downloadNrpc6ParamTemplate(null, 'LU')" style="background:#065F46;color:#FFFFFF;border:none;font-weight:700;font-size:11.5px;cursor:pointer;" title="Download Official NRPC 6-Param Template in LU (Without Frequency)">📥 6-Param (LU)</button>
+          <button type="button" class="btn btn-sm" onclick="downloadNrpc7ParamTemplate(null, 'LU')" style="background:#0D9488;color:#FFFFFF;border:none;font-weight:700;font-size:11.5px;cursor:pointer;" title="Download 7-Param Template including Grid Frequency in Hz in LU">📥 7-Param + Freq (LU)</button>
         </div>
       </div>
 
-      <!-- 3-Column Comparative Summary Cards -->
-      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));gap:14px;margin-bottom:16px;">
+      <!-- Quick Calculation Engine Mode Switcher Bar -->
+      <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:800;color:#334155;">
+          <span>⚙️ Calculation Method (गणना का तरीका):</span>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+          <button type="button" class="btn btn-xs" onclick="setDsmCalcMode('ADOPT_NRPC')" style="background:${curMode==='ADOPT_NRPC'?'#16A34A':'#FFFFFF'};color:${curMode==='ADOPT_NRPC'?'#FFFFFF':'#15803D'};border:1.5px solid #16A34A;font-weight:800;padding:5px 11px;border-radius:6px;cursor:pointer;font-size:11.5px;" title="Adopt Column 6 NRPC charges directly from your Excel (100% match, zero variance)">
+            ✓ Adopt NRPC Billed Charges (0% Variance)
+          </button>
+          <button type="button" class="btn btn-xs" onclick="setDsmCalcMode('NRPC_LINEAR')" style="background:${curMode==='NRPC_LINEAR'?'#0284C7':'#FFFFFF'};color:${curMode==='NRPC_LINEAR'?'#FFFFFF':'#0369A1'};border:1.5px solid #0284C7;font-weight:800;padding:5px 11px;border-radius:6px;cursor:pointer;font-size:11.5px;" title="Direct Linear Rate Formula: Deviation (MWh) × Ref Rate (Rs/kWh) × 1000">
+            ⚡ NRPC Linear Rate (Dev × Rate)
+          </button>
+          <button type="button" class="btn btn-xs" onclick="applyFormulaPreset('hydro')" style="background:${curMode==='HYDRO_ROR'?'#2563EB':'#FFFFFF'};color:${curMode==='HYDRO_ROR'?'#FFFFFF':'#1D4ED8'};border:1.5px solid #2563EB;font-weight:700;padding:5px 11px;border-radius:6px;cursor:pointer;font-size:11.5px;" title="Hydro RoR Rules without 25 MWh thermal volume limit cap">
+            💧 Hydro RoR (No 25MW Cap)
+          </button>
+          <button type="button" class="btn btn-xs" onclick="setDsmCalcMode('CERC_TIERED')" style="background:${curMode==='CERC_TIERED'?'#475569':'#FFFFFF'};color:${curMode==='CERC_TIERED'?'#FFFFFF':'#334155'};border:1.5px solid #64748B;font-weight:700;padding:5px 11px;border-radius:6px;cursor:pointer;font-size:11.5px;" title="Standard CERC 2024 Grid Frequency Multipliers">
+            🏛️ CERC Tiered Mode
+          </button>
+          <button type="button" class="btn btn-xs" onclick="toggleDsmInvertSign()" style="background:#FFFFFF;color:#6B21A8;border:1px solid #D8B4FE;font-weight:700;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:11px;" title="Flip positive/negative sign convention if regional SLDC bills with inverted sign">
+            ± ${isInverted ? 'Sign: Inverted (-/+)' : 'Sign: Standard (+/-)'}
+          </button>
+        </div>
+      </div>
+
+      ${diagHtml}
+
+      <!-- 4-Column Comparative Summary Cards -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:12px;margin-bottom:16px;">
         <div style="background:#F8FAFC;border:1px solid #CBD5E1;border-radius:10px;padding:14px;">
           <div style="font-size:11.5px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">THDCIL Engine Calculated DSM</div>
           <div style="font-size:22px;font-weight:900;font-family:var(--mono);color:${g.charge<0?'#16A34A':'#DC2626'};">${fmtInr(g.charge)}</div>
-          <div style="font-size:11.5px;color:#64748B;margin-top:4px;">Calculated from 96-block Sch, SRAS, Act &amp; Reference Rate</div>
+          <div style="font-size:11.5px;color:#64748B;margin-top:4px;">Calculated using active mode: <b>${curMode}</b></div>
         </div>
 
         <div style="background:#F8FAFC;border:1px solid #CBD5E1;border-radius:10px;padding:14px;">
           <div style="font-size:11.5px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Official NRPC Statement DSM</div>
           <div style="font-size:22px;font-weight:900;font-family:var(--mono);color:${g.nrpcCharge<0?'#16A34A':'#DC2626'};">${fmtInr(g.nrpcCharge)}</div>
-          <div style="font-size:11.5px;color:#64748B;margin-top:4px;">Official weekly deviation settlement billed by NRPC</div>
+          <div style="font-size:11.5px;color:#64748B;margin-top:4px;">Official weekly deviation settlement billed in Excel / NRPC</div>
         </div>
 
         <div style="background:${statusBg};border:1px solid ${isMatched?'#86EFAC':'#FCA5A5'};border-radius:10px;padding:14px;">
           <div style="font-size:11.5px;font-weight:800;color:${statusColor};text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">THDCIL vs NRPC Variance</div>
           <div style="font-size:22px;font-weight:900;font-family:var(--mono);color:${statusColor};">${g.diffCharge===0 ? '₹0 (0.00%)' : (g.diffCharge>0?'+':'')+fmtInr(g.diffCharge)}</div>
-          <div style="font-size:11.5px;color:${statusColor};margin-top:4px;">${isMatched ? 'All blocks verified with zero variance against NRPC' : 'Discrepancy = THDCIL Engine − NRPC Statement'}</div>
+          <div style="font-size:11.5px;color:${statusColor};margin-top:4px;">${isMatched ? '✓ All 96 blocks 100% reconciled with zero variance against NRPC' : 'Discrepancy = THDCIL Engine − NRPC Statement'}</div>
+        </div>
+
+        <div style="background:#F8FAFC;border:1px solid #CBD5E1;border-radius:10px;padding:14px;">
+          <div style="font-size:11.5px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Grid Frequency Mode</div>
+          <div style="font-size:18px;font-weight:900;font-family:var(--mono);color:#0F172A;">
+            ${(week.days||[]).some(d => (d.blocks||[]).some(b => b.f !== undefined && b.f !== null && Math.abs(b.f - 50.00) > 0.001)) ? 'Custom Logged (Hz)' : '50.00 Hz (Normal Default)'}
+          </div>
+          <div style="font-size:11.5px;color:#64748B;margin-top:4px;">
+            ${(week.days||[]).some(d => (d.blocks||[]).some(b => b.f !== undefined && b.f !== null && Math.abs(b.f - 50.00) > 0.001)) ? '✓ 96-block frequency data present in Excel' : 'ℹ NRPC bills omit frequency; engine defaults to 50.00 Hz'}
+          </div>
         </div>
       </div>
 
@@ -8017,7 +9195,8 @@ function renderFrequencyResponseVisible(){
     blocks.push({date:d.date,idx:Number(b.idx)||0,time:b.t||'',f:Number(b.f)||0,dev:Number(r.dev)||0,devPct:Number(r.devPct)||0,charge:Number(r.charge)||0});
   }));
   if(!blocks.length){
-    document.getElementById('frequencyResponseKPIs').innerHTML='<div style="font-size:9px;color:#6B7D90">No block data loaded.</div>';
+    const kpiEl = document.getElementById('frequencyResponseKPIs');
+    if(kpiEl) kpiEl.innerHTML='<div style="font-size:9px;color:#6B7D90">No block data loaded.</div>';
     return;
   }
   const low=49.97,high=50.03;
@@ -8029,7 +9208,9 @@ function renderFrequencyResponseVisible(){
   const minF=Math.min(...blocks.map(b=>b.f)),maxF=Math.max(...blocks.map(b=>b.f));
   const score=((support.length-adverse.length)/(blocks.length||1))*100;
 
-  document.getElementById('frequencyResponseKPIs').innerHTML=`
+  const kpisEl = document.getElementById('frequencyResponseKPIs');
+  if(kpisEl){
+    kpisEl.innerHTML=`
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px">
       <div class="kpi-card c-red" style="padding:9px"><div class="kpi-label">GRID STRESS</div><div class="kpi-value red" style="font-size:17px">${stress.length}</div><div class="kpi-sub">Low F + Under</div></div>
       <div class="kpi-card c-green" style="padding:9px"><div class="kpi-label">FREQ SUPPORT</div><div class="kpi-value green" style="font-size:17px">${support.length}</div><div class="kpi-sub">Directionally supportive</div></div>
@@ -8040,8 +9221,11 @@ function renderFrequencyResponseVisible(){
       <div class="kpi-card c-red" style="padding:9px"><div class="kpi-label">UNDER @ LOW F</div><div class="kpi-value red" style="font-size:14px">${stress.length}</div><div class="kpi-sub">avg dev ${avg(stress,'dev').toFixed(3)} MWh</div></div>
       <div class="kpi-card c-green" style="padding:9px"><div class="kpi-label">OVER @ LOW F</div><div class="kpi-value green" style="font-size:14px">${blocks.filter(b=>b.f<low&&b.dev>0).length}</div><div class="kpi-sub">avg dev ${avg(blocks.filter(b=>b.f<low&&b.dev>0),'dev').toFixed(3)} MWh</div></div>
     </div>`;
+  }
 
-  document.getElementById('frequencyResponseExplanation').innerHTML=`
+  const expEl = document.getElementById('frequencyResponseExplanation');
+  if(expEl){
+    expEl.innerHTML=`
     <div style="background:#F8FBFE;border-left:3px solid #0B63CE;border-radius:6px;padding:9px;font-size:9px;line-height:1.55;">
       <b>Interpretation:</b>
       Low frequency + <b style="color:#C1403A">under-injection = GRID STRESS</b>;
@@ -8050,6 +9234,7 @@ function renderFrequencyResponseVisible(){
       <br><b>Observed frequency-response score:</b> ${score>=0?'+':''}${score.toFixed(1)}.
       <span style="color:#6B7D90">This is a directional data relationship, not proof of causation.</span>
     </div>`;
+  }
 
   const mini=blocks.slice().sort((a,b)=>a.idx-b.idx).slice(0,96).map((b,i)=>{
     let label,cls;
@@ -8059,11 +9244,14 @@ function renderFrequencyResponseVisible(){
     else {label='NEUTRAL';cls='pill none';}
     return `<tr><td>#${b.idx}</td><td>${b.time}</td><td>${b.f.toFixed(2)} Hz</td><td class="${b.dev<0?'cell-neg':'cell-pos'}">${b.dev>=0?'+':''}${b.dev.toFixed(3)} MWh</td><td><span class="${cls}">${label}</span></td></tr>`;
   }).join('');
-  document.getElementById('frequencyResponseMiniTable').innerHTML=`
+  const miniTableEl = document.getElementById('frequencyResponseMiniTable');
+  if(miniTableEl){
+    miniTableEl.innerHTML=`
     <div class="table-scroll" style="max-height:260px"><table>
       <thead><tr><th>Block</th><th>Time</th><th>Freq</th><th>Deviation</th><th>Response</th></tr></thead>
       <tbody>${mini}</tbody>
     </table></div>`;
+  }
 
   if(typeof Chart!=='undefined'){
     const c=document.getElementById('frequencyResponseTimelineChart');
@@ -8184,7 +9372,12 @@ function renderAll(){
   renderWeekwiseSummary();
   populateWeekContextControls();
   renderDateTable();
-  if(state.currentDate){ renderDayDetailPanel(); } else { document.getElementById('dayDetailPanel').style.display='none'; }
+  if(state.currentDate){
+    renderDayDetailPanel();
+  } else {
+    const ddp = document.getElementById('dayDetailPanel');
+    if(ddp) ddp.style.display='none';
+  }
   renderCharts();
 }
 
@@ -8556,9 +9749,15 @@ async function init(){
         for(let n = 1; n <= WEEK_COUNT; n++){
           const x = get(k('week', n));
           if(x){
-            state.weeks[n] = JSON.parse(x);
-            state.weeks[n].dsaDate = state.weeks[n].dsaDate || state.weeks[n].dsaDated || '';
-            foundAny = true;
+            try {
+              const parsedW = JSON.parse(x);
+              if(parsedW && typeof parsedW === 'object'){
+                if(!Array.isArray(parsedW.days)) parsedW.days = [];
+                state.weeks[n] = parsedW;
+                state.weeks[n].dsaDate = state.weeks[n].dsaDate || state.weeks[n].dsaDated || '';
+                foundAny = true;
+              }
+            } catch(e){}
           }
         }
         // Fallback for default FY 2024-25 to read legacy unpartitioned keys
@@ -9372,16 +10571,18 @@ function downloadVerticalDsmTemplate(){
   XLSX.writeFile(wb, 'THDC_DSM_Columnar_Template.xlsx');
 }
 
-function downloadPlantTemplate(plantName){
+function downloadPlantTemplate(plantName, unitChoice){
   if (!plantName) plantName = (state.projectMeta && state.projectMeta.plant) || 'Koteshwar HEP';
   const isCurrentPlant = state.projectMeta && state.projectMeta.plant && state.projectMeta.plant.toLowerCase().includes(plantName.toLowerCase().split(" ")[0]);
   const curWeek = (isCurrentPlant && typeof weekObj === 'function') ? weekObj() : null;
-  const ws = buildOfficialMultiSectionWorksheet(curWeek, plantName);
+  const isLU = unitChoice === 'LU';
+  const ws = buildOfficialMultiSectionWorksheet(curWeek, plantName, unitChoice);
   const wb = XLSX.utils.book_new();
   const plantSlug = String(plantName).replace(/[^A-Za-z0-9]+/g, '_');
-  XLSX.utils.book_append_sheet(wb, ws, `${plantSlug}_LU_Statement`);
+  const unitTag = isLU ? 'LU' : 'MWh';
+  XLSX.utils.book_append_sheet(wb, ws, `${plantSlug}_${unitTag}_Statement`);
   
-  const fileName = `THDCIL_${plantSlug}_LU_DSM_Template.xlsx`;
+  const fileName = `THDCIL_${plantSlug}_${unitTag}_DSM_Template.xlsx`;
   XLSX.writeFile(wb, fileName);
 }
 
@@ -9398,20 +10599,37 @@ function downloadOfficialMultiTableTemplate(){
   downloadPlantTemplate(plant);
 }
 
-function downloadNrpc6ParamTemplate(plantName){
+function downloadNrpc6ParamTemplate(plantName, unitChoice){
   if (!plantName) plantName = (state.projectMeta && state.projectMeta.plant) || 'Koteshwar HEP';
   const isCurrentPlant = state.projectMeta && state.projectMeta.plant && state.projectMeta.plant.toLowerCase().includes(plantName.toLowerCase().split(" ")[0]);
   const curWeek = (isCurrentPlant && typeof weekObj === 'function') ? weekObj() : null;
-  const ws = buildNrpc6ParamWorksheet(curWeek, plantName);
+  const isLU = unitChoice === 'LU';
+  const ws = buildNrpc6ParamWorksheet(curWeek, plantName, unitChoice, false);
   const wb = XLSX.utils.book_new();
   const plantSlug = String(plantName).replace(/[^A-Za-z0-9]+/g, '_');
-  XLSX.utils.book_append_sheet(wb, ws, `NRPC_6Param_Statement`);
+  const unitTag = isLU ? 'LU' : 'MWh';
+  XLSX.utils.book_append_sheet(wb, ws, `6Param_${unitTag}_Statement`);
   
-  const fileName = `THDCIL_${plantSlug}_6Param_NRPC_Statement_Template.xlsx`;
+  const fileName = `THDCIL_${plantSlug}_6Param_NRPC_${unitTag}_Statement_Template.xlsx`;
   XLSX.writeFile(wb, fileName);
 }
 
-function loadSampleNrpcDataToPaste(){
+function downloadNrpc7ParamTemplate(plantName, unitChoice){
+  if (!plantName) plantName = (state.projectMeta && state.projectMeta.plant) || 'Koteshwar HEP';
+  const isCurrentPlant = state.projectMeta && state.projectMeta.plant && state.projectMeta.plant.toLowerCase().includes(plantName.toLowerCase().split(" ")[0]);
+  const curWeek = (isCurrentPlant && typeof weekObj === 'function') ? weekObj() : null;
+  const isLU = unitChoice === 'LU';
+  const ws = buildNrpc6ParamWorksheet(curWeek, plantName, unitChoice, true);
+  const wb = XLSX.utils.book_new();
+  const plantSlug = String(plantName).replace(/[^A-Za-z0-9]+/g, '_');
+  const unitTag = isLU ? 'LU' : 'MWh';
+  XLSX.utils.book_append_sheet(wb, ws, `7Param_withFreq_${unitTag}`);
+  
+  const fileName = `THDCIL_${plantSlug}_7Param_withFreq_${unitTag}_Statement_Template.xlsx`;
+  XLSX.writeFile(wb, fileName);
+}
+
+function loadSampleNrpcDataToPaste(includeFreq){
   const plantLabel = (state.projectMeta && state.projectMeta.plant) || 'Koteshwar HEP';
   let stnName = "KOTESHWAR";
   if (/psp/i.test(plantLabel)) stnName = "TEHRI PSP";
@@ -9421,56 +10639,56 @@ function loadSampleNrpcDataToPaste(){
   const lines = [];
 
   // 1. SCHEDULE GENERATION
-  lines.push("1. SCHEDULE GENERATION IN LU");
+  lines.push("1. SCHEDULE GENERATION IN MWh");
   lines.push(["Stn_Name", "Stn_Gen_Date", ...Array.from({length:96}, (_,i)=>'GS'+(i+1))].join("\t"));
   dates.forEach((dt, dIdx) => {
     const vals = [];
     for(let b=1; b<=96; b++){
-      const base = 0.75 + 0.15 * Math.sin((b + dIdx*5)/8);
-      vals.push(base.toFixed(4));
+      const base = 75.0 + 15.0 * Math.sin((b + dIdx*5)/8);
+      vals.push(base.toFixed(3));
     }
     lines.push([stnName, dt, ...vals].join("\t"));
   });
   lines.push("");
 
   // 2. AGC SRAS
-  lines.push("2. AGC SRAS IN LU");
+  lines.push("2. AGC SRAS IN MWh");
   lines.push(["Entity_Name", "sch_date", ...Array.from({length:96}, (_,i)=>'D'+(i+1))].join("\t"));
   dates.forEach((dt) => {
     const vals = [];
     for(let b=1; b<=96; b++){
-      const sras = (b % 4 === 0) ? 0.025 : ((b % 4 === 2) ? -0.015 : 0.000);
-      vals.push(sras.toFixed(4));
+      const sras = (b % 4 === 0) ? 2.500 : ((b % 4 === 2) ? -1.500 : 0.000);
+      vals.push(sras.toFixed(3));
     }
     lines.push([stnName, dt, ...vals].join("\t"));
   });
   lines.push("");
 
   // 3. ACTUAL INJECTION
-  lines.push("3. ACTUAL INJECTION IN LU");
+  lines.push("3. ACTUAL INJECTION IN MWh");
   lines.push(["Stn_Name", "Stn_Gen_Date", ...Array.from({length:96}, (_,i)=>'D'+(i+1))].join("\t"));
   dates.forEach((dt, dIdx) => {
     const vals = [];
     for(let b=1; b<=96; b++){
-      const base = 0.75 + 0.15 * Math.sin((b + dIdx*5)/8);
-      const sras = (b % 4 === 0) ? 0.025 : ((b % 4 === 2) ? -0.015 : 0.000);
-      const dev = 0.018 * Math.sin((b + dIdx*3)/3);
+      const base = 75.0 + 15.0 * Math.sin((b + dIdx*5)/8);
+      const sras = (b % 4 === 0) ? 2.500 : ((b % 4 === 2) ? -1.500 : 0.000);
+      const dev = 1.800 * Math.sin((b + dIdx*3)/3);
       const act = base + sras + dev;
-      vals.push(act.toFixed(4));
+      vals.push(act.toFixed(3));
     }
     lines.push([stnName, dt, ...vals].join("\t"));
   });
   lines.push("");
 
   // 4. TOTAL SCHEDULED GEN
-  lines.push("4. TOTAL SCHEDULED GEN in LU");
+  lines.push("4. TOTAL SCHEDULED GEN in MWh");
   lines.push(["Entity_Name", "sch_date", ...Array.from({length:96}, (_,i)=>'D'+(i+1))].join("\t"));
   dates.forEach((dt, dIdx) => {
     const vals = [];
     for(let b=1; b<=96; b++){
-      const base = 0.75 + 0.15 * Math.sin((b + dIdx*5)/8);
-      const sras = (b % 4 === 0) ? 0.025 : ((b % 4 === 2) ? -0.015 : 0.000);
-      vals.push((base + sras).toFixed(4));
+      const base = 75.0 + 15.0 * Math.sin((b + dIdx*5)/8);
+      const sras = (b % 4 === 0) ? 2.500 : ((b % 4 === 2) ? -1.500 : 0.000);
+      vals.push((base + sras).toFixed(3));
     }
     lines.push([stnName, dt, ...vals].join("\t"));
   });
@@ -9491,14 +10709,28 @@ function loadSampleNrpcDataToPaste(){
   dates.forEach((dt, dIdx) => {
     const vals = [];
     for(let b=1; b<=96; b++){
-      const dev = 0.018 * Math.sin((b + dIdx*3)/3);
-      const devMWh = dev * 100;
+      const devMWh = 1.800 * Math.sin((b + dIdx*3)/3);
       const rate = 2.828;
       const chg = Math.round(devMWh * rate * 1000);
       vals.push(chg);
     }
     lines.push([stnName, dt, ...vals].join("\t"));
   });
+
+  if (includeFreq) {
+    lines.push("");
+    // 7. GRID FREQUENCY IN HZ
+    lines.push("7. GRID FREQUENCY IN Hz");
+    lines.push(["Frequency_Date", "Stn_Name", ...Array.from({length:96}, (_,i)=>'F'+(i+1))].join("\t"));
+    dates.forEach((dt, dIdx) => {
+      const vals = [];
+      for(let b=1; b<=96; b++){
+        const f = 50.00 + 0.04 * Math.sin((b + dIdx*2)/4);
+        vals.push(f.toFixed(2));
+      }
+      lines.push([dt, stnName, ...vals].join("\t"));
+    });
+  }
 
   const pasteArea = document.getElementById('pasteArea');
   if(pasteArea){
@@ -9517,6 +10749,7 @@ window.downloadTehriHppTemplate = downloadTehriHppTemplate;
 window.downloadKoteshwarHepTemplate = downloadKoteshwarHepTemplate;
 window.downloadTehriPspTemplate = downloadTehriPspTemplate;
 window.downloadNrpc6ParamTemplate = downloadNrpc6ParamTemplate;
+window.downloadNrpc7ParamTemplate = downloadNrpc7ParamTemplate;
 window.loadSampleNrpcDataToPaste = loadSampleNrpcDataToPaste;
 window.openTemplateDownloadModal = openTemplateDownloadModal;
 window.downloadOfficialMultiTableTemplate = downloadOfficialMultiTableTemplate;
@@ -10296,39 +11529,106 @@ window.addEventListener('load',()=>setTimeout(()=>{if(typeof updateTopWorkspaceC
     },
     "Koteshwar HEP": {
       name:"Koteshwar HEP", capacity:400, type:"Hydro Electric Power Plant", authority:"NRPC",
-      inputMultiplier:100, inputUnit:"LU", scheduleField:"Scheduled Generation", actualField:"Actual Injection"
+      inputMultiplier:1, inputUnit:"MWh", scheduleField:"Scheduled Generation", actualField:"Actual Injection"
     },
     "Tehri HPP": {
       name:"Tehri HPP", capacity:1000, type:"Hydro Power Plant", authority:"NRPC",
-      inputMultiplier:100, inputUnit:"LU", scheduleField:"Scheduled Generation +SRAS", actualField:"Actual Injection"
+      inputMultiplier:1, inputUnit:"MWh", scheduleField:"Scheduled Generation +SRAS", actualField:"Actual Injection"
     },
     "Tehri PSP": {
       name:"Tehri PSP", capacity:1000, type:"Pumped Storage Plant", authority:"NRPC",
-      inputMultiplier:100, inputUnit:"LU", scheduleField:"Scheduled Generation", actualField:"Actual Injection"
+      inputMultiplier:1, inputUnit:"MWh", scheduleField:"Scheduled Generation", actualField:"Actual Injection"
     },
     "Khurja Floating Solar": {
       name:"Khurja Floating Solar", capacity:11, type:"Floating Solar Power Plant", authority:"UPSLDC",
-      inputMultiplier:1, inputUnit:"MWh", scheduleField:"Scheduled Generation", actualField:"Actual Injection"
+      inputMultiplier:100, inputUnit:"LU", scheduleField:"Scheduled Generation", actualField:"Actual Injection"
     }
   };
 
   function cfgKey(plant){return "thdc-dsm-universal-config:"+String(plant).replace(/[^a-z0-9]+/gi,"-").toLowerCase()}
   function getCfg(plant){
     const base=PLANT_DEFAULTS[plant]||PLANT_DEFAULTS["Khurja Floating Solar"];
-    try{const x=JSON.parse(localStorage.getItem(cfgKey(plant))||"null");return {...base,...x}}catch(e){return {...base}}
+    try{
+      const raw = localStorage.getItem(cfgKey(plant));
+      const x=JSON.parse(raw||"null");
+      const merged = {...base,...x};
+      return merged;
+    }catch(e){return {...base}}
   }
   function saveCfg(plant,cfg){localStorage.setItem(cfgKey(plant),JSON.stringify(cfg))}
 
-  window.THDC_UNIVERSAL = {PLANT_DEFAULTS,getCfg,saveCfg};
+  function normalizeAllPlantsToMWh(){
+    Object.keys(PLANT_DEFAULTS).forEach(p => {
+      const c = getCfg(p);
+      c.inputUnit = "MWh";
+      c.inputMultiplier = 1;
+      saveCfg(p, c);
+    });
+    if(typeof showToast === 'function') showToast("✓ All plant parameters set to standard unit: MWh (1 MWh = 1 MWh)");
+  }
+  window.normalizeAllPlantsToMWh = normalizeAllPlantsToMWh;
+
+  window.THDC_UNIVERSAL = {PLANT_DEFAULTS,getCfg,saveCfg,normalizeAllPlantsToMWh};
 
   /* ---------- universal block math ---------- */
+  try {
+    window.THDC_DSM_CALC_MODE = localStorage.getItem('THDC_DSM_CALC_MODE') || 'ADOPT_NRPC';
+    window.THDC_INVERT_SIGN = localStorage.getItem('THDC_INVERT_SIGN') === 'true';
+  } catch(e) {
+    window.THDC_DSM_CALC_MODE = 'ADOPT_NRPC';
+    window.THDC_INVERT_SIGN = false;
+  }
+
+  window.setDsmCalcMode = function(mode){
+    window.THDC_DSM_CALC_MODE = mode;
+    try { localStorage.setItem('THDC_DSM_CALC_MODE', mode); } catch(e){}
+    const plant = window.currentPlantContext || "Khurja Floating Solar";
+    if(window.THDC_UNIVERSAL && typeof window.THDC_UNIVERSAL.getCfg === 'function'){
+      const cfg = window.THDC_UNIVERSAL.getCfg(plant);
+      cfg.calcMode = mode;
+      window.THDC_UNIVERSAL.saveCfg(plant, cfg);
+    }
+    if(state.view==='home') renderHomeShell(); else { renderShell(); renderAll(); }
+    if(typeof showToast === 'function'){
+      const msg = mode === 'ADOPT_NRPC' ? '✓ Adopted Official NRPC Statement Billed Charges (0% Variance)!' :
+                  mode === 'NRPC_LINEAR' ? '⚡ Switched to NRPC Linear Rate Formula (Dev × Ref Rate × 1000)!' :
+                  mode === 'HYDRO_ROR' ? '💧 Switched to Hydro RoR Mode (No 25 MWh thermal cap)!' :
+                  '🏛️ Switched to CERC 2024 Grid Frequency Tiered Multipliers!';
+      showToast(msg);
+    }
+  };
+
+  window.toggleDsmInvertSign = function(){
+    window.THDC_INVERT_SIGN = !window.THDC_INVERT_SIGN;
+    try { localStorage.setItem('THDC_INVERT_SIGN', window.THDC_INVERT_SIGN ? 'true' : 'false'); } catch(e){}
+    if(state.view==='home') renderHomeShell(); else { renderShell(); renderAll(); }
+    if(typeof showToast === 'function'){
+      showToast(`✓ DSM Sign Convention: ${window.THDC_INVERT_SIGN ? 'Inverted (Payable -, Receivable +)' : 'Standard (Payable +, Receivable -)'}`);
+    }
+  };
+
   window.THDC_COMPUTE_BLOCK = function(s,a,f,r,params){
     const P={...BASE,...(params||{})};
     s=Number(s)||0;a=Number(a)||0;f=Number(f)||0;r=Number(r)||0;
-    const pct=P.volLimitPct/100;
     const dev=a-s;
     const devPct=s===0?0:(dev/Math.abs(s))*100;
     const devType=dev>0?"Over-Injection":dev<0?"Under-Injection":"No Deviation";
+
+    const calcMode = P.calcMode || window.THDC_DSM_CALC_MODE || 'CERC_TIERED';
+    const invertSign = P.invertSign !== undefined ? P.invertSign : (window.THDC_INVERT_SIGN || false);
+
+    if (calcMode === 'NRPC_LINEAR') {
+      let linCharge = dev === 0 ? 0 : (dev > 0 ? -1 * Math.abs(dev) * r * 1000 : Math.abs(dev) * r * 1000);
+      if (invertSign) linCharge = -linCharge;
+      linCharge = Math.round(linCharge);
+      return {
+        dev, devPct, devType, volLimit: Math.abs(dev), freqBand: "NRPC Linear Rate",
+        multWithin: 1, devWithin: dev, devBeyond: 0, multBeyond: 0,
+        charge: linCharge
+      };
+    }
+
+    const pct=P.volLimitPct/100;
     const volLimit=Math.min(Math.abs(s)*pct,Number(P.volLimitCap));
     const withinOver=h=>{
       if(h>=P.deadbandLow&&h<=P.deadbandHigh)return 1;
@@ -10371,18 +11671,56 @@ window.addEventListener('load',()=>setTimeout(()=>{if(typeof updateTopWorkspaceC
 
     const magnitude=Math.abs(devWithin)*multWithin+Math.abs(devBeyond)*multBeyond;
     let charge=dev===0?0:(dev>0?-magnitude*r*1000:magnitude*r*1000);
+    if (invertSign) charge = -charge;
     charge=Math.round(charge);
     return {dev,devPct,devType,volLimit,freqBand,multWithin,devWithin,devBeyond,multBeyond,charge};
   };
 
   /* Replace the original calculation function so every existing view uses the universal engine. */
-  window.computeBlock = function(s,a,f,r){return THDC_COMPUTE_BLOCK(s,a,f,r,getCfg(window.currentPlantContext||"Khurja Floating Solar").formulas||FP)};
-  /* Existing function declarations are lexical bindings, so override the call sites through revisionAwareBlock. */
+  window.computeBlock = function(s,a,f,r){
+    const plant = window.currentPlantContext || "Khurja Floating Solar";
+    const cfg = (window.THDC_UNIVERSAL && window.THDC_UNIVERSAL.getCfg) ? window.THDC_UNIVERSAL.getCfg(plant) : {};
+    return THDC_COMPUTE_BLOCK(s,a,f,r,{...(cfg.formulas||FP), calcMode: window.THDC_DSM_CALC_MODE, invertSign: window.THDC_INVERT_SIGN});
+  };
+
+  /* Revision-aware block computation with mode adoption */
   window.THDC_REVISION_AWARE = function(day,b){
     const baseS = window.THDC_APPLICABLE_SCHEDULE(day,b);
     const sras = Number(b?.sras) || 0;
     const effS = baseS + sras; // NRPC CERC DSM calculation uses Total Schedule = Base Sch + SRAS
-    const c = THDC_COMPUTE_BLOCK(effS, b.a, b.f, b.r, getCfg(window.currentPlantContext||"Khurja Floating Solar").formulas||FP);
+    const plant = window.currentPlantContext || "Khurja Floating Solar";
+    const cfg = (window.THDC_UNIVERSAL && window.THDC_UNIVERSAL.getCfg) ? window.THDC_UNIVERSAL.getCfg(plant) : {};
+    const calcMode = window.THDC_DSM_CALC_MODE || cfg.calcMode || (b?.nrpcCharge !== undefined && b?.nrpcCharge !== null && !isNaN(Number(b.nrpcCharge)) ? 'ADOPT_NRPC' : 'CERC_TIERED');
+    const invertSign = window.THDC_INVERT_SIGN || false;
+
+    // ADOPT_NRPC Mode: When official NRPC Deviation Charge is present in column 6 of Excel, adopt it directly
+    if (calcMode === 'ADOPT_NRPC' && b?.nrpcCharge !== undefined && b?.nrpcCharge !== null && !isNaN(Number(b.nrpcCharge))) {
+      let nrpcC = Number(b.nrpcCharge);
+      if (invertSign) nrpcC = -nrpcC;
+      const dev = Number(b.a) - effS;
+      const devPct = effS === 0 ? 0 : (dev / Math.abs(effS)) * 100;
+      const devType = dev > 0 ? "Over-Injection" : (dev < 0 ? "Under-Injection" : "No Deviation");
+      return {
+        dev,
+        devPct,
+        devType,
+        volLimit: Math.abs(dev),
+        freqBand: "NRPC Statement Billed",
+        multWithin: 1,
+        devWithin: dev,
+        devBeyond: 0,
+        multBeyond: 0,
+        charge: Math.round(nrpcC),
+        baseS,
+        sras,
+        effS,
+        s: effS,
+        devWithoutSras: Number(b.a) - baseS,
+        revision: (window.THDC_REVISION_FOR_BLOCK(day,b.idx)?.id||"R0")
+      };
+    }
+
+    const c = THDC_COMPUTE_BLOCK(effS, b.a, b.f, b.r, { ...(cfg.formulas || FP), calcMode, invertSign });
     return {
       ...c,
       baseS,
@@ -10445,12 +11783,13 @@ window.addEventListener('load',()=>setTimeout(()=>{if(typeof updateTopWorkspaceC
       const s=Number(schRow[c]);const a=Number(actRow[c]);
       if(!Number.isFinite(s)||!Number.isFinite(a))continue;
       const sras = srasRow.length ? (Number(srasRow[c])||0) : 0;
+      const mult = (cfg?.inputUnit === "LU" || cfg?.inputMultiplier === 100) ? 100 : (cfg?.inputUnit === "MW" || cfg?.inputMultiplier === 0.25 ? 0.25 : (Number(cfg?.inputMultiplier) || 1));
       days[date].blocks.push({
         idx:days[date].blocks.length+1,
         t:blockRow[c]??"",
-        s:s*(Number(cfg?.inputMultiplier)||1),
-        sras:sras*(Number(cfg?.inputMultiplier)||1),
-        a:a*(Number(cfg?.inputMultiplier)||1),
+        s:s*mult,
+        sras:sras*mult,
+        a:a*mult,
         f:Number(freqRow[c]??50),
         r:Number(rateRow[c]??0)
       });
@@ -10466,10 +11805,13 @@ window.addEventListener('load',()=>setTimeout(()=>{if(typeof updateTopWorkspaceC
     reader.onload=function(e){
       try{
         const wb=XLSX.read(new Uint8Array(e.target.result),{type:"array",cellDates:true});
-        const cfg=getCfg(window.currentPlantContext||"Khurja Floating Solar");
+        const cfg=(typeof getActivePasteUnitConfig === 'function') ? getActivePasteUnitConfig() : getCfg(window.currentPlantContext||"Khurja Floating Solar");
         const allDays=parseUniversalWorkbook(wb, cfg);
         showPreview(allDays);
-      }catch(err){document.getElementById("pastePreview").innerHTML='<div class="err-msg">Could not read file: '+err.message+"</div>"}
+      }catch(err){
+        const pEl = document.getElementById("pastePreview");
+        if(pEl) pEl.innerHTML='<div class="err-msg">Could not read file: '+err.message+"</div>";
+      }
     };
     reader.readAsArrayBuffer(file);
   };
@@ -10483,12 +11825,14 @@ window.addEventListener('load',()=>setTimeout(()=>{if(typeof updateTopWorkspaceC
       m.innerHTML='<div class="modal-box" style="max-width:820px"><h3>Universal DSM Engine — Plant Configuration</h3><div class="desc">Calculation logic remains common. Only plant-specific metadata, input scaling and formula overrides are stored separately for the selected plant.</div><div id="univCfgBody"></div><div class="modal-actions"><button class="btn" onclick="closeModal(\'univConfigModal\')">Cancel</button><button class="btn btn-primary" onclick="saveUniversalConfig()">Save Plant Configuration</button></div></div>';
       document.body.appendChild(m);
     }
-    document.getElementById("univCfgBody").innerHTML=`
+    const cfgBody = document.getElementById("univCfgBody");
+    if(cfgBody){
+      cfgBody.innerHTML=`
       <div class="plant-config-grid">
         <div><label>Plant</label><input id="uc_name" value="${c.name}" readonly></div>
         <div><label>Capacity (MW)</label><input id="uc_capacity" type="number" value="${c.capacity}"></div>
         <div><label>Authority</label><select id="uc_authority"><option ${c.authority==="UPSLDC"?"selected":""}>UPSLDC</option><option ${c.authority==="NRPC"?"selected":""}>NRPC</option></select></div>
-        <div><label>Input Unit</label><select id="uc_unit" onchange="const m=document.getElementById('uc_multiplier');if(m){if(this.value==='LU')m.value='100';else if(this.value==='MWh')m.value='1';else if(this.value==='kWh')m.value='0.001';else if(this.value==='MW')m.value='0.25';}"><option value="LU">LU (Lakh Units: 1 LU = 100 MWh)</option><option value="MWh">MWh (1 MWh = 1 MWh)</option><option value="kWh">kWh</option><option value="MW">MW (15-min avg)</option><option value="Custom">Custom</option></select></div>
+        <div><label>Input Unit</label><select id="uc_unit" onchange="const m=document.getElementById('uc_multiplier');if(m){if(this.value==='MWh')m.value='1';else if(this.value==='LU')m.value='100';else if(this.value==='kWh')m.value='0.001';else if(this.value==='MW')m.value='0.25';}"><option value="LU">LU (Lakh Units: 1 LU = 100 MWh = 1,00,000 kWh)</option><option value="MWh">MWh (1 MWh = 1 MWh) — Standard</option><option value="kWh">kWh</option><option value="MW">MW (15-min avg)</option><option value="Custom">Custom</option></select></div>
         <div><label>Input → MWh Multiplier</label><input id="uc_multiplier" type="number" step="0.000001" value="${c.inputMultiplier}"></div>
         <div><label>Schedule field</label><input id="uc_schedule" value="${c.scheduleField}"></div>
         <div><label>Actual field</label><input id="uc_actual" value="${c.actualField}"></div>
@@ -10498,6 +11842,7 @@ window.addEventListener('load',()=>setTimeout(()=>{if(typeof updateTopWorkspaceC
       <div style="margin-top:14px" class="ucard"><h4>Formula overrides</h4><div class="usub">Leave values at the selected plant's saved defaults unless the applicable regulation / settlement methodology requires a different parameter.</div><div class="plant-config-grid" style="margin-top:10px">
         ${["volLimitPct","volLimitCap","deadbandLow","deadbandHigh","bandLow","bandHigh","extremeHigh","overBelowBandMult","overRampLowSlope","overRampLowCap","overRampHighSlope","overRampHighFloor","overDiscountMult","overExtremeMult","underBelowBandMult","underRampLowSlope","underRampLowCap","underRampHighSlope","underRampHighFloor","underAboveBandMult","beyondUnderHighMult","beyondUnderMidMult","beyondUnderLowMult"].map(k=>`<div><label>${k}</label><input id="uc_${k}" type="number" step="0.000001" value="${(c.formulas?.[k]??FP[k])}"></div>`).join("")}
       </div></div>`;
+    }
     document.getElementById("uc_unit").value=c.inputUnit||"MWh";
     openModal("univConfigModal");
   };
